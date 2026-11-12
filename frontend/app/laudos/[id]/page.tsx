@@ -32,6 +32,7 @@ import { getConfirmacaoRevogarVeterinario } from "@/lib/laudo-portal-destinos";
 import AvisoWhatsAppDialog from "../components/AvisoWhatsAppDialog";
 import PortalLiberadoPara from "../components/PortalLiberadoPara";
 import EchoNarrativeConsistencyNotice from "../components/EchoNarrativeConsistencyNotice";
+import EchoPreviousExamComparison from "../components/EchoPreviousExamComparison";
 import { ArrowLeft, CheckCircle, Download, FileText, Loader2, MessageCircle, Printer, Send, Upload } from "lucide-react";
 
 const PORTAL_RELEASE_STATUS = "Liberado no portal";
@@ -857,6 +858,8 @@ export default function VisualizarLaudoPage() {
               </div>
             </div>
           )}
+
+          {laudoEhEco && laudo.paciente_id && <EchoPreviousExamComparison laudoId={laudo.id} pacienteId={laudo.paciente_id} />}
 
           {/* Qualitativa */}
           {!laudoEhPressao && Object.values(qualitativa).some((value) => Boolean(value?.trim())) && (

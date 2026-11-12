@@ -55,7 +55,7 @@ import {
 import { criarMensagemAlertaSalvamentoEcocardiograma } from "@/lib/ecocardiograma-save-alert";
 import { calendarDateInput, operationalTodayDateInput } from "@/lib/calendar-date";
 import { confirmedUnitKey, echoLengthInMm, echoLengthInputLabel } from "@/lib/echo-unit-provenance";
-import { isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
+import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
 import { useEchoMeasurements } from "../hooks/useEchoMeasurements";
 import { NEW_REPORT_PROTOCOL_KEYS } from "@/lib/echo-new-report-defaults";
 import { useEchoEditorDraft } from "../hooks/useEchoEditorDraft";
@@ -636,7 +636,7 @@ export default function NovoLaudoPage() {
         : null;
 
     const divedNormalizadoCalculado =
-      normalizeEchoSpecies(paciente.especie) === "Canina" && divedMm !== null && divedMm > 0 && peso !== null && peso > 0
+      isCanineEchoSpecies(paciente.especie) && divedMm !== null && divedMm > 0 && peso !== null && peso > 0
         ? formatar2Casas((divedMm / 10.0) / Math.pow(peso, 0.294))
         : null;
 
@@ -1608,7 +1608,7 @@ export default function NovoLaudoPage() {
                         >
                           <option value="Canina">Canina</option>
                           <option value="Felina">Felina</option>
-                          {normalizeEchoSpecies(paciente.especie) === "Canina" && paciente.especie !== "Canina" && (
+                          {isCanineEchoSpecies(paciente.especie) && paciente.especie !== "Canina" && (
                             <option value={paciente.especie}>{paciente.especie} (canina)</option>
                           )}
                           {isFelineEchoSpecies(paciente.especie) && paciente.especie !== "Felina" && (
@@ -1827,12 +1827,12 @@ export default function NovoLaudoPage() {
                           value={medidas["DIVEd"] || ""}
                           onChange={(v) => handleMedidaChange("DIVEd", v)}
                         />
-                        {normalizeEchoSpecies(paciente.especie) === "Canina" && <MedidaInput
+                        {isCanineEchoSpecies(paciente.especie) && <MedidaInput
                           label="DIVEd normalizado (DIVEd [cm] / peso^0,294)"
                           value={medidas["DIVEd_normalizado"] || ""}
                           onChange={(v) => handleMedidaChange("DIVEd_normalizado", v)}
                           readOnly
-                          reference={normalizeEchoSpecies(paciente.especie) === "Canina" && (parsePesoKg(paciente.peso) ?? 0) >= 2.2 && (parsePesoKg(paciente.peso) ?? 0) <= 95
+                          reference={isCanineEchoSpecies(paciente.especie) && (parsePesoKg(paciente.peso) ?? 0) >= 2.2 && (parsePesoKg(paciente.peso) ?? 0) <= 95
                             ? "Cornell 2004 (amostra de cães adultos, Modo M): 1,27–1,85"
                             : "Faixa aplicável não cadastrada"}
                         />}

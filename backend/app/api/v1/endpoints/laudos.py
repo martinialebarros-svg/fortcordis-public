@@ -53,6 +53,12 @@ from app.services.laudo_pdf_jobs import (
 from app.services.laudo_pdf_service import compute_laudo_pdf_cache_key, render_laudo_pdf
 from app.schemas.echo_editor_update import EchoEditorUpdate
 from app.services.echo_editor_source import load_echo_editor_source
+from app.schemas.laudo_comparacao import LaudoComparacaoAnteriorResponse
+from app.services.laudo_comparacao_service import (
+    LaudoComparacaoNaoEncontrada,
+    LaudoComparacaoPacienteAusente,
+    comparar_laudo_anterior,
+)
 from app.services.laudo_ordem_servico_service import (
     buscar_ordem_laudo, buscar_ordem_por_chave, chave_upload_ordem, criar_ordem_laudo,
     exigir_criacao_ordem, hash_upload_ordem, mesma_data, pode_acessar_ordens, resumo_ordem, validar_preco_ordem,
@@ -2954,6 +2960,22 @@ def atualizar_laudo_ultrassonografia_abdominal(
         "paciente_id": laudo.paciente_id,
         "tipo": laudo.tipo,
     }
+
+
+@router.get("/laudos/{laudo_id}/comparacao-anterior", response_model=LaudoComparacaoAnteriorResponse)
+def obter_comparacao_laudo_anterior(
+    laudo_id: int,
+    anterior_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Consulta interna protegida pela mesma permissão de visualização do laudo."""
+    try:
+        return comparar_laudo_anterior(db, laudo_id, anterior_id=anterior_id)
+    except LaudoComparacaoNaoEncontrada:
+        raise HTTPException(status_code=404, detail="Comparação não encontrada") from None
+    except LaudoComparacaoPacienteAusente:
+        raise HTTPException(status_code=422, detail="Paciente do laudo indisponível") from None
 
 
 @router.get("/laudos/{laudo_id}")

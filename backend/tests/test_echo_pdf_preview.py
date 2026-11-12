@@ -433,8 +433,8 @@ class EchoPdfPreviewHTTPTest(unittest.TestCase):
         self.assertEqual(self.client.get(self.url,headers=self.headers()).status_code,200)
 
     def test_official_cache_drops_previous_layout_version_without_touching_other_modalities(self):
-        # The complete reviewed HP renderer must invalidate pre-HP and earlier
-        # Stage caches without changing cache identities of other modalities.
+        # Restored full Stage includes HP, unlike the isolated production PDF.
+        # Neither its former cache nor the production-only layout cache is valid.
         with self.sessions() as db:
             db.add(Laudo(id=903, paciente_id=901, veterinario_id=1, tipo="pressao_arterial", titulo="QA"))
             db.commit()
@@ -445,7 +445,6 @@ class EchoPdfPreviewHTTPTest(unittest.TestCase):
                 "2026-11-02-eco-reviewed-pulmonary-probability-v33",
                 "2026-11-04-eco-reviewed-preview-layout-v34",
                 "2026-11-04-eco-full-stage-reviewed-preview-hp-v35",
-                "2026-11-04-eco-full-stage-hp-unit-guard-v36",
             ):
                 with self.subTest(previous_version=previous_version):
                     with patch("app.services.laudo_pdf_service.LAUDO_PDF_ECO_RENDERER_VERSION", previous_version):

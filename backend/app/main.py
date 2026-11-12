@@ -25,6 +25,7 @@ from app.api.v1.endpoints import (
     configuracoes,
     eco_study_import,
     financeiro,
+    gestao,
     fiscal,
     google_maps_cost_control,
     frases_ecocardiograma_estruturado_teste,
@@ -459,6 +460,7 @@ app.include_router(servicos.router, prefix="/api/v1/servicos", tags=["servicos"]
 app.include_router(laudo_editor_drafts.router, prefix="/api/v1", tags=["laudos"])
 app.include_router(laudos.router, prefix="/api/v1", tags=["laudos"])
 app.include_router(financeiro.router, prefix="/api/v1/financeiro", tags=["financeiro"])
+app.include_router(gestao.router, prefix="/api/v1/gestao", tags=["gestao"])
 app.include_router(xml_import.router, prefix="/api/v1/xml", tags=["xml_import"])
 app.include_router(
     eco_study_import.router,

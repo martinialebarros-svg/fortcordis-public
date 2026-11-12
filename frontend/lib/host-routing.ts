@@ -25,6 +25,7 @@ const APP_ROUTE_PREFIXES = [
   "/dashboard",
   "/financeiro",
   "/fiscal",
+  "/gestao",
   "/laudos",
   "/logistica",
   "/pacientes",

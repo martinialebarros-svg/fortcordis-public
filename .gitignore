@@ -59,3 +59,13 @@ backend/import_vetsmart_saved_html.py
 *.backup.*
 output/
 tmp/
+
+# Backups e diagnósticos privados existentes na VPS
+backup_stage_*.tar.gz
+backend/.bot-test-*.json
+backend/data/data/
+backend/data/*backup*
+backend/data/*before*
+backend/data/*postimport*
+backend/data/*pre_recover*
+backend/{d}
