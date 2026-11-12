@@ -1,0 +1,61 @@
+# Python
+__pycache__/
+*.pyc
+backend/venv/
+backend/.venv/
+backend/.venv-http/
+.env
+.env.local
+backend/private_key.pem
+backend/public_key.pem
+backend/uploads/
+backend/data/runtime_backups/
+backend/tmp/
+backend/generated/atendimento_assistente_lotes/
+
+# Next.js
+frontend/node_modules/
+frontend/.next/
+
+# Base de dados (dados locais; não versionar)
+*.db
+backend/*.db
+
+# Outros
+*.log
+.DS_Store
+backups/
+.vscode/
+.cursor/
+nul
+backend/preview_test*.pdf
+ops/baseline/prod/
+
+# Artefatos locais de contexto/planejamento (IA)
+ARCHITECTURE_DECISIONS.md
+CURRENT_TASK.md
+KNOWN_BUGS.md
+NEXT_STEPS.md
+PROJECT_CONTEXT.md
+
+# Dados brutos de scraping/import temporario (nao usados em runtime)
+backend/data/vetsmart_html/
+backend/data/vetsmart_cardio.csv
+backend/data/vetsmart_cardio.json
+backend/import_vetsmart_saved_html.py
+
+# Arquivos locais e dados de runtime
+.env.*
+!.env.example
+*.sqlite
+*.sqlite3
+*.db-*
+*.pem
+*.key
+*.p12
+*.pfx
+*.err
+*.bak
+*.backup.*
+output/
+tmp/

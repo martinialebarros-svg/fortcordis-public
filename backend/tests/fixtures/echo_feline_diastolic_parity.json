@@ -1,0 +1,94 @@
+{
+  "description": "Shared clinical contract for UI consultation and PDF evidence: published mean/SD values with independent transmitral and tissue Doppler applicability.",
+  "measurements": {
+    "Onda_E": "1.08",
+    "Onda_A": "0.95",
+    "E_A": "1.14",
+    "TD": "51",
+    "TRIV": "40",
+    "E_TRIV": "2.70",
+    "e_doppler": "0.16",
+    "a_doppler": "0.06",
+    "doppler_tecidual_relacao": "2.67",
+    "E_E_linha": "6.75"
+  },
+  "evidence": {
+    "unconfirmed": { "kind": "unconfirmed", "statistic": "", "doi": "", "numeric_text": "" },
+    "fusion": { "kind": "uninterpretable", "statistic": "", "doi": "", "numeric_text": "" },
+    "disatian_e": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1111/j.1939-1676.2008.0066.x", "numeric_text": "0,70 ± 0,14 m/s" },
+    "disatian_a": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1111/j.1939-1676.2008.0066.x", "numeric_text": "0,65 ± 0,14 m/s" },
+    "disatian_ea": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1111/j.1939-1676.2008.0066.x", "numeric_text": "1,12 ± 0,22" },
+    "soares_td": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1590/S0103-84782005000600020", "numeric_text": "72,29 ± 9,56 ms" },
+    "disatian_triv": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1111/j.1939-1676.2008.0066.x", "numeric_text": "46,2 ± 7,6 ms" },
+    "soares_triv": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1590/S0103-84782005000600020", "numeric_text": "68,75 ± 19,14 ms" },
+    "lateral_e": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1186/s12917-020-02557-3", "numeric_text": "0,11 ± 0,03 m/s" },
+    "lateral_a": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1186/s12917-020-02557-3", "numeric_text": "0,08 ± 0,03 m/s" },
+    "lateral_ea": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1186/s12917-020-02557-3", "numeric_text": "1,33 ± 0,31" },
+    "lateral_ee": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1186/s12917-020-02557-3", "numeric_text": "7,8 ± 2,92" },
+    "septal_e": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1177/1098612X12447729", "numeric_text": "0,075 ± 0,026 m/s" },
+    "septal_a": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1177/1098612X12447729", "numeric_text": "0,061 ± 0,017 m/s" },
+    "septal_ee": { "kind": "descriptive", "statistic": "mean_sd", "doi": "10.1177/1098612X12447729", "numeric_text": "8,7 ± 1,7" }
+  },
+  "cases": [
+    {
+      "id": "separate_waves_aortic_click_lateral_tdi",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_clique_aortico", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "separadas" },
+      "expected": { "Onda_E": "disatian_e", "Onda_A": "disatian_a", "E_A": "disatian_ea", "TD": "soares_td", "TRIV": "disatian_triv", "E_TRIV": "unconfirmed", "e_doppler": "lateral_e", "a_doppler": "lateral_a", "doppler_tecidual_relacao": "lateral_ea", "E_E_linha": "lateral_ee" }
+    },
+    {
+      "id": "separate_waves_aortic_flow_end_septal_tdi",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_fim_fluxo", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_septal", "TDI_ondas": "separadas" },
+      "expected": { "Onda_E": "disatian_e", "Onda_A": "disatian_a", "E_A": "disatian_ea", "TD": "soares_td", "TRIV": "soares_triv", "E_TRIV": "unconfirmed", "e_doppler": "septal_e", "a_doppler": "septal_a", "doppler_tecidual_relacao": "unconfirmed", "E_E_linha": "septal_ee" }
+    },
+    {
+      "id": "fused_transmitral_separate_tdi",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_clique_aortico", "Diastolica_ondas": "fundidas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "separadas" },
+      "expected": { "Onda_E": "fusion", "Onda_A": "fusion", "E_A": "fusion", "TD": "fusion", "TRIV": "disatian_triv", "E_TRIV": "fusion", "e_doppler": "lateral_e", "a_doppler": "lateral_a", "doppler_tecidual_relacao": "lateral_ea", "E_E_linha": "fusion" }
+    },
+    {
+      "id": "separate_transmitral_fused_tdi",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_clique_aortico", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "fundidas" },
+      "expected": { "Onda_E": "disatian_e", "Onda_A": "disatian_a", "E_A": "disatian_ea", "TD": "soares_td", "TRIV": "disatian_triv", "E_TRIV": "unconfirmed", "e_doppler": "fusion", "a_doppler": "fusion", "doppler_tecidual_relacao": "fusion", "E_E_linha": "fusion" }
+    },
+    {
+      "id": "both_doppler_wave_pairs_fused",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_clique_aortico", "Diastolica_ondas": "fundidas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "fundidas" },
+      "expected": { "Onda_E": "fusion", "Onda_A": "fusion", "E_A": "fusion", "TD": "fusion", "TRIV": "disatian_triv", "E_TRIV": "fusion", "e_doppler": "fusion", "a_doppler": "fusion", "doppler_tecidual_relacao": "fusion", "E_E_linha": "fusion" }
+    },
+    {
+      "id": "unconfirmed_acquisition_and_wave_separation",
+      "species": "Felina",
+      "protocol": {},
+      "expected": { "Onda_E": "unconfirmed", "Onda_A": "unconfirmed", "E_A": "unconfirmed", "TD": "unconfirmed", "TRIV": "unconfirmed", "E_TRIV": "unconfirmed", "e_doppler": "unconfirmed", "a_doppler": "unconfirmed", "doppler_tecidual_relacao": "unconfirmed", "E_E_linha": "unconfirmed" }
+    },
+    {
+      "id": "canine_ignores_feline_acquisition",
+      "species": "Canina",
+      "protocol": { "Diastolica_metodo": "felino_adulto_nao_sedado_pw_apical_clique_aortico", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "separadas" },
+      "expected": {}
+    },
+    {
+      "id": "unconfirmed_transmitral_with_confirmed_tdi",
+      "species": "Felina",
+      "protocol": { "Diastolica_metodo": "outro", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "separadas" },
+      "expected": { "Onda_E": "unconfirmed", "Onda_A": "unconfirmed", "E_A": "unconfirmed", "TD": "unconfirmed", "TRIV": "unconfirmed", "E_TRIV": "unconfirmed", "e_doppler": "lateral_e", "a_doppler": "lateral_a", "doppler_tecidual_relacao": "lateral_ea", "E_E_linha": "unconfirmed" }
+    },
+    {
+      "id": "legacy_click_requires_apical_confirmation",
+      "species": "Felina",
+      "protocol": {"Diastolica_metodo": "felino_adulto_nao_sedado_pw_clique_aortico", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_lateral", "TDI_ondas": "separadas"},
+      "expected": {"Onda_E": "unconfirmed", "Onda_A": "unconfirmed", "E_A": "unconfirmed", "TD": "unconfirmed", "TRIV": "disatian_triv", "E_TRIV": "unconfirmed", "e_doppler": "lateral_e", "a_doppler": "lateral_a", "doppler_tecidual_relacao": "lateral_ea", "E_E_linha": "unconfirmed"}
+    },
+    {
+      "id": "legacy_flow_end_requires_apical_confirmation",
+      "species": "Felina",
+      "protocol": {"Diastolica_metodo": "felino_adulto_nao_sedado_pw_fim_fluxo", "Diastolica_ondas": "separadas", "TDI_metodo": "felino_pw_anel_septal", "TDI_ondas": "separadas"},
+      "expected": {"Onda_E": "unconfirmed", "Onda_A": "unconfirmed", "E_A": "unconfirmed", "TD": "unconfirmed", "TRIV": "soares_triv", "E_TRIV": "unconfirmed", "e_doppler": "septal_e", "a_doppler": "septal_a", "doppler_tecidual_relacao": "unconfirmed", "E_E_linha": "unconfirmed"}
+    }
+  ]
+}

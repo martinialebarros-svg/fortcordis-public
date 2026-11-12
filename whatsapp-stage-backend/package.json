@@ -1,0 +1,60 @@
+{
+  "name": "whatsapp-stage-backend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Minimal Node.js + TypeScript backend for WhatsApp Cloud API on stage/local",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "migrate": "ts-node src/db/migrate.ts",
+    "smoke": "bash scripts/smoke-tests.sh",
+    "test:bot-auto": "ts-node --files scripts/test-bot-auto.ts",
+    "test:whatsapp-retry": "ts-node scripts/test-whatsapp-retry.ts",
+    "test:reservation-template": "ts-node scripts/test-reservation-template.ts",
+    "test:approved-templates": "ts-node scripts/test-approved-templates.ts",
+    "test:document-templates": "ts-node scripts/test-document-templates.ts",
+    "test:report-pdf": "ts-node scripts/test-report-pdf.ts",
+    "test:report-pdf-postgres": "ts-node scripts/test-report-pdf-postgres.ts",
+    "test:database-config": "ts-node scripts/test-database-config.ts",
+    "test:inbox-ui": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage ts-node scripts/test-inbox-ui-contracts.ts",
+    "test:customer-service-window": "ts-node scripts/test-customer-service-window.ts",
+    "test:phone-number": "ts-node scripts/test-phone-number.ts",
+    "test:express-http": "DATABASE_URL=\"${DATABASE_URL:-postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage}\" ts-node --files scripts/test-express-http.ts",
+    "test:auth-policy": "ts-node --transpile-only scripts/test-auth-policy.ts",
+    "test:webhook-cleanup-config": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage ts-node --transpile-only scripts/test-webhook-cleanup-config.ts",
+    "test:log-redaction": "ts-node --transpile-only scripts/test-log-redaction.ts",
+    "test:smoke-cleanup": "ts-node --transpile-only scripts/test-smoke-cleanup.ts",
+    "test:webhook-message-body": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage ts-node --transpile-only scripts/test-webhook-message-body.ts",
+    "test:message-media": "ts-node --transpile-only scripts/test-message-media.ts",
+    "test:message-attachment": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage ts-node --transpile-only scripts/test-message-attachment.ts",
+    "test:audio-transcode": "ts-node --transpile-only scripts/test-audio-transcode.ts",
+    "test:conversation-ordering": "ts-node --transpile-only scripts/test-conversation-ordering.ts",
+    "test:conversation-productivity": "ts-node --files scripts/test-conversation-productivity.ts",
+    "test:approved-template-button-events": "DATABASE_URL=postgres://postgres:postgres@127.0.0.1:5432/fortcordis_stage ts-node --transpile-only scripts/test-approved-template-button-events.ts",
+    "test:change-request-acknowledgement": "ts-node --files scripts/test-change-request-acknowledgement.ts",
+    "test:conversation-reply-queue": "ts-node --files scripts/test-conversation-reply-queue.ts",
+    "test:follow-ups": "ts-node --files scripts/test-follow-ups.ts",
+    "test:quick-replies": "ts-node --files scripts/test-quick-replies.ts"
+  },
+  "dependencies": {
+    "axios": "^1.20.0",
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "ffmpeg-static": "^5.3.0",
+    "multer": "^2.4.0",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^20.17.19",
+    "@types/pg": "^8.11.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.7.3"
+  }
+}

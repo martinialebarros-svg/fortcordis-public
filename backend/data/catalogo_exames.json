@@ -1,0 +1,244 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-03-15T20:30:00",
+  "exames": [
+    {
+      "codigo": "ecocardiograma",
+      "nome": "Ecocardiograma",
+      "categoria": "Cardiologia",
+      "subcategoria": "Imagem",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Tosar janela quando necessario. Evitar estresse intenso antes do exame.",
+      "observacoes_padrao": "Avaliar camaras cardiacas, funcao sistolica e valvas.",
+      "sinonimos": ["eco", "ecocardiografia", "doppler cardiaco"]
+    },
+    {
+      "codigo": "eletrocardiograma",
+      "nome": "Eletrocardiograma",
+      "categoria": "Cardiologia",
+      "subcategoria": "Monitorizacao",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Paciente em decubito lateral ou esternal, ambiente calmo.",
+      "observacoes_padrao": "Registrar ritmo, eixo e conducao eletrica.",
+      "sinonimos": ["ecg", "eletro", "tracado cardiaco"]
+    },
+    {
+      "codigo": "holter_24h",
+      "nome": "Holter 24h",
+      "categoria": "Cardiologia",
+      "subcategoria": "Monitorizacao",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Orientar tutor sobre cuidados com equipamento durante 24 horas.",
+      "observacoes_padrao": "Investigar arritmias intermitentes e correlacao clinica.",
+      "sinonimos": ["holter", "monitorizacao 24h"]
+    },
+    {
+      "codigo": "mensuracao_pressao_arterial",
+      "nome": "Mensuracao de pressao arterial",
+      "categoria": "Cardiologia",
+      "subcategoria": "Triagem",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Paciente em repouso por 5 a 10 minutos antes da mensuracao.",
+      "observacoes_padrao": "Registrar media de multiplas afericoes.",
+      "sinonimos": ["pressao arterial", "pa", "doppler pressao"]
+    },
+    {
+      "codigo": "radiografia_toracica_2_projecoes",
+      "nome": "Radiografia toracica (2 projecoes)",
+      "categoria": "Imagem",
+      "subcategoria": "Radiologia",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Jejum conforme protocolo local se sedacao for necessaria.",
+      "observacoes_padrao": "Avaliar silhueta cardiaca, padrao pulmonar e vasos.",
+      "sinonimos": ["raio x torax", "rx torax", "radiografia de torax"]
+    },
+    {
+      "codigo": "nt_probnp",
+      "nome": "NT-proBNP",
+      "categoria": "Cardiologia",
+      "subcategoria": "Biomarcador",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Urgente",
+      "valor_padrao": 0,
+      "preparo": "Coletar conforme kit e enviar com acondicionamento adequado.",
+      "observacoes_padrao": "Auxiliar na diferenciacao entre causa cardiaca e nao cardiaca de dispneia.",
+      "sinonimos": ["pro bnp", "nt pro bnp"]
+    },
+    {
+      "codigo": "troponina_i",
+      "nome": "Troponina I",
+      "categoria": "Cardiologia",
+      "subcategoria": "Biomarcador",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Urgente",
+      "valor_padrao": 0,
+      "preparo": "Coleta de soro conforme protocolo do laboratorio.",
+      "observacoes_padrao": "Investigar lesao miocardica.",
+      "sinonimos": ["troponina", "troponina cardiaca"]
+    },
+    {
+      "codigo": "hemograma_completo",
+      "nome": "Hemograma completo",
+      "categoria": "Laboratorio",
+      "subcategoria": "Hematologia",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Coletar sangue em EDTA.",
+      "observacoes_padrao": "Avaliar serie vermelha, branca e plaquetas.",
+      "sinonimos": ["hemograma", "cbc"]
+    },
+    {
+      "codigo": "bioquimica_renal_hepatica",
+      "nome": "Bioquimica renal e hepatica",
+      "categoria": "Laboratorio",
+      "subcategoria": "Bioquimica",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Jejum de 8 horas quando aplicavel.",
+      "observacoes_padrao": "Incluir ureia, creatinina, ALT, FA e albumina.",
+      "sinonimos": ["perfil bioquimico", "bioquimica", "funcao renal e hepatica"]
+    },
+    {
+      "codigo": "eletrolitos",
+      "nome": "Eletrolitos",
+      "categoria": "Laboratorio",
+      "subcategoria": "Bioquimica",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Urgente",
+      "valor_padrao": 0,
+      "preparo": "Processar amostra rapidamente.",
+      "observacoes_padrao": "Avaliar sodio, potassio, cloro e calcio ionizado se disponivel.",
+      "sinonimos": ["eletrólitos", "sodio e potassio", "ionograma"]
+    },
+    {
+      "codigo": "gasometria",
+      "nome": "Gasometria",
+      "categoria": "Laboratorio",
+      "subcategoria": "Urgencia",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Emergencial",
+      "valor_padrao": 0,
+      "preparo": "Analisar imediatamente apos coleta.",
+      "observacoes_padrao": "Avaliar acidose, ventilacao e oxigenacao.",
+      "sinonimos": ["gaso", "gasometria arterial", "gasometria venosa"]
+    },
+    {
+      "codigo": "urinalise",
+      "nome": "Urinalise",
+      "categoria": "Laboratorio",
+      "subcategoria": "Clinica",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Coletar amostra fresca preferencialmente estéril.",
+      "observacoes_padrao": "Importante para monitoracao renal em cardiopatas.",
+      "sinonimos": ["urina", "urinalise completa", "eas"]
+    },
+    {
+      "codigo": "ecg_pressao_holter",
+      "nome": "ECG + pressao + Holter",
+      "categoria": "Cardiologia",
+      "subcategoria": "Combo",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Seguir preparo especifico de cada item.",
+      "observacoes_padrao": "Quando houver suspeita de arritmia e hipertensao associadas.",
+      "sinonimos": ["combo arritmia", "painel arritmia"]
+    },
+    {
+      "codigo": "coagulograma",
+      "nome": "Coagulograma",
+      "categoria": "Laboratorio",
+      "subcategoria": "Hematologia",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Urgente",
+      "valor_padrao": 0,
+      "preparo": "Coletar em citrato e encaminhar rapidamente.",
+      "observacoes_padrao": "Avaliar TP, TTPA e fibrinogenio conforme disponibilidade.",
+      "sinonimos": ["tp ttpa", "coagulacao"]
+    },
+    {
+      "codigo": "ultrassom_abdominal",
+      "nome": "Ultrassom abdominal",
+      "categoria": "Imagem",
+      "subcategoria": "Ultrassonografia",
+      "especie_alvo": "Canina,Felina",
+      "prioridade_padrao": "Rotina",
+      "valor_padrao": 0,
+      "preparo": "Jejum de 8 horas e bexiga moderadamente repleta quando possivel.",
+      "observacoes_padrao": "Triagem de comorbidades e causas extracardiacas.",
+      "sinonimos": ["us abdominal", "ultrassonografia abdominal"]
+    }
+  ],
+  "paineis": [
+    {
+      "codigo": "painel_cardiologico_basico",
+      "nome": "Painel cardiologico basico",
+      "categoria": "Cardiologia",
+      "especie_alvo": "Canina,Felina",
+      "observacoes": "Triagem inicial de cardiopatas ou pacientes com sopro.",
+      "itens": [
+        "ecocardiograma",
+        "eletrocardiograma",
+        "mensuracao_pressao_arterial",
+        "radiografia_toracica_2_projecoes"
+      ]
+    },
+    {
+      "codigo": "painel_icc",
+      "nome": "Painel insuficiencia cardiaca congestiva",
+      "categoria": "Cardiologia",
+      "especie_alvo": "Canina,Felina",
+      "observacoes": "Para pacientes com dispneia, tosse ou suspeita de congestao.",
+      "itens": [
+        "ecocardiograma",
+        "radiografia_toracica_2_projecoes",
+        "nt_probnp",
+        "gasometria",
+        "eletrolitos"
+      ]
+    },
+    {
+      "codigo": "painel_monitoracao_cardiaca",
+      "nome": "Painel monitoracao cardiaca",
+      "categoria": "Cardiologia",
+      "especie_alvo": "Canina,Felina",
+      "observacoes": "Reavaliacao de cardiopatas em tratamento.",
+      "itens": [
+        "mensuracao_pressao_arterial",
+        "eletrocardiograma",
+        "hemograma_completo",
+        "bioquimica_renal_hepatica",
+        "urinalise",
+        "eletrolitos"
+      ]
+    },
+    {
+      "codigo": "painel_pre_operatorio_cardiaco",
+      "nome": "Painel pre-operatorio cardiaco",
+      "categoria": "Pre-operatorio",
+      "especie_alvo": "Canina,Felina",
+      "observacoes": "Estratificacao de risco para procedimentos anestesicos.",
+      "itens": [
+        "ecocardiograma",
+        "eletrocardiograma",
+        "hemograma_completo",
+        "bioquimica_renal_hepatica",
+        "coagulograma"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,127 @@
+name: Deploy Discard Guard
+
+# Os deploys da VPS compartilham `concurrency.group: fortcordis-vps-deploy`
+# (prod e stage moram na mesma maquina e disputam apt, nginx e o backup dir;
+# nenhum dos scripts tem lock proprio, entao o grupo e a unica serializacao).
+# O GitHub so mantem um run pendente por grupo: quando outro run entra na fila,
+# um dos pendentes e descartado. Ele termina com `conclusion: cancelled` e
+# `total_count: 0` em /actions/runs/<id>/jobs -- nenhum job chegou a rodar --
+# e nada no `gh run list` avisa que aquele deploy nunca aconteceu.
+#
+# Este guard existe para que esse descarte nao passe em silencio. Ele roda
+# FORA do grupo de concorrencia de proposito: um detector que entrasse no grupo
+# poderia ser descartado pelo mesmo mecanismo que deveria denunciar. Pelo mesmo
+# motivo a checagem nao pode viver dentro dos deploys -- o run descartado nao
+# executa job nenhum.
+#
+# Atencao: `workflow_run` so dispara com o arquivo presente na branch default
+# (`main`). Enquanto este workflow estiver so em `stage`, ele fica inerte; a
+# vigilancia comeca na promocao `stage -> main`.
+
+on:
+  workflow_run:
+    workflows:
+      - "Deploy to VPS"
+      - "Deploy to Stage (VPS)"
+    types: [completed]
+
+permissions:
+  actions: read
+  issues: write
+
+jobs:
+  denunciar-deploy-descartado:
+    # Um deploy que rodou e falhou ja aparece vermelho sozinho; aqui so
+    # interessa o cancelamento, que e o caso que some sem deixar rastro.
+    if: ${{ github.event.workflow_run.conclusion == 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verificar se o deploy foi descartado sem rodar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_ID: ${{ github.event.workflow_run.workflow_id }}
+          CREATED_AT: ${{ github.event.workflow_run.created_at }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${BRANCH}" == "main" ]]; then
+            AMBIENTE="produção"
+            AMBIENTE_CAP="Produção"
+          else
+            AMBIENTE="stage"
+            AMBIENTE_CAP="Stage"
+          fi
+
+          # Sem `set -e` na chamada: uma falha transitoria da API nao pode virar
+          # um alarme dizendo que o ambiente esta desatualizado quando talvez nao esteja.
+          TOTAL="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}/jobs" --jq '.total_count' || true)"
+          echo "ambiente=${AMBIENTE} branch=${BRANCH} run_id=${RUN_ID} head_sha=${HEAD_SHA} jobs_total_count=${TOTAL:-<falha>}"
+
+          if ! [[ "${TOTAL}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Nao foi possivel consultar os jobs do run ${RUN_ID} (${RUN_URL})."
+            echo "::error::Confira manualmente se o deploy de ${AMBIENTE} do commit ${HEAD_SHA} chegou a rodar."
+            exit 1
+          fi
+
+          if [[ "${TOTAL}" -gt 0 ]]; then
+            echo "Deploy de ${AMBIENTE} cancelado depois de iniciar (${TOTAL} job(s))."
+            echo "Cancelamento manual ou falha no meio do caminho: fora do escopo deste guard."
+            exit 0
+          fi
+
+          # Os deploys fazem checkout da branch, nao do commit: qualquer run
+          # posterior bem-sucedido da mesma branch ja levou junto o commit
+          # descartado. Sem isso o stage alarmaria toda vez que dois pushes
+          # seguidos disputassem a fila, o que e rotina.
+          SUPERSEDED=0
+          if RUNS_JSON="$(gh api "repos/${REPO}/actions/workflows/${WORKFLOW_ID}/runs?branch=${BRANCH}&status=success&per_page=50")"; then
+            SUPERSEDED="$(printf '%s' "$RUNS_JSON" \
+              | jq --arg since "${CREATED_AT}" '[.workflow_runs[] | select(.created_at > $since)] | length')"
+          else
+            echo "::warning::Nao foi possivel checar deploys posteriores; tratando o descarte como nao superado."
+          fi
+
+          if [[ "${SUPERSEDED}" =~ ^[0-9]+$ ]] && [[ "${SUPERSEDED}" -gt 0 ]]; then
+            echo "Run descartado sem rodar, mas ${SUPERSEDED} deploy(s) posterior(es) de '${BRANCH}' concluiram com sucesso."
+            echo "A branch foi deployada depois; nada a fazer."
+            exit 0
+          fi
+
+          {
+            echo "## Deploy de ${AMBIENTE} descartado sem rodar"
+            echo
+            echo "- Ambiente: **${AMBIENTE}** (branch \`${BRANCH}\`)"
+            echo "- Commit: \`${HEAD_SHA}\`"
+            echo "- Run descartado: ${RUN_URL}"
+            echo
+            echo "O run terminou como \`cancelled\` com **zero jobs**: ele foi expulso da fila"
+            echo "do grupo \`fortcordis-vps-deploy\` por outro run e nunca chegou a deployar."
+            echo "Nenhum deploy posterior de \`${BRANCH}\` rodou desde entao."
+            echo "**${AMBIENTE_CAP} NAO recebeu este commit.**"
+            echo
+            echo "Para corrigir: re-execute o deploy em ${RUN_URL} (Re-run all jobs)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          gh issue create \
+            --repo "${REPO}" \
+            --title "Deploy de ${AMBIENTE} descartado sem rodar (run ${RUN_ID})" \
+            --body "$(printf '%s\n' \
+              "O deploy de ${AMBIENTE} (branch \`${BRANCH}\`) do commit \`${HEAD_SHA}\` foi descartado da fila de concorrencia e **nao chegou a rodar**." \
+              "" \
+              "- Run: ${RUN_URL}" \
+              "- \`conclusion: cancelled\`, \`total_count: 0\` em \`/actions/runs/${RUN_ID}/jobs\`" \
+              "- Nenhum deploy posterior de \`${BRANCH}\` concluiu desde entao." \
+              "" \
+              "${AMBIENTE_CAP} continua na versao anterior. Re-execute o deploy pelo link acima (Re-run all jobs)." \
+              "" \
+              "Contexto do mecanismo: \`.github/workflows/deploy-discard-guard.yml\`.")" \
+            || echo "::warning::Nao foi possivel abrir a issue; o erro abaixo ainda marca o incidente."
+
+          echo "::error::Deploy de ${AMBIENTE} (branch ${BRANCH}) do commit ${HEAD_SHA} foi descartado sem rodar nenhum job e nao foi superado por deploy posterior. Re-execute: ${RUN_URL}"
+          exit 1

@@ -1,0 +1,89 @@
+name: Frontend CI
+
+# Dois gates para o frontend, em PR e em push: tipos e testes.
+#
+# Typecheck -- por que nao basta o `npm run build` que o quality-gate ja faz: o
+# `next build` so verifica tipos do que entra no grafo de compilacao. Arquivo de
+# teste nao e importado por pagina nenhuma, entao fica de fora. Foi assim que
+# tres erros TS2322 em `app/whatsapp-stage/AppointmentQueue.test.tsx` chegaram em
+# stage e ficaram dias sem ninguem ver, com build e lint verdes o tempo todo.
+#
+# Testes -- o `quality-gate` roda a suite do backend, mas nunca rodou a do
+# frontend. Ate aqui, 297 testes vitest e 9 do runner do Node so rodavam na
+# maquina de quem implementava: nada garantia que o que entrava em `stage`
+# passasse.
+#
+# Os dois rodam em `pull_request` de proposito: gate que so roda depois do merge
+# nao e gate. Jobs separados para que falha de tipo e falha de teste apareçam
+# como checks distintos.
+#
+# Sem filtro `paths`, de proposito. Havia um (`frontend/**`), que poupava rodar
+# em PR so de documentacao -- mas check obrigatorio que **nao roda** deixa o PR
+# parado para sempre em "Expected -- waiting for status to be reported". Como
+# estes dois sao os candidatos naturais a obrigatorios, rodar sempre vale mais
+# que economizar ~1 min em PR de docs.
+
+on:
+  pull_request:
+    branches:
+      - stage
+      - main
+  push:
+    branches:
+      - stage
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tipos-devem-compilar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: frontend
+        run: npx tsc --noEmit
+
+  testes-devem-passar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # `npm test` e `vitest run && node --test`: as duas suites, como na
+      # maquina de quem implementa.
+      - name: Testes do frontend
+        working-directory: frontend
+        run: npm test

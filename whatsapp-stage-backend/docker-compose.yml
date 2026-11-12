@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:15
+    container_name: whatsapp_stage_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: fortcordis_stage
+    ports:
+      - "5432:5432"
+    volumes:
+      - whatsapp_stage_postgres_data:/var/lib/postgresql/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: whatsapp_stage_app
+    depends_on:
+      - db
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    command: sh -c "npm run migrate && npm run dev"
+
+volumes:
+  whatsapp_stage_postgres_data:

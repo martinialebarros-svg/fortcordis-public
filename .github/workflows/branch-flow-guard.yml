@@ -1,0 +1,55 @@
+name: Branch Flow Guard
+
+# Fluxo stage-first: uma feature entra por `stage`, e produção (`main`) só
+# recebe o que já rodou em stage, via PR de promoção `stage -> main`.
+# Este guard não substitui protecao de branch (que bloqueia push direto em
+# main); ele marca com falha qualquer PR de feature que mire main.
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize, edited, labeled, unlabeled]
+
+permissions:
+  contents: read
+
+jobs:
+  base-deve-ser-promocao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Exigir que main receba apenas promocao de stage (ou hotfix marcado)
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+          LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -euo pipefail
+          echo "head_repo=${HEAD_REPO} base_repo=${BASE_REPO} head_ref=${HEAD_REF} labels=${LABELS}"
+
+          # `github.head_ref` e so o nome da branch: um fork com branch tambem
+          # chamada `stage` (ou `hotfix/*`) passaria pelas checagens abaixo sem
+          # nunca ter rodado no stage deste repositorio.
+          if [[ "${HEAD_REPO}" != "${BASE_REPO}" ]]; then
+            echo "::error::PR vindo de fork (${HEAD_REPO}) nao pode mirar 'main' neste fluxo."
+            echo "Abra o PR contra 'stage'; produção recebe pela promocao 'stage -> main' deste repositorio."
+            exit 1
+          fi
+
+          if [[ "${HEAD_REF}" == "stage" ]]; then
+            echo "OK: promocao stage -> main."
+            exit 0
+          fi
+
+          if [[ "${HEAD_REF}" == hotfix/* ]] || [[ ",${LABELS}," == *,hotfix,* ]]; then
+            echo "OK: hotfix direto em main (escape hatch explicito)."
+            exit 0
+          fi
+
+          echo "::error::Fluxo stage-first: PRs de feature devem mirar 'stage', nao 'main'."
+          echo "Troque o base branch deste PR para 'stage' (Edit -> base: stage)."
+          echo "Produção recebe as mudancas depois, pelo PR de promocao 'stage -> main'."
+          echo "Se for hotfix urgente de produção: use branch 'hotfix/<slug>' ou adicione a label 'hotfix'."
+          exit 1

@@ -1,0 +1,818 @@
+name: Deploy to Stage (VPS)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - stage
+
+concurrency:
+  group: fortcordis-vps-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fortcordis_stage
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fortcordis_stage"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate immutable deploy target
+        env:
+          BRANCH: stage
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          source scripts/deploy_prod_vps.sh
+          validate_deploy_target
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+      - name: Test immutable deploy SHA
+        run: python3 scripts/tests/test_deploy_immutable_sha.py
+
+      - name: Test WhatsApp stage Meta isolation
+        run: |
+          bash scripts/tests/test_whatsapp_stage_meta_isolation.sh
+          python3 scripts/tests/test_stage_meta_optional_workflow.py
+
+      - name: Test controlled WhatsApp reminder activation
+        run: bash scripts/tests/test_whatsapp_reminder_activation.sh
+
+      - name: Test VPS ingress diagnostics
+        run: |
+          bash scripts/tests/test_collect_vps_ingress_diagnostics.sh
+          bash scripts/tests/test_probe_public_https.sh
+          bash scripts/tests/test_monitor_vps_ingress_deltas.sh
+          bash scripts/tests/test_vps_ingress_diagnostics_stage_trigger.sh
+          python3 scripts/tests/test_ensure_atendimento_ia_ingress.py
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-test.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+
+      - name: Run backend test suite
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: deploy-stage-quality-gate-secret-key-1234567890
+        run: |
+          python -m unittest discover -s backend/tests -p "test_*.py"
+
+      - name: Test WhatsApp triage regressions
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: whatsapp-triage-ci-secret-key-1234567890
+        run: python -m pytest -q backend/tests/test_whatsapp_bot_reacoes.py backend/tests/test_whatsapp_bot_mensagens_automaticas.py backend/tests/test_whatsapp_bot_saudacoes_agrupadas.py
+
+      - name: Test Google Maps shared limits and operational transactions in PostgreSQL
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: maps-cost-stage-ci-synthetic-secret-123456789
+          MAPS_COST_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/maps_cost_test
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:5432/postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE maps_cost_test'
+          python -m unittest discover -s backend/tests -p 'test_google_maps*.py' -v
+
+      - name: Test clinical edit history, document persistence and PostgreSQL concurrency
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: document-persistence-ci-secret-key-1234567890
+          DOCUMENT_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/document_test
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:5432/postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE document_test'
+          python -m pytest -q backend/tests/test_atendimento_documentos_persistencia.py backend/tests/test_atendimento_documentos_concorrencia_postgres.py backend/tests/test_atendimento_edicao_historico.py backend/tests/test_atendimento_edicoes_concorrencia_postgres.py backend/tests/test_paciente_mesclagem.py
+
+      - name: Test atomic batch receipts with PostgreSQL concurrency
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: batch-receipt-ci-secret-key-1234567890
+          OS_BATCH_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/os_batch_test
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:5432/postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE os_batch_test'
+          python -m pytest -q backend/tests/test_ordens_servico_receber_lote_postgres.py backend/tests/test_recebimento_desconto_baixa_credito.py
+
+      - name: Test fiscal monthly package PostgreSQL concurrency
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: fiscal-package-ci-secret-key-1234567890
+          FISCAL_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/fiscal_test
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:5432/postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE fiscal_test'
+          psql postgresql://postgres:postgres@127.0.0.1:5432/fiscal_test -v ON_ERROR_STOP=1 -c 'CREATE ROLE anon NOLOGIN; CREATE ROLE authenticated NOLOGIN;'
+          python -m unittest discover -s backend/tests -p 'test_fiscal_fechamento_competencia.py'
+          python -m unittest discover -s backend/tests -p 'test_fiscal_rotina_postgres.py'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            whatsapp-stage-backend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Test Financeiro batch receipt interface
+        working-directory: frontend
+        run: npx vitest run app/financeiro/page.test.tsx
+
+      - name: Test manual fiscal routines and package regressions
+        working-directory: frontend
+        run: npx vitest run app/fiscal/components/FechamentoCompetenciaPage.test.tsx app/fiscal/components/RotinaFiscalPage.test.tsx lib/fiscal-fechamento.test.ts lib/fiscal-rotina.test.ts
+
+      - name: Run frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Verify Google Maps cost confirmation and cancellation
+        working-directory: frontend
+        run: npx vitest run components/google-maps app/clinicas/geocode-explicit-action.test.tsx
+
+      - name: Run frontend build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Verify compiled Auth redirects behind the Stage proxy
+        working-directory: frontend
+        run: npm run test:auth-proxy-smoke
+
+      - name: Install WhatsApp backend dependencies
+        working-directory: whatsapp-stage-backend
+        run: npm ci
+
+      - name: Build WhatsApp backend
+        working-directory: whatsapp-stage-backend
+        run: npm run build
+
+      - name: Test WhatsApp backend
+        working-directory: whatsapp-stage-backend
+        run: |
+          npm run test:reservation-template
+          npm run test:approved-templates
+          npm run test:document-templates
+          npm run test:database-config
+          npm run test:express-http
+          npm run test:inbox-ui
+          npm run test:customer-service-window
+          npm run test:phone-number
+          npm run test:whatsapp-retry
+          npm run test:message-attachment
+          npm run test:auth-policy
+          npm run test:webhook-cleanup-config
+          npm run test:log-redaction
+          npm audit --omit=dev
+
+      - name: Test WhatsApp productivity with isolated database
+        working-directory: whatsapp-stage-backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/fortcordis_whatsapp_test
+        run: |
+          node <<'JS'
+          const { Client } = require("pg");
+          const url = new URL(process.env.DATABASE_URL);
+          url.pathname = "/postgres";
+          const client = new Client({ connectionString: url.toString() });
+          (async () => {
+            await client.connect();
+            await client.query("CREATE DATABASE fortcordis_whatsapp_test");
+          })().catch(error => { console.error(error); process.exitCode = 1; })
+            .finally(() => client.end());
+          JS
+          npm run migrate
+          npm run test:conversation-productivity
+          npm run test:conversation-ordering
+          npm run test:conversation-reply-queue
+          npm run test:change-request-acknowledgement
+          npm run test:quick-replies
+          npm run test:follow-ups
+          WHATSAPP_ACCESS_TOKEN=synthetic-test-token PHONE_NUMBER_ID=synthetic-number npm run test:bot-auto
+
+  sdd-guardrail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve diff range
+        id: diff
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse "${HEAD_SHA}^" 2>/dev/null || true)"
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            BASE_SHA="$HEAD_SHA"
+          fi
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Run SDD guardrail
+        run: |
+          python3 scripts/ci/check_sdd_guardrail.py \
+            --base-sha "${{ steps.diff.outputs.base_sha }}" \
+            --head-sha "${{ steps.diff.outputs.head_sha }}"
+
+  whatsapp-persistence-diagnostics:
+    environment: staging
+    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate immutable deploy target
+        env:
+          BRANCH: stage
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          source scripts/deploy_prod_vps.sh
+          validate_deploy_target
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+      - name: Configure SSH for read-only stage diagnostics
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "$VPS_SSH_KEY" > ~/.ssh/id_vps
+          chmod 600 ~/.ssh/id_vps
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Collect sanitized WhatsApp stage persistence diagnostics
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SUDO_PASSWORD: ${{ secrets.VPS_SUDO_PASSWORD }}
+        run: |
+          set -euo pipefail
+          diagnostic_file="/tmp/fortcordis-whatsapp-stage-diagnostics-${GITHUB_RUN_ID}.py"
+          scp -i ~/.ssh/id_vps -o IdentitiesOnly=yes scripts/collect_whatsapp_stage_persistence_diagnostics.py "${VPS_USER}@${VPS_HOST}:${diagnostic_file}"
+          printf '%s\n' "$VPS_SUDO_PASSWORD" | ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes "${VPS_USER}@${VPS_HOST}" "python3 '${diagnostic_file}'; diagnostic_exit=\$?; rm -f '${diagnostic_file}'; exit \$diagnostic_exit"
+
+
+  deploy-stage:
+    environment: staging
+    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    env:
+      WHATSAPP_STAGE_LIVE_META_ENABLED: ${{ vars.WHATSAPP_STAGE_LIVE_META_ENABLED || '0' }}
+    needs:
+      - quality-gate
+      - sdd-guardrail
+      - whatsapp-persistence-diagnostics
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate immutable deploy target
+        env:
+          BRANCH: stage
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          source scripts/deploy_prod_vps.sh
+          validate_deploy_target
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+      - name: Validate optional stage Meta mode
+        run: |
+          set -euo pipefail
+          case "$WHATSAPP_STAGE_LIVE_META_ENABLED" in
+            0) echo "Stage Meta transport disabled; no stage number is required." ;;
+            1) echo "Stage Meta transport explicitly enabled; isolated identity checks are required." ;;
+            *) echo "WHATSAPP_STAGE_LIVE_META_ENABLED must be 0 or 1."; exit 1 ;;
+          esac
+
+      - name: Setup SSH key
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s' "$VPS_SSH_KEY" > ~/.ssh/id_vps
+          chmod 600 ~/.ssh/id_vps
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Verify approved SHA on VPS before configuration
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          # Stream the gated installer functions; do not write runtime files.
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "APP_DIR='/var/www/fortcordis-stage' BRANCH='stage' DEPLOY_SHA='$DEPLOY_SHA' DEPLOY_REF='refs/heads/stage' bash -c 'set -euo pipefail; source /dev/stdin; cd \"\$APP_DIR\"; resolve_deploy_target'" \
+            < scripts/deploy_prod_vps.sh
+
+      - name: Configure OpenAI secret on Stage VPS
+        env:
+          OPENAI_API_KEY_STAGE: ${{ secrets.OPENAI_API_KEY_STAGE }}
+        run: |
+          if [ -z "$OPENAI_API_KEY_STAGE" ]; then
+            echo "OPENAI_API_KEY_STAGE is not configured."
+            exit 1
+          fi
+
+          printf '%s\n' "$OPENAI_API_KEY_STAGE" | \
+            ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+              set -euo pipefail
+              umask 077
+              IFS= read -r openai_api_key
+              if [ -z "$openai_api_key" ]; then
+                echo "Received an empty OpenAI API key."
+                exit 1
+              fi
+
+              env_file="/var/www/fortcordis-stage/backend/.env"
+              if [ ! -f "$env_file" ]; then
+                echo "Stage backend env file not found."
+                exit 1
+              fi
+
+              temp_file="${env_file}.openai.$$"
+              trap "rm -f \"$temp_file\"" EXIT
+              found=0
+              : > "$temp_file"
+              while IFS= read -r line || [ -n "$line" ]; do
+                case "$line" in
+                  OPENAI_API_KEY=*)
+                    printf "OPENAI_API_KEY=%s\n" "$openai_api_key" >> "$temp_file"
+                    found=1
+                    ;;
+                  *)
+                    printf "%s\n" "$line" >> "$temp_file"
+                    ;;
+                esac
+              done < "$env_file"
+              if [ "$found" -eq 0 ]; then
+                printf "OPENAI_API_KEY=%s\n" "$openai_api_key" >> "$temp_file"
+              fi
+
+              chmod --reference="$env_file" "$temp_file"
+              mv "$temp_file" "$env_file"
+              trap - EXIT
+              unset openai_api_key
+              echo "Stage backend OpenAI secret configured."
+            '
+
+      - name: Configure echo voice assistant on Stage VPS
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            env_file="/var/www/fortcordis-stage/backend/.env"
+            if [ ! -f "$env_file" ]; then
+              echo "Stage backend env file not found."
+              exit 1
+            fi
+
+            upsert_env() {
+              key="$1"
+              value="$2"
+              temp_file="${env_file}.${key}.$$"
+              awk -v key="$key" -v value="$value" '
+                BEGIN { found = 0 }
+                index($0, key "=") == 1 {
+                  print key "=" value
+                  found = 1
+                  next
+                }
+                { print }
+                END {
+                  if (!found) print key "=" value
+                }
+              ' "$env_file" > "$temp_file"
+              chmod --reference="$env_file" "$temp_file"
+              mv "$temp_file" "$env_file"
+            }
+
+            upsert_env AI_ECHO_ASSISTANT_ENABLED true
+            upsert_env AI_PROVIDER openai
+            upsert_env AI_TRANSCRIPTION_MODEL gpt-4o-transcribe
+            upsert_env AI_STRUCTURING_MODEL gpt-5.6-sol
+            upsert_env AI_ECHO_REASONING_EFFORT low
+            upsert_env AI_ECHO_MAX_OUTPUT_TOKENS 8000
+            upsert_env AI_AUDIO_RETENTION_HOURS 2
+            upsert_env AI_ECHO_AUDIO_MAX_BYTES 20971520
+            upsert_env AI_ECHO_AUDIO_MAX_SECONDS 600
+            upsert_env AI_ECHO_MAX_ATTEMPTS 3
+            upsert_env AI_ECHO_MONTHLY_SESSION_LIMIT 100
+            echo "Stage echo voice assistant configuration updated."
+          EOF
+
+      - name: Configure portal clinic access flags on Stage VPS
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            env_file="/var/www/fortcordis-stage/backend/.env"
+            if [ ! -f "$env_file" ]; then
+              echo "Stage backend env file not found."
+              exit 1
+            fi
+
+            upsert_env() {
+              key="$1"
+              value="$2"
+              temp_file="${env_file}.${key}.$$"
+              awk -v key="$key" -v value="$value" '
+                BEGIN { found = 0 }
+                index($0, key "=") == 1 {
+                  print key "=" value
+                  found = 1
+                  next
+                }
+                { print }
+                END {
+                  if (!found) print key "=" value
+                }
+              ' "$env_file" > "$temp_file"
+              chmod --reference="$env_file" "$temp_file"
+              mv "$temp_file" "$env_file"
+            }
+
+            # Ligadas SO em stage, para os cenarios manuais de
+            # docs/specs/portal-clinica-dispositivo-confiavel/verify.md secao 3.
+            # Producao recebe as duas desligadas pelo default de config.py, e
+            # este workflow nao toca no .env de producao.
+            #
+            # As duas andam juntas: a acao "manter esta unidade conectada" mora
+            # na pagina do link do laudo, entao sem o link nao ha por onde
+            # conectar o computador da recepcao.
+            # A URL base do link precisa ser fixada aqui. Sem ela,
+            # build_exam_link_url cai no request.base_url, e o uvicorn sobe sem
+            # --proxy-headers (ver o ExecStart em docs/DEPLOY-STAGE.md): ignora o
+            # X-Forwarded-Proto que o nginx manda e monta o link como http://. O
+            # nginx responde 301 para https, mas o primeiro GET ja teria levado o
+            # token do laudo em texto claro - e esse token e credencial ao
+            # portador, o suficiente para abrir o exame.
+            upsert_env PORTAL_CLINIC_EXAM_LINK_BASE_URL https://app.stage.fortcordis.com.br
+            upsert_env PORTAL_CLINIC_EXAM_LINK_ENABLED true
+            upsert_env PORTAL_CLINIC_DEVICE_TRUST_ENABLED true
+            echo "Stage portal clinic access flags updated."
+          EOF
+
+      - name: Configure isolated WhatsApp Cloud API identity on Stage VPS
+        if: env.WHATSAPP_STAGE_LIVE_META_ENABLED == '1'
+        env:
+          WHATSAPP_ACCESS_TOKEN_STAGE: ${{ secrets.WHATSAPP_ACCESS_TOKEN_STAGE }}
+          WHATSAPP_APP_SECRET_STAGE: ${{ secrets.WHATSAPP_APP_SECRET_STAGE }}
+          WHATSAPP_VERIFY_TOKEN_STAGE: ${{ secrets.WHATSAPP_VERIFY_TOKEN_STAGE }}
+          WHATSAPP_PHONE_NUMBER_ID_STAGE: ${{ vars.WHATSAPP_PHONE_NUMBER_ID_STAGE }}
+          WHATSAPP_META_APP_ID_STAGE: ${{ vars.WHATSAPP_META_APP_ID_STAGE }}
+          WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE: ${{ vars.WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$WHATSAPP_ACCESS_TOKEN_STAGE" || "$WHATSAPP_ACCESS_TOKEN_STAGE" != EAA* || ${#WHATSAPP_ACCESS_TOKEN_STAGE} -lt 64 ]]; then
+            echo "WHATSAPP_ACCESS_TOKEN_STAGE is missing or invalid."
+            exit 1
+          fi
+          if [[ ! "$WHATSAPP_APP_SECRET_STAGE" =~ ^[[:xdigit:]]{32}$ ]]; then
+            echo "WHATSAPP_APP_SECRET_STAGE is missing or invalid."
+            exit 1
+          fi
+          if [[ -z "$WHATSAPP_VERIFY_TOKEN_STAGE" || ${#WHATSAPP_VERIFY_TOKEN_STAGE} -lt 16 ]]; then
+            echo "WHATSAPP_VERIFY_TOKEN_STAGE is missing or invalid."
+            exit 1
+          fi
+
+          for identity_var in \
+            WHATSAPP_PHONE_NUMBER_ID_STAGE \
+            WHATSAPP_META_APP_ID_STAGE \
+            WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE; do
+            identity_value="${!identity_var:-}"
+            if [[ ! "$identity_value" =~ ^[0-9]{10,32}$ ]]; then
+              echo "${identity_var} GitHub variable is missing or invalid."
+              exit 1
+            fi
+          done
+
+          if [[ "$WHATSAPP_PHONE_NUMBER_ID_STAGE" == "1279142515283484" || \
+                "$WHATSAPP_META_APP_ID_STAGE" == "975334532125008" || \
+                "$WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE" == "1369494994627980" ]]; then
+            echo "Stage WhatsApp identity must be isolated from production."
+            exit 1
+          fi
+
+          WHATSAPP_ACCESS_TOKEN="$WHATSAPP_ACCESS_TOKEN_STAGE" \
+            PHONE_NUMBER_ID="$WHATSAPP_PHONE_NUMBER_ID_STAGE" \
+            META_APP_ID="$WHATSAPP_META_APP_ID_STAGE" \
+            WHATSAPP_BUSINESS_ACCOUNT_ID="$WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE" \
+            WHATSAPP_GRAPH_API_VERSION=v26.0 \
+            WHATSAPP_ALLOW_UNVERIFIED_TEST_NUMBER=1 \
+            WHATSAPP_REQUIRE_SUBSCRIBED_APP=0 \
+            bash scripts/whatsapp_meta_identity_check.sh
+
+          printf '%s\n%s\n%s\n%s\n%s\n%s\n' \
+            "$WHATSAPP_ACCESS_TOKEN_STAGE" \
+            "$WHATSAPP_APP_SECRET_STAGE" \
+            "$WHATSAPP_VERIFY_TOKEN_STAGE" \
+            "$WHATSAPP_PHONE_NUMBER_ID_STAGE" \
+            "$WHATSAPP_META_APP_ID_STAGE" \
+            "$WHATSAPP_BUSINESS_ACCOUNT_ID_STAGE" | \
+            ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+              set -euo pipefail
+              umask 077
+
+              IFS= read -r whatsapp_access_token
+              IFS= read -r whatsapp_app_secret
+              IFS= read -r whatsapp_verify_token
+              IFS= read -r whatsapp_phone_number_id
+              IFS= read -r whatsapp_meta_app_id
+              IFS= read -r whatsapp_business_account_id
+
+              if [ -z "$whatsapp_access_token" ] || [ -z "$whatsapp_app_secret" ] || \
+                 [ -z "$whatsapp_verify_token" ] || [ -z "$whatsapp_phone_number_id" ] || \
+                 [ -z "$whatsapp_meta_app_id" ] || [ -z "$whatsapp_business_account_id" ]; then
+                echo "Received incomplete WhatsApp stage configuration."
+                exit 1
+              fi
+
+              env_file="/var/www/fortcordis-stage/whatsapp-stage-backend/.env"
+              if [ ! -f "$env_file" ]; then
+                echo "Stage WhatsApp env file not found. Run the bootstrap deploy before configuring Meta secrets."
+                exit 1
+              fi
+
+              upsert_env() {
+                key="$1"
+                value="$2"
+                temp_file="${env_file}.${key}.$$"
+                found=0
+                : > "$temp_file"
+                while IFS= read -r line || [ -n "$line" ]; do
+                  case "$line" in
+                    "$key="*)
+                      printf "%s=%s\n" "$key" "$value" >> "$temp_file"
+                      found=1
+                      ;;
+                    *)
+                      printf "%s\n" "$line" >> "$temp_file"
+                      ;;
+                  esac
+                done < "$env_file"
+                if [ "$found" -eq 0 ]; then
+                  printf "%s=%s\n" "$key" "$value" >> "$temp_file"
+                fi
+                chmod 600 "$temp_file"
+                mv "$temp_file" "$env_file"
+              }
+
+              upsert_env WHATSAPP_ACCESS_TOKEN "$whatsapp_access_token"
+              upsert_env WHATSAPP_APP_SECRET "$whatsapp_app_secret"
+              upsert_env WHATSAPP_VERIFY_TOKEN "$whatsapp_verify_token"
+              upsert_env PHONE_NUMBER_ID "$whatsapp_phone_number_id"
+              upsert_env META_APP_ID "$whatsapp_meta_app_id"
+              upsert_env WHATSAPP_BUSINESS_ACCOUNT_ID "$whatsapp_business_account_id"
+              upsert_env WHATSAPP_GRAPH_API_VERSION "v26.0"
+              # Stage pooler has a small connection budget; queue the burst locally.
+              upsert_env WHATSAPP_DATABASE_POOL_MAX "2"
+              upsert_env WHATSAPP_ALLOW_UNVERIFIED_TEST_NUMBER "1"
+              # So em stage: o numero de TESTE da Meta guarda os destinatarios
+              # permitidos COM o nono digito, entao enviar na forma de 12
+              # digitos e recusado com OAuthException/131030. Producao nao tem
+              # lista de permitidos e entrega na forma de 12 digitos - por isso
+              # a flag e opt-in e nao pode ir para o deploy de producao.
+              upsert_env WHATSAPP_GRAPH_FORCE_BR_MOBILE_NINTH_DIGIT "true"
+              chmod 600 "$env_file"
+
+              unset whatsapp_access_token whatsapp_app_secret whatsapp_verify_token \
+                whatsapp_phone_number_id whatsapp_meta_app_id whatsapp_business_account_id
+              echo "Stage WhatsApp Cloud API identity configured without exposing values."
+            '
+
+      - name: Remove obsolete env keys on Stage VPS
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            env_file="/var/www/fortcordis-stage/backend/.env"
+            if [ -f "$env_file" ]; then
+              sed -i '/^WHATSAPP_REMINDER_SCHEDULER_ENABLED=/d' "$env_file"
+              chmod 600 "$env_file"
+              echo "Removed obsolete WHATSAPP_REMINDER_SCHEDULER_ENABLED if present."
+            fi
+          EOF
+
+      - name: Deploy to Stage (VPS)
+        run: |
+          set -euo pipefail
+          [[ "$WHATSAPP_STAGE_LIVE_META_ENABLED" == "0" || "$WHATSAPP_STAGE_LIVE_META_ENABLED" == "1" ]]
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "WHATSAPP_STAGE_LIVE_META_ENABLED='$WHATSAPP_STAGE_LIVE_META_ENABLED' bash -s" << 'EOF'
+            set -euo pipefail
+            APP_DIR="/var/www/fortcordis-stage"
+            BRANCH="stage"
+            DEPLOY_SHA="${{ github.sha }}"
+            DEPLOY_REF="${{ github.ref }}"
+            test "$DEPLOY_REF" = "refs/heads/$BRANCH"
+            [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "ERROR: $APP_DIR is not a git checkout"
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+            echo "Loading stage deploy scripts from gated SHA $DEPLOY_SHA..."
+            git fetch --no-tags origin "$DEPLOY_SHA"
+            test "$(git rev-parse --verify "${DEPLOY_SHA}^{commit}")" = "$DEPLOY_SHA"
+            deploy_scripts_dir="$(mktemp -d)"
+            cleanup_deploy_scripts() {
+              rm -rf -- "$deploy_scripts_dir"
+            }
+            trap cleanup_deploy_scripts EXIT
+            git archive --format=tar "$DEPLOY_SHA" -- \
+              scripts/deploy_stage_vps.sh \
+              scripts/deploy_prod_vps.sh \
+              scripts/ensure_nginx_http2.sh | tar -xf - -C "$deploy_scripts_dir"
+
+            echo "Running standardized stage deploy script..."
+            SUDO_PASSWORD='${{ secrets.VPS_SUDO_PASSWORD }}' \
+              APP_DIR="$APP_DIR" \
+              BRANCH="$BRANCH" \
+              DEPLOY_SHA="$DEPLOY_SHA" \
+              DEPLOY_REF="$DEPLOY_REF" \
+              DEPLOY_ACTIVATE_WHATSAPP_REMINDER_SERVICE=0 \
+              WHATSAPP_STAGE_LIVE_META_ENABLED="$WHATSAPP_STAGE_LIVE_META_ENABLED" \
+              WHATSAPP_HOME_REPORT_TEMPLATE_ENABLED=true \
+              bash "$deploy_scripts_dir/scripts/deploy_stage_vps.sh"
+          EOF
+
+      - name: Configure isolated Atendimento IA ingress on Stage
+        if: success() && contains(github.event.head_commit.message, '[atendimento-ia-ingress]')
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SUDO_PASSWORD: ${{ secrets.VPS_SUDO_PASSWORD }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$VPS_SUDO_PASSWORD" | \
+            ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+              "${VPS_USER}@${VPS_HOST}" \
+              'exec sudo -S -p "" /usr/bin/python3 /var/www/fortcordis-stage/scripts/ensure_atendimento_ia_ingress.py --apply-stage-ingress --expected-sha ${{ github.sha }}'
+
+      - name: Synchronize feline diastolic presets on Stage
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            cd /var/www/fortcordis-stage
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+            python3 backend/scripts/sync_feline_diastolic_presets.py --apply
+          EOF
+
+      - name: Verify atomic batch receipts on Stage with disposable data
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            cd /var/www/fortcordis-stage
+            test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+            cd backend
+            FORTCORDIS_PROCESS_ROLE=api \
+              DATABASE_URL=sqlite:// \
+              SECRET_KEY=batch-receipt-stage-synthetic-validation-1234567890 \
+              venv/bin/python -m unittest tests.test_ordens_servico_receber_lote
+          EOF
+
+      - name: Run one-shot Nginx TLS listener inventory on Stage
+        if: contains(github.event.head_commit.message, '[nginx-tls-inventory]')
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            "SUDO_PASSWORD='${{ secrets.VPS_SUDO_PASSWORD }}' INVENTORY_HOSTS='app.stage.fortcordis.com.br,stage.fortcordis.com.br,www.stage.fortcordis.com.br,app.fortcordis.com.br,fortcordis.com.br,www.fortcordis.com.br,fortcordis.com,www.fortcordis.com' bash -s" \
+            < scripts/inventory_nginx_tls_listeners.sh
+
+      - name: Run one-shot VPS ingress diagnostics on Stage
+        if: contains(github.event.head_commit.message, '[vps-ingress-diagnostics]')
+        run: |
+          PROBE_URL=https://app.stage.fortcordis.com.br/dashboard \
+            PROBE_LABEL=stage_dashboard_before_snapshot \
+            PROBE_ATTEMPTS=20 \
+            PROBE_INTERVAL_SECONDS=1 \
+            PROBE_CONNECT_TIMEOUT_SECONDS=4 \
+            PROBE_MAX_TIME_SECONDS=6 \
+            bash scripts/probe_public_https.sh
+
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            'bash -s --' < scripts/collect_vps_ingress_diagnostics.sh
+
+          PROBE_URL=https://app.stage.fortcordis.com.br/dashboard \
+            PROBE_LABEL=stage_dashboard_after_snapshot \
+            PROBE_ATTEMPTS=20 \
+            PROBE_INTERVAL_SECONDS=1 \
+            PROBE_CONNECT_TIMEOUT_SECONDS=4 \
+            PROBE_MAX_TIME_SECONDS=6 \
+            bash scripts/probe_public_https.sh
+
+      - name: Run bounded VPS ingress delta monitor on Stage
+        if: contains(github.event.head_commit.message, '[vps-ingress-monitor]')
+        timeout-minutes: 9
+        run: |
+          PROBE_URL=https://app.stage.fortcordis.com.br/dashboard \
+            PROBE_LABEL=stage_dashboard_monitor \
+            PROBE_ATTEMPTS=30 \
+            PROBE_INTERVAL_SECONDS=10 \
+            PROBE_CONNECT_TIMEOUT_SECONDS=4 \
+            PROBE_MAX_TIME_SECONDS=6 \
+            bash scripts/probe_public_https.sh &
+          probe_pid=$!
+
+          set +e
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=2 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+            'cd /var/www/fortcordis-stage && test "$(git rev-parse HEAD)" = "${{ github.sha }}" && INGRESS_MONITOR_SAMPLES=30 INGRESS_MONITOR_INTERVAL_SECONDS=10 timeout --kill-after=5 360 bash scripts/monitor_vps_ingress_deltas.sh'
+          monitor_exit=$?
+          wait "${probe_pid}"
+          probe_exit=$?
+          set -e
+
+          if (( monitor_exit != 0 || probe_exit != 0 )); then
+            echo "Bounded VPS ingress delta monitor could not complete."
+            exit 1
+          fi
+
+      - name: Run one-shot AI echo canary on Stage
+        if: contains(github.event.head_commit.message, '[ai-echo-canary]')
+        run: |
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            set -euo pipefail
+            cd /var/www/fortcordis-stage
+            backend/venv/bin/python scripts/ai_echo_stage_canary.py \
+              --base-url http://127.0.0.1:8001 \
+              --backend-dir /var/www/fortcordis-stage/backend \
+              --audio-file /var/www/fortcordis-stage/backend/evals/ai_echo_canary_pt_br.m4a
+          EOF
+
+      - name: Verify fiscal monthly package with isolated Stage fixtures
+        if: contains(github.event.head_commit.message, '[fiscal-fechamento-canary]')
+        env:
+          VPS_SUDO_PASSWORD: ${{ secrets.VPS_SUDO_PASSWORD }}
+        run: |
+          printf '%s\n' "$VPS_SUDO_PASSWORD" | \
+            ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              'backend_user="$(systemctl show fortcordis-stage-backend --property=User --value)"; exec sudo -S -p "" -u "${backend_user:-root}" /var/www/fortcordis-stage/backend/venv/bin/python /var/www/fortcordis-stage/scripts/fiscal_fechamento_stage_canary.py'
+
+      - name: Verify manual fiscal routine with isolated Stage fixtures
+        if: contains(github.event.head_commit.message, '[fiscal-rotina-canary]')
+        env:
+          VPS_SUDO_PASSWORD: ${{ secrets.VPS_SUDO_PASSWORD }}
+        run: |
+          printf '%s\n' "$VPS_SUDO_PASSWORD" | \
+            ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+              ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+              'backend_user="$(systemctl show fortcordis-stage-backend --property=User --value)"; exec sudo -S -p "" -u "${backend_user:-root}" /var/www/fortcordis-stage/backend/venv/bin/python /var/www/fortcordis-stage/scripts/fiscal_rotina_stage_canary.py'

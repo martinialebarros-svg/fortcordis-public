@@ -1,0 +1,1991 @@
+{
+    "Normal (Normal)": {
+        "valvas": "valvas mitral, tricuspide, aortica e pulmonar  normais, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.\n",
+        "camaras": "As câmaras cardíacas apresentam tamanho e espessura parietal dentro dos parâmetros normais, com o átrio esquerdo, ventrículo esquerdo, átrio direito e ventrículo direito bem dimensionados. Não há sinais de dilatação ou hipertrofia.",
+        "funcao": "A função sistólica global do coração é adequada, com fração de encurtamento e fração de ejeção normais. A função diastólica está preservada, com padrões de enchimento ventricular normais e sem sinais de disfunção diastólica.",
+        "pericardio": "Não há evidência de derrame pericárdico, e o pericárdio apresenta-se normal, sem sinais de espessamento ou inflamação.",
+        "vasos": "A artéria pulmonar e a aorta possuem diâmetros normais, sem evidência de dilatação ou anomalias estruturais. Não há sinais de hipertensão pulmonar, e o fluxo sanguíneo é adequado.",
+        "ad_vd": "",
+        "conclusao": "EXAME NORMAL",
+        "det": {
+            "valvas": {
+                "mitral": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+                "tricuspide": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+                "aortica": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+                "pulmonar": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose."
+            },
+            "camaras": {
+                "ae": "Dimensões cavitárias preservadas. Espessura parietal diastólica preservada.",
+                "ad": "",
+                "ve": "Dimensões cavitárias preservadas. Espessura parietal diastólica preservada.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Grandes vasos da base com diâmetros e relações anatômicas preservadas.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica e diastólica dos ventrículos preservada.",
+                "sistolica_vd": "",
+                "diastolica": "A função diastólica está preservada, com padrões de enchimento ventricular normais e sem sinais de disfunção diastólica.",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Pericárdio com aspecto ecocardiográfico normal. Ausência de efusão.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+        "q_valvas_tricuspide": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+        "q_valvas_aortica": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+        "q_valvas_pulmonar": "Normal, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose.",
+        "q_camaras_ae": "Dimensões cavitárias preservadas. Espessura parietal diastólica preservada.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Dimensões cavitárias preservadas. Espessura parietal diastólica preservada.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Grandes vasos da base com diâmetros e relações anatômicas preservadas.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica e diastólica dos ventrículos preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "A função diastólica está preservada, com padrões de enchimento ventricular normais e sem sinais de disfunção diastólica.",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Pericárdio com aspecto ecocardiográfico normal. Ausência de efusão.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Endocardiose Mitral (Leve)": {
+        "valvas": "Mitral: Valva mitral espessada com refluxo moderado\nTricúspide: espessada com refluxo leve.\nAórtica: normal\nPulmonar: normal",
+        "camaras": "Átrio esquerdo: Dimensões de câmaras esquerdas preservadas.\nVentrículo esquerdo: Dimensões de câmaras esquerdas preservadas.",
+        "funcao": "Sistólica VE: Função sistólica preservada.",
+        "pericardio": "Efusão: Normal.",
+        "vasos": "Aorta: Normais.",
+        "ad_vd": "Normais.",
+        "conclusao": "Endocardiose Mitral Estágio B1.",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral espessada com refluxo moderado",
+                "tricuspide": "espessada com refluxo leve.",
+                "aortica": "normal",
+                "pulmonar": "normal"
+            },
+            "camaras": {
+                "ae": "Dimensões de câmaras esquerdas preservadas.",
+                "ad": "",
+                "ve": "Dimensões de câmaras esquerdas preservadas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Normais.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Normal.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Valva mitral espessada com refluxo moderado",
+        "q_valvas_tricuspide": "espessada com refluxo leve.",
+        "q_valvas_aortica": "normal",
+        "q_valvas_pulmonar": "normal",
+        "q_camaras_ae": "Dimensões de câmaras esquerdas preservadas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Dimensões de câmaras esquerdas preservadas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Normais.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Normal.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Endocardiose Mitral (Moderada)": {
+        "valvas": "Valva mitral espessada. Refluxo moderado.",
+        "camaras": "Aumento moderado de AE e VE.",
+        "funcao": "Preservada.",
+        "pericardio": "Normal.",
+        "vasos": "Relação AE/Ao aumentada.",
+        "ad_vd": "Normais.",
+        "conclusao": "Endocardiose Mitral Estágio B2.",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral espessada. Refluxo moderado.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Aumento moderado de AE e VE.",
+                "ad": "",
+                "ve": "Aumento moderado de AE e VE.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Relação AE/Ao aumentada.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Normal.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Valva mitral espessada. Refluxo moderado.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Aumento moderado de AE e VE.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Aumento moderado de AE e VE.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Relação AE/Ao aumentada.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Normal.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Endocardiose Mitral (Importante)": {
+        "valvas": "Mitral: Espessamento importante. Refluxo significativo.",
+        "camaras": "Átrio esquerdo: Dilatação importante AE/VE.\nVentrículo esquerdo: Dilatação importante AE/VE.",
+        "funcao": "Sistólica VE: Preservada.",
+        "pericardio": "Efusão: Normal.",
+        "vasos": "Aorta: Congestão venosa?",
+        "ad_vd": "Normais.",
+        "conclusao": "Endocardiose Mitral Importante.",
+        "det": {
+            "valvas": {
+                "mitral": "Espessamento importante. Refluxo significativo.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Dilatação importante AE/VE.",
+                "ad": "",
+                "ve": "Dilatação importante AE/VE.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Congestão venosa?",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Normal.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Espessamento importante. Refluxo significativo.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Dilatação importante AE/VE.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Dilatação importante AE/VE.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Congestão venosa?",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Normal.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Estenose Aórtica (Leve)": {
+        "valvas": "Mitral: teste\nTricúspide: Valva tricúspide com morfologia e mobilidade preservadas. Ausência de refluxo significativo.\nAórtica: Valva aórtica com alterações compatíveis com estenose leve. Fluxo turbulento discreto em via de saída do ventrículo esquerdo.\nPulmonar: Valva pulmonar com morfologia e mobilidade preservadas. Ausência de refluxo significativo.",
+        "camaras": "Átrio esquerdo: Átrio esquerdo com dimensões preservadas.\nÁtrio direito: Átrio direito com dimensões preservadas.\nVentrículo esquerdo: Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).\nVentrículo direito: Ventrículo direito com dimensões e contratilidade preservadas.",
+        "vasos": "Aorta: Aorta com aspecto preservado ao estudo bidimensional. Pode haver discreta dilatação pós-estenótica da aorta ascendente, a depender do caso.\nArtéria pulmonar: Artéria pulmonar com diâmetro preservado.\nVeias pulmonares: Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.\nCava/Hepáticas: Veia cava caudal e veias hepáticas com padrão preservado.",
+        "funcao": "Sistólica VE: Função sistólica do ventrículo esquerdo preservada (por vezes discretamente hiperdinâmica).\nSistólica VD: Função sistólica do ventrículo direito preservada.\nDiastólica: Função diastólica sem alterações significativas; avaliar padrão de relaxamento conforme Doppler.\nSincronia: Sem dissincronia interventricular evidente.",
+        "pericardio": "Efusão: Ausência de efusão pericárdica.\nEspessamento: Pericárdio sem espessamento.\nSinais de tamponamento: Sem sinais ecocardiográficos de tamponamento.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Aórtica leve (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "teste\n",
+                "tricuspide": "Valva tricúspide com morfologia e mobilidade preservadas. Ausência de refluxo significativo.",
+                "aortica": "Valva aórtica com alterações compatíveis com estenose leve. Fluxo turbulento discreto em via de saída do ventrículo esquerdo.",
+                "pulmonar": "Valva pulmonar com morfologia e mobilidade preservadas. Ausência de refluxo significativo."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+                "vd": "Ventrículo direito com dimensões e contratilidade preservadas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional. Pode haver discreta dilatação pós-estenótica da aorta ascendente, a depender do caso.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada (por vezes discretamente hiperdinâmica).",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Função diastólica sem alterações significativas; avaliar padrão de relaxamento conforme Doppler.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "teste\n",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia e mobilidade preservadas. Ausência de refluxo significativo.",
+        "q_valvas_aortica": "Valva aórtica com alterações compatíveis com estenose leve. Fluxo turbulento discreto em via de saída do ventrículo esquerdo.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia e mobilidade preservadas. Ausência de refluxo significativo.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+        "q_camaras_vd": "Ventrículo direito com dimensões e contratilidade preservadas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional. Pode haver discreta dilatação pós-estenótica da aorta ascendente, a depender do caso.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada (por vezes discretamente hiperdinâmica).",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Função diastólica sem alterações significativas; avaliar padrão de relaxamento conforme Doppler.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Aórtica (Moderada)": {
+        "valvas": "Estenose aórtica moderada.",
+        "camaras": "Hipertrofia concêntrica de ventrículo esquerdo (PLVE e SIV).",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Função sistólica global preservada; avaliar diástole.",
+        "pericardio": "Sem efusão pericárdica.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Aórtica moderada (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Valva aórtica com estenose moderada, com fluxo turbulento e aumento de velocidade ao Doppler.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo geralmente com dimensões preservadas; avaliar discreto aumento secundário a alteração de relaxamento, quando presente.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica discreta a moderada, com aumento de espessura de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), conforme medidas.",
+                "vd": "Ventrículo direito com dimensões preservadas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional. Possível dilatação pós-estenótica da aorta ascendente, a depender do caso.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo geralmente preservada; pode estar discretamente hiperdinâmica.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Possível padrão de relaxamento alterado associado à hipertrofia (disfunção diastólica grau I (alteração do relaxamento)), conforme Doppler.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Valva aórtica com estenose moderada, com fluxo turbulento e aumento de velocidade ao Doppler.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo geralmente com dimensões preservadas; avaliar discreto aumento secundário a alteração de relaxamento, quando presente.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica discreta a moderada, com aumento de espessura de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), conforme medidas.",
+        "q_camaras_vd": "Ventrículo direito com dimensões preservadas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional. Possível dilatação pós-estenótica da aorta ascendente, a depender do caso.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo geralmente preservada; pode estar discretamente hiperdinâmica.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Possível padrão de relaxamento alterado associado à hipertrofia (disfunção diastólica grau I (alteração do relaxamento)), conforme Doppler.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Aórtica (Importante)": {
+        "valvas": "Estenose aórtica importante.",
+        "camaras": "Hipertrofia concêntrica importante de ventrículo esquerdo.",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Avaliar repercussão diastólica e sistólica.",
+        "pericardio": "Sem efusão pericárdica.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Aórtica importante (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada ou com refluxo discreto secundário, conforme remodelamento.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Estenose aórtica importante, com turbulência acentuada e aumento expressivo de velocidades ao Doppler.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo geralmente preservado; pode haver discreto aumento secundário, conforme alterações de enchimento.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica moderada a importante, com aumento de espessura de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), conforme medidas.",
+                "vd": "Ventrículo direito com dimensões preservadas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo frequentemente preservada; avaliar sinais de repercussão funcional conforme caso.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Padrão de relaxamento frequentemente alterado em função da hipertrofia; avaliar disfunção diastólica ao Doppler.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada ou com refluxo discreto secundário, conforme remodelamento.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Estenose aórtica importante, com turbulência acentuada e aumento expressivo de velocidades ao Doppler.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo geralmente preservado; pode haver discreto aumento secundário, conforme alterações de enchimento.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica moderada a importante, com aumento de espessura de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), conforme medidas.",
+        "q_camaras_vd": "Ventrículo direito com dimensões preservadas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo frequentemente preservada; avaliar sinais de repercussão funcional conforme caso.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Padrão de relaxamento frequentemente alterado em função da hipertrofia; avaliar disfunção diastólica ao Doppler.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Aórtica (Grave)": {
+        "valvas": "Estenose aórtica grave.",
+        "camaras": "Hipertrofia concêntrica importante de ventrículo esquerdo.",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Avaliar repercussão sistólica/diastólica.",
+        "pericardio": "Sem efusão pericárdica.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Aórtica grave (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada ou refluxo secundário discreto, conforme remodelamento.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Estenose aórtica grave, com turbulência severa e velocidades muito elevadas ao Doppler.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo pode estar preservado ou discretamente aumentado, conforme repercussões de enchimento.",
+                "ad": "Átrio direito geralmente preservado.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica importante. Avaliar espessuras de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), além de eventuais sinais de repercussão hemodinâmica.",
+                "vd": "Ventrículo direito geralmente preservado."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares: avaliar sinais de congestão conforme hemodinâmica e Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar cuidadosamente função sistólica do ventrículo esquerdo, pois pode haver repercussão funcional em casos graves.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Avaliar diástole ao Doppler (alterações de relaxamento e aumento de pressões de enchimento podem ocorrer).",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada ou refluxo secundário discreto, conforme remodelamento.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Estenose aórtica grave, com turbulência severa e velocidades muito elevadas ao Doppler.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo pode estar preservado ou discretamente aumentado, conforme repercussões de enchimento.",
+        "q_camaras_ad": "Átrio direito geralmente preservado.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica importante. Avaliar espessuras de PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular), além de eventuais sinais de repercussão hemodinâmica.",
+        "q_camaras_vd": "Ventrículo direito geralmente preservado.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares: avaliar sinais de congestão conforme hemodinâmica e Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Avaliar cuidadosamente função sistólica do ventrículo esquerdo, pois pode haver repercussão funcional em casos graves.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Avaliar diástole ao Doppler (alterações de relaxamento e aumento de pressões de enchimento podem ocorrer).",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Subaórtica (Leve)": {
+        "valvas": "Mitral: de novo\nTricúspide: Valva tricúspide com morfologia preservada. Ausência de refluxo significativo.\nAórtica: Valva aórtica com morfologia preservada ou alterações discretas. Fluxo turbulento discreto em via de saída do ventrículo esquerdo, compatível com estenose subaórtica leve.\nPulmonar: Valva pulmonar com morfologia preservada.",
+        "camaras": "Átrio esquerdo: Átrio esquerdo com dimensões preservadas.\nÁtrio direito: Átrio direito com dimensões preservadas.\nVentrículo esquerdo: Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas, conforme medidas.\nVentrículo direito: Ventrículo direito com dimensões preservadas.",
+        "vasos": "Aorta: Aorta com aspecto preservado ao estudo bidimensional. Avaliar dilatação pós-estenótica da aorta ascendente conforme o caso.\nArtéria pulmonar: Artéria pulmonar com diâmetro preservado.\nVeias pulmonares: Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.\nCava/Hepáticas: Veia cava caudal e veias hepáticas com padrão preservado.",
+        "funcao": "Sistólica VE: Função sistólica do ventrículo esquerdo preservada.\nSistólica VD: Função sistólica do ventrículo direito preservada.\nDiastólica: Sem alterações significativas; avaliar relaxamento conforme Doppler.\nSincronia: Sem dissincronia interventricular evidente.",
+        "pericardio": "Efusão: Ausência de efusão pericárdica.\nEspessamento: Pericárdio sem espessamento.\nSinais de tamponamento: Sem sinais ecocardiográficos de tamponamento.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Subaórtica leve (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "de novo",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Ausência de refluxo significativo.",
+                "aortica": "Valva aórtica com morfologia preservada ou alterações discretas. Fluxo turbulento discreto em via de saída do ventrículo esquerdo, compatível com estenose subaórtica leve.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas, conforme medidas.",
+                "vd": "Ventrículo direito com dimensões preservadas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional. Avaliar dilatação pós-estenótica da aorta ascendente conforme o caso.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Sem alterações significativas; avaliar relaxamento conforme Doppler.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "de novo",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Ausência de refluxo significativo.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada ou alterações discretas. Fluxo turbulento discreto em via de saída do ventrículo esquerdo, compatível com estenose subaórtica leve.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas. Espessuras parietais preservadas ou discretamente aumentadas, conforme medidas.",
+        "q_camaras_vd": "Ventrículo direito com dimensões preservadas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional. Avaliar dilatação pós-estenótica da aorta ascendente conforme o caso.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Sem alterações significativas; avaliar relaxamento conforme Doppler.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Subaórtica (Moderada)": {
+        "valvas": "Estenose subaórtica moderada.",
+        "camaras": "Hipertrofia concêntrica de ventrículo esquerdo.",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Função sistólica preservada; avaliar diástole.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Subaórtica moderada (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Valva aórtica com morfologia preservada ou alterações discretas. Turbulência e aumento de velocidade em via de saída do ventrículo esquerdo, compatível com estenose subaórtica moderada.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo geralmente com dimensões preservadas.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica discreta a moderada (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+                "vd": "Ventrículo direito com dimensões preservadas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo geralmente preservada; pode estar discretamente hiperdinâmica.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Possível alteração de relaxamento associada à hipertrofia (disfunção diastólica grau I (alteração do relaxamento)), conforme Doppler.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada ou alterações discretas. Turbulência e aumento de velocidade em via de saída do ventrículo esquerdo, compatível com estenose subaórtica moderada.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo geralmente com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica discreta a moderada (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+        "q_camaras_vd": "Ventrículo direito com dimensões preservadas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares sem sinais indiretos de congestão ao Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo geralmente preservada; pode estar discretamente hiperdinâmica.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Possível alteração de relaxamento associada à hipertrofia (disfunção diastólica grau I (alteração do relaxamento)), conforme Doppler.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Subaórtica (Importante)": {
+        "valvas": "Estenose subaórtica importante.",
+        "camaras": "Hipertrofia concêntrica importante de ventrículo esquerdo.",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Avaliar repercussão diastólica/sistólica.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Subaórtica importante (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada ou refluxo discreto secundário, conforme remodelamento.",
+                "tricuspide": "Valva tricúspide com morfologia preservada.",
+                "aortica": "Turbulência acentuada e velocidades elevadas em via de saída do ventrículo esquerdo, compatível com estenose subaórtica importante.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo geralmente preservado; pode haver discreto aumento secundário conforme enchimento.",
+                "ad": "Átrio direito preservado.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica moderada a importante (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+                "vd": "Ventrículo direito preservado."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares: avaliar sinais indiretos de congestão conforme Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo frequentemente preservada; avaliar repercussão funcional conforme caso.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Alterações de relaxamento são frequentes em presença de hipertrofia; avaliar Doppler diastólico.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada ou refluxo discreto secundário, conforme remodelamento.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada.",
+        "q_valvas_aortica": "Turbulência acentuada e velocidades elevadas em via de saída do ventrículo esquerdo, compatível com estenose subaórtica importante.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo geralmente preservado; pode haver discreto aumento secundário conforme enchimento.",
+        "q_camaras_ad": "Átrio direito preservado.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica moderada a importante (avaliar PLVE (parede livre do ventrículo esquerdo) e SIV (septo interventricular) conforme medidas).",
+        "q_camaras_vd": "Ventrículo direito preservado.",
+        "q_vasos_aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares: avaliar sinais indiretos de congestão conforme Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo frequentemente preservada; avaliar repercussão funcional conforme caso.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Alterações de relaxamento são frequentes em presença de hipertrofia; avaliar Doppler diastólico.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Subaórtica (Grave)": {
+        "valvas": "Estenose subaórtica grave.",
+        "camaras": "Hipertrofia concêntrica importante de ventrículo esquerdo.",
+        "vasos": "Possível dilatação pós-estenótica da aorta.",
+        "funcao": "Avaliar repercussão sistólica/diastólica.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Subaórtica grave (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada ou refluxo secundário discreto, conforme remodelamento.",
+                "tricuspide": "Valva tricúspide com morfologia preservada.",
+                "aortica": "Turbulência severa e velocidades muito elevadas em via de saída do ventrículo esquerdo, compatível com estenose subaórtica grave.",
+                "pulmonar": "Valva pulmonar com morfologia preservada."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo pode estar preservado ou discretamente aumentado.",
+                "ad": "Átrio direito geralmente preservado.",
+                "ve": "Ventrículo esquerdo: hipertrofia concêntrica importante; avaliar repercussões hemodinâmicas conforme demais parâmetros.",
+                "vd": "Ventrículo direito geralmente preservado."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+                "art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+                "veias_pulmonares": "Veias pulmonares: avaliar congestão conforme hemodinâmica e Doppler, quando avaliadas.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar cuidadosamente função sistólica do ventrículo esquerdo; repercussão funcional pode ocorrer em casos graves.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Avaliar diástole ao Doppler (alterações de relaxamento e aumento de pressões de enchimento podem ocorrer).",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada ou refluxo secundário discreto, conforme remodelamento.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada.",
+        "q_valvas_aortica": "Turbulência severa e velocidades muito elevadas em via de saída do ventrículo esquerdo, compatível com estenose subaórtica grave.",
+        "q_valvas_pulmonar": "Valva pulmonar com morfologia preservada.",
+        "q_camaras_ae": "Átrio esquerdo pode estar preservado ou discretamente aumentado.",
+        "q_camaras_ad": "Átrio direito geralmente preservado.",
+        "q_camaras_ve": "Ventrículo esquerdo: hipertrofia concêntrica importante; avaliar repercussões hemodinâmicas conforme demais parâmetros.",
+        "q_camaras_vd": "Ventrículo direito geralmente preservado.",
+        "q_vasos_aorta": "Aorta com aspecto preservado. Dilatação pós-estenótica da aorta ascendente pode estar presente.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar com diâmetro preservado.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares: avaliar congestão conforme hemodinâmica e Doppler, quando avaliadas.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Avaliar cuidadosamente função sistólica do ventrículo esquerdo; repercussão funcional pode ocorrer em casos graves.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Avaliar diástole ao Doppler (alterações de relaxamento e aumento de pressões de enchimento podem ocorrer).",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Pulmonar (Leve)": {
+        "valvas": "Estenose pulmonar leve.",
+        "camaras": "Sem remodelamento significativo.",
+        "vasos": "Artéria pulmonar preservada; possível dilatação pós-estenótica discreta.",
+        "funcao": "Função sistólica preservada.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Estenose Pulmonar leve (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Valva aórtica com morfologia preservada.",
+                "pulmonar": "Valva pulmonar com alterações compatíveis com estenose leve. Fluxo turbulento discreto em via de saída do ventrículo direito."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito com dimensões preservadas.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas.",
+                "vd": "Ventrículo direito com dimensões preservadas; espessura parietal preservada ou discretamente aumentada, conforme medidas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado ao estudo bidimensional.",
+                "art_pulmonar": "Artéria pulmonar: avaliar discreta dilatação pós-estenótica do tronco pulmonar, a depender do caso.",
+                "veias_pulmonares": "Veias pulmonares com padrão preservado.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+                "sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+                "diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada.",
+        "q_valvas_pulmonar": "Valva pulmonar com alterações compatíveis com estenose leve. Fluxo turbulento discreto em via de saída do ventrículo direito.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas.",
+        "q_camaras_vd": "Ventrículo direito com dimensões preservadas; espessura parietal preservada ou discretamente aumentada, conforme medidas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado ao estudo bidimensional.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar: avaliar discreta dilatação pós-estenótica do tronco pulmonar, a depender do caso.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares com padrão preservado.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito preservada.",
+        "q_funcao_diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Pulmonar (Moderada)": {
+        "valvas": "Estenose pulmonar moderada.",
+        "camaras": "Hipertrofia/dilatação de câmaras direitas conforme severidade.",
+        "vasos": "Possível dilatação pós-estenótica de artéria pulmonar.",
+        "funcao": "Avaliar função do ventrículo direito.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Repercussão em câmaras direitas pode estar presente conforme severidade.",
+        "conclusao": "Achados compatíveis com Estenose Pulmonar moderada (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada.",
+                "tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+                "aortica": "Valva aórtica com morfologia preservada.",
+                "pulmonar": "Valva pulmonar com estenose moderada, com aumento de velocidades em via de saída do ventrículo direito ao Doppler."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito com dimensões preservadas ou discretamente aumentadas, conforme severidade.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas.",
+                "vd": "Ventrículo direito: hipertrofia concêntrica discreta a moderada, conforme medidas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado.",
+                "art_pulmonar": "Artéria pulmonar: possível dilatação pós-estenótica do tronco pulmonar, conforme o caso.",
+                "veias_pulmonares": "Veias pulmonares com padrão preservado.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+                "sistolica_vd": "Função sistólica do ventrículo direito geralmente preservada; avaliar repercussão conforme severidade.",
+                "diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada.",
+        "q_valvas_tricuspide": "Valva tricúspide com morfologia preservada. Refluxo ausente ou discreto, quando presente.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada.",
+        "q_valvas_pulmonar": "Valva pulmonar com estenose moderada, com aumento de velocidades em via de saída do ventrículo direito ao Doppler.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito com dimensões preservadas ou discretamente aumentadas, conforme severidade.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas.",
+        "q_camaras_vd": "Ventrículo direito: hipertrofia concêntrica discreta a moderada, conforme medidas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar: possível dilatação pós-estenótica do tronco pulmonar, conforme o caso.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares com padrão preservado.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas com padrão preservado.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+        "q_funcao_sistolica_vd": "Função sistólica do ventrículo direito geralmente preservada; avaliar repercussão conforme severidade.",
+        "q_funcao_diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Pulmonar (Importante)": {
+        "valvas": "Estenose pulmonar importante.",
+        "camaras": "Remodelamento de câmaras direitas.",
+        "vasos": "Dilatação pós-estenótica de artéria pulmonar pode estar presente.",
+        "funcao": "Avaliar função do ventrículo direito.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Remodelamento de câmaras direitas pode estar presente.",
+        "conclusao": "Achados compatíveis com Estenose Pulmonar importante (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada.",
+                "tricuspide": "Valva tricúspide: pode haver refluxo funcional secundário, conforme remodelamento.",
+                "aortica": "Valva aórtica com morfologia preservada.",
+                "pulmonar": "Estenose pulmonar importante, com aumento expressivo de velocidades ao Doppler."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito: possível dilatação moderada a importante, conforme severidade.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas.",
+                "vd": "Ventrículo direito: hipertrofia concêntrica moderada a importante; pode haver dilatação associada, conforme severidade."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado.",
+                "art_pulmonar": "Artéria pulmonar: dilatação pós-estenótica do tronco pulmonar pode estar presente.",
+                "veias_pulmonares": "Veias pulmonares com padrão preservado.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas: avaliar sinais de congestão sistêmica conforme hemodinâmica."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+                "sistolica_vd": "Avaliar função sistólica do ventrículo direito; repercussão funcional pode ocorrer em casos avançados.",
+                "diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada.",
+        "q_valvas_tricuspide": "Valva tricúspide: pode haver refluxo funcional secundário, conforme remodelamento.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada.",
+        "q_valvas_pulmonar": "Estenose pulmonar importante, com aumento expressivo de velocidades ao Doppler.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito: possível dilatação moderada a importante, conforme severidade.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas.",
+        "q_camaras_vd": "Ventrículo direito: hipertrofia concêntrica moderada a importante; pode haver dilatação associada, conforme severidade.",
+        "q_vasos_aorta": "Aorta com aspecto preservado.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar: dilatação pós-estenótica do tronco pulmonar pode estar presente.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares com padrão preservado.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas: avaliar sinais de congestão sistêmica conforme hemodinâmica.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+        "q_funcao_sistolica_vd": "Avaliar função sistólica do ventrículo direito; repercussão funcional pode ocorrer em casos avançados.",
+        "q_funcao_diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Estenose Pulmonar (Grave)": {
+        "valvas": "Estenose pulmonar grave.",
+        "camaras": "Remodelamento importante de câmaras direitas.",
+        "vasos": "Dilatação pós-estenótica de artéria pulmonar pode estar presente.",
+        "funcao": "Avaliar função do ventrículo direito.",
+        "pericardio": "Sem efusão.",
+        "ad_vd": "Dilatação/hipertrofia de câmaras direitas provável.",
+        "conclusao": "Achados compatíveis com Estenose Pulmonar grave (confirmar grau pelo gradiente ao Doppler).",
+        "det": {
+            "valvas": {
+                "mitral": "Valva mitral com morfologia preservada.",
+                "tricuspide": "Valva tricúspide: refluxo funcional secundário pode estar presente.",
+                "aortica": "Valva aórtica com morfologia preservada.",
+                "pulmonar": "Estenose pulmonar grave, com turbulência severa e velocidades muito elevadas ao Doppler."
+            },
+            "camaras": {
+                "ae": "Átrio esquerdo com dimensões preservadas.",
+                "ad": "Átrio direito: dilatação importante provável, conforme severidade.",
+                "ve": "Ventrículo esquerdo com dimensões preservadas.",
+                "vd": "Ventrículo direito: hipertrofia importante e possível dilatação; avaliar repercussões hemodinâmicas."
+            },
+            "vasos": {
+                "aorta": "Aorta com aspecto preservado.",
+                "art_pulmonar": "Artéria pulmonar: dilatação pós-estenótica pode estar presente.",
+                "veias_pulmonares": "Veias pulmonares com padrão preservado.",
+                "cava_hepaticas": "Veia cava caudal e veias hepáticas: avaliar sinais de congestão sistêmica conforme hemodinâmica."
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+                "sistolica_vd": "Avaliar cuidadosamente função sistólica do ventrículo direito; disfunção pode estar presente em casos graves.",
+                "diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+                "sincronia": "Sem dissincronia interventricular evidente."
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "Pericárdio sem espessamento.",
+                "tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+            }
+        },
+        "q_valvas_mitral": "Valva mitral com morfologia preservada.",
+        "q_valvas_tricuspide": "Valva tricúspide: refluxo funcional secundário pode estar presente.",
+        "q_valvas_aortica": "Valva aórtica com morfologia preservada.",
+        "q_valvas_pulmonar": "Estenose pulmonar grave, com turbulência severa e velocidades muito elevadas ao Doppler.",
+        "q_camaras_ae": "Átrio esquerdo com dimensões preservadas.",
+        "q_camaras_ad": "Átrio direito: dilatação importante provável, conforme severidade.",
+        "q_camaras_ve": "Ventrículo esquerdo com dimensões preservadas.",
+        "q_camaras_vd": "Ventrículo direito: hipertrofia importante e possível dilatação; avaliar repercussões hemodinâmicas.",
+        "q_vasos_aorta": "Aorta com aspecto preservado.",
+        "q_vasos_art_pulmonar": "Artéria pulmonar: dilatação pós-estenótica pode estar presente.",
+        "q_vasos_veias_pulmonares": "Veias pulmonares com padrão preservado.",
+        "q_vasos_cava_hepaticas": "Veia cava caudal e veias hepáticas: avaliar sinais de congestão sistêmica conforme hemodinâmica.",
+        "q_funcao_sistolica_ve": "Função sistólica do ventrículo esquerdo preservada.",
+        "q_funcao_sistolica_vd": "Avaliar cuidadosamente função sistólica do ventrículo direito; disfunção pode estar presente em casos graves.",
+        "q_funcao_diastolica": "Sem alterações diastólicas significativas atribuíveis ao achado no ventrículo esquerdo.",
+        "q_funcao_sincronia": "Sem dissincronia interventricular evidente.",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "Pericárdio sem espessamento.",
+        "q_pericardio_tamponamento": "Sem sinais ecocardiográficos de tamponamento."
+    },
+    "Persistência do Ducto Arterioso (PDA) (Leve)": {
+        "valvas": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "camaras": "Sem remodelamento significativo associado ao achado.",
+        "funcao": "Função sistólica global preservada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com PDA, com fluxo anômalo em região de artéria pulmonar/aorta descendente, conforme janelas disponíveis.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Persistência do Ducto Arterioso (PDA) leve.",
+        "det": {
+            "valvas": {
+                "mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Sem remodelamento significativo associado ao achado.",
+                "ad": "",
+                "ve": "Sem remodelamento significativo associado ao achado.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com PDA, com fluxo anômalo em região de artéria pulmonar/aorta descendente, conforme janelas disponíveis.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica global preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com PDA, com fluxo anômalo em região de artéria pulmonar/aorta descendente, conforme janelas disponíveis.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica global preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Persistência do Ducto Arterioso (PDA) (Moderada)": {
+        "valvas": "Possível insuficiência funcional secundária (ex.: mitral) conforme remodelamento.",
+        "camaras": "Sugere sobrecarga volumétrica esquerda moderada (aumento de AE e VE), conforme medidas.",
+        "funcao": "Função sistólica preservada ou discretamente hiperdinâmica.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com PDA com shunt predominante esquerda→direita.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com PDA com repercussão hemodinâmica moderada.",
+        "det": {
+            "valvas": {
+                "mitral": "Possível insuficiência funcional secundária (ex.: mitral) conforme remodelamento.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Sugere sobrecarga volumétrica esquerda moderada (aumento de AE e VE), conforme medidas.",
+                "ad": "",
+                "ve": "Sugere sobrecarga volumétrica esquerda moderada (aumento de AE e VE), conforme medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com PDA com shunt predominante esquerda→direita.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica preservada ou discretamente hiperdinâmica.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possível insuficiência funcional secundária (ex.: mitral) conforme remodelamento.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Sugere sobrecarga volumétrica esquerda moderada (aumento de AE e VE), conforme medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Sugere sobrecarga volumétrica esquerda moderada (aumento de AE e VE), conforme medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com PDA com shunt predominante esquerda→direita.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica preservada ou discretamente hiperdinâmica.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Persistência do Ducto Arterioso (PDA) (Importante)": {
+        "valvas": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras.",
+        "camaras": "Importante sobrecarga volumétrica esquerda provável (dilatação de AE e VE), conforme medidas.",
+        "funcao": "Função sistólica pode estar preservada ou já apresentar repercussão, conforme o caso.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com PDA com shunt significativa esquerda→direita.",
+        "ad_vd": "Avaliar sinais de hipertensão pulmonar associada, quando aplicável.",
+        "conclusao": "Achados compatíveis com PDA com repercussão hemodinâmica importante.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Importante sobrecarga volumétrica esquerda provável (dilatação de AE e VE), conforme medidas.",
+                "ad": "",
+                "ve": "Importante sobrecarga volumétrica esquerda provável (dilatação de AE e VE), conforme medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com PDA com shunt significativa esquerda→direita.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica pode estar preservada ou já apresentar repercussão, conforme o caso.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Importante sobrecarga volumétrica esquerda provável (dilatação de AE e VE), conforme medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Importante sobrecarga volumétrica esquerda provável (dilatação de AE e VE), conforme medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com PDA com shunt significativa esquerda→direita.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica pode estar preservada ou já apresentar repercussão, conforme o caso.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Persistência do Ducto Arterioso (PDA) (Grave)": {
+        "valvas": "Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.",
+        "camaras": "Repercussão hemodinâmica grave provável (sobrecarga volumétrica importante e/ou alterações compatíveis com evolução avançada), conforme medidas.",
+        "funcao": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com PDA. Considerar avaliação de hipertensão pulmonar e direção do shunt, quando aplicável.",
+        "ad_vd": "Repercussões em câmaras direitas podem ocorrer em cenários avançados/hipertensão pulmonar.",
+        "conclusao": "Achados compatíveis com PDA grave.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Repercussão hemodinâmica grave provável (sobrecarga volumétrica importante e/ou alterações compatíveis com evolução avançada), conforme medidas.",
+                "ad": "",
+                "ve": "Repercussão hemodinâmica grave provável (sobrecarga volumétrica importante e/ou alterações compatíveis com evolução avançada), conforme medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com PDA. Considerar avaliação de hipertensão pulmonar e direção do shunt, quando aplicável.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Repercussão hemodinâmica grave provável (sobrecarga volumétrica importante e/ou alterações compatíveis com evolução avançada), conforme medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Repercussão hemodinâmica grave provável (sobrecarga volumétrica importante e/ou alterações compatíveis com evolução avançada), conforme medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com PDA. Considerar avaliação de hipertensão pulmonar e direção do shunt, quando aplicável.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interventricular (CIV) (Leve)": {
+        "valvas": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "camaras": "Sem remodelamento significativo associado ao achado.",
+        "funcao": "Função sistólica global preservada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIV, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+        "ad_vd": "Câmaras direitas sem alterações significativas.",
+        "conclusao": "Achados compatíveis com Comunicação Interventricular (CIV) leve.",
+        "det": {
+            "valvas": {
+                "mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Sem remodelamento significativo associado ao achado.",
+                "ad": "",
+                "ve": "Sem remodelamento significativo associado ao achado.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIV, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica global preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIV, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica global preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interventricular (CIV) (Moderada)": {
+        "valvas": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+        "camaras": "Sugere repercussão em câmaras esquerdas em grau moderado, conforme magnitude do shunt e medidas.",
+        "funcao": "Função sistólica global preservada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIV com shunt predominante esquerda→direita.",
+        "ad_vd": "Avaliar repercussão em câmaras direitas e sinais de hipertensão pulmonar, quando aplicável.",
+        "conclusao": "Achados compatíveis com CIV com repercussão hemodinâmica moderada.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Sugere repercussão em câmaras esquerdas em grau moderado, conforme magnitude do shunt e medidas.",
+                "ad": "",
+                "ve": "Sugere repercussão em câmaras esquerdas em grau moderado, conforme magnitude do shunt e medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIV com shunt predominante esquerda→direita.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica global preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Sugere repercussão em câmaras esquerdas em grau moderado, conforme magnitude do shunt e medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Sugere repercussão em câmaras esquerdas em grau moderado, conforme magnitude do shunt e medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIV com shunt predominante esquerda→direita.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica global preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interventricular (CIV) (Importante)": {
+        "valvas": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+        "camaras": "Repercussão hemodinâmica importante provável, conforme medidas e magnitude do shunt.",
+        "funcao": "Avaliar repercussão funcional associada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIV com shunt significativa. Avaliar hipertensão pulmonar associada.",
+        "ad_vd": "Repercussões em câmaras direitas podem estar presentes.",
+        "conclusao": "Achados compatíveis com Comunicação Interventricular (CIV) importante.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Repercussão hemodinâmica importante provável, conforme medidas e magnitude do shunt.",
+                "ad": "",
+                "ve": "Repercussão hemodinâmica importante provável, conforme medidas e magnitude do shunt.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIV com shunt significativa. Avaliar hipertensão pulmonar associada.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar repercussão funcional associada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Repercussão hemodinâmica importante provável, conforme medidas e magnitude do shunt.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Repercussão hemodinâmica importante provável, conforme medidas e magnitude do shunt.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIV com shunt significativa. Avaliar hipertensão pulmonar associada.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Avaliar repercussão funcional associada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interventricular (CIV) (Grave)": {
+        "valvas": "Possíveis refluxos funcionais secundários, conforme remodelamento avançado.",
+        "camaras": "Repercussão hemodinâmica grave provável, conforme medidas e avaliação do shunt.",
+        "funcao": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIV. Considerar avaliação detalhada da direção do shunt e hipertensão pulmonar, quando aplicável.",
+        "ad_vd": "Repercussões em câmaras direitas podem ocorrer em cenários avançados.",
+        "conclusao": "Achados compatíveis com Comunicação Interventricular (CIV) grave.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento avançado.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Repercussão hemodinâmica grave provável, conforme medidas e avaliação do shunt.",
+                "ad": "",
+                "ve": "Repercussão hemodinâmica grave provável, conforme medidas e avaliação do shunt.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIV. Considerar avaliação detalhada da direção do shunt e hipertensão pulmonar, quando aplicável.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis refluxos funcionais secundários, conforme remodelamento avançado.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Repercussão hemodinâmica grave provável, conforme medidas e avaliação do shunt.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Repercussão hemodinâmica grave provável, conforme medidas e avaliação do shunt.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIV. Considerar avaliação detalhada da direção do shunt e hipertensão pulmonar, quando aplicável.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Avaliar cuidadosamente função sistólica e sinais indiretos de aumento de pressões.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interatrial (CIA) (Leve)": {
+        "valvas": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "camaras": "Sem remodelamento significativo associado ao achado.",
+        "funcao": "Função sistólica global preservada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIA, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+        "ad_vd": "Sem alterações significativas em câmaras direitas.",
+        "conclusao": "Achados compatíveis com Comunicação Interatrial (CIA) leve.",
+        "det": {
+            "valvas": {
+                "mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Sem remodelamento significativo associado ao achado.",
+                "ad": "",
+                "ve": "Sem remodelamento significativo associado ao achado.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIA, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica global preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Valvas sem alterações morfológicas relevantes, salvo repercussões secundárias conforme severidade.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Sem remodelamento significativo associado ao achado.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIA, com fluxo de shunt ao Doppler, conforme janelas disponíveis.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica global preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interatrial (CIA) (Moderada)": {
+        "valvas": "Mitral: Possíveis insuficiências funcionais secundárias conforme remodelamento.\nTricúspide: teste",
+        "camaras": "Átrio esquerdo: Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.\nVentrículo esquerdo: Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.",
+        "funcao": "Sistólica VE: Função sistólica global preservada.",
+        "pericardio": "Efusão: Ausência de efusão pericárdica.",
+        "vasos": "Aorta: Achados compatíveis com CIA com shunt predominante esquerda→direita.",
+        "ad_vd": "Possível repercussão moderada em AD/VD, conforme medidas.",
+        "conclusao": "Achados compatíveis com Comunicação Interatrial (CIA) moderada.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis insuficiências funcionais secundárias conforme remodelamento.",
+                "tricuspide": "teste",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.",
+                "ad": "",
+                "ve": "Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIA com shunt predominante esquerda→direita.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Função sistólica global preservada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis insuficiências funcionais secundárias conforme remodelamento.",
+        "q_valvas_tricuspide": "teste",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Pode haver aumento de câmaras direitas conforme magnitude do shunt (direita), conforme medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIA com shunt predominante esquerda→direita.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Função sistólica global preservada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interatrial (CIA) (Importante)": {
+        "valvas": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras direitas.",
+        "camaras": "Repercussão hemodinâmica importante provável em câmaras direitas, conforme medidas.",
+        "funcao": "Avaliar repercussão funcional associada.",
+        "pericardio": "Ausência de efusão pericárdica.",
+        "vasos": "Achados compatíveis com CIA. Avaliar sinais de hipertensão pulmonar quando aplicável.",
+        "ad_vd": "Remodelamento importante de AD/VD pode estar presente.",
+        "conclusao": "Achados compatíveis com Comunicação Interatrial (CIA) importante.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras direitas.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Repercussão hemodinâmica importante provável em câmaras direitas, conforme medidas.",
+                "ad": "",
+                "ve": "Repercussão hemodinâmica importante provável em câmaras direitas, conforme medidas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIA. Avaliar sinais de hipertensão pulmonar quando aplicável.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar repercussão funcional associada.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis insuficiências funcionais secundárias, conforme dilatação de câmaras direitas.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Repercussão hemodinâmica importante provável em câmaras direitas, conforme medidas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Repercussão hemodinâmica importante provável em câmaras direitas, conforme medidas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIA. Avaliar sinais de hipertensão pulmonar quando aplicável.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Avaliar repercussão funcional associada.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Comunicação Interatrial (CIA) (Grave)": {
+        "valvas": "Mitral: Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.\nTricúspide: TESTE",
+        "camaras": "Átrio esquerdo: Repercussão hemodinâmica grave provável em câmaras direitas.\nVentrículo esquerdo: Repercussão hemodinâmica grave provável em câmaras direitas.",
+        "funcao": "Sistólica VE: Avaliar cuidadosamente função sistólica do VD e sinais indiretos de aumento de pressões.",
+        "pericardio": "Efusão: Ausência de efusão pericárdica.",
+        "vasos": "Aorta: Achados compatíveis com CIA. Considerar avaliação detalhada de hipertensão pulmonar e direção do shunt.",
+        "ad_vd": "Repercussões avançadas em AD/VD podem estar presentes.",
+        "conclusao": "Achados compatíveis com Comunicação Interatrial (CIA) grave.",
+        "det": {
+            "valvas": {
+                "mitral": "Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.",
+                "tricuspide": "TESTE",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "Repercussão hemodinâmica grave provável em câmaras direitas.",
+                "ad": "",
+                "ve": "Repercussão hemodinâmica grave provável em câmaras direitas.",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "Achados compatíveis com CIA. Considerar avaliação detalhada de hipertensão pulmonar e direção do shunt.",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Avaliar cuidadosamente função sistólica do VD e sinais indiretos de aumento de pressões.",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Ausência de efusão pericárdica.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "Possíveis insuficiências funcionais secundárias, conforme remodelamento avançado.",
+        "q_valvas_tricuspide": "TESTE",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "Repercussão hemodinâmica grave provável em câmaras direitas.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "Repercussão hemodinâmica grave provável em câmaras direitas.",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "Achados compatíveis com CIA. Considerar avaliação detalhada de hipertensão pulmonar e direção do shunt.",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Avaliar cuidadosamente função sistólica do VD e sinais indiretos de aumento de pressões.",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Ausência de efusão pericárdica.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "Disfunção diastólica grau I": {
+        "valvas": "Mitral: As valvas mitral, tricúspide, aórtica e pulmonar apresentam-se normais, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose. Não há sinais de insuficiência valvar, e os gradientes de pressão transvalvar estão dentro dos limites da normalidade.",
+        "camaras": "Átrio esquerdo: As câmaras cardíacas apresentam tamanho e espessura parietal dentro dos parâmetros normais, com o átrio esquerdo, ventrículo esquerdo, átrio direito e ventrículo direito bem dimensionados. Não há sinais de dilatação ou hipertrofia.",
+        "funcao": "Sistólica VE: Presença de disfunção diastólica grau I (padrão senil), caracterizada por alteração nos padrões de enchimento ventricular. A função sistólica global do coração é adequada, com fração de encurtamento e fração de ejeção normais.",
+        "pericardio": "Efusão: Não há evidência de derrame pericárdico, e o pericárdio apresenta-se normal, sem sinais de espessamento ou inflamação.",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "Disfunção diastólica grau I (padrão senil)",
+        "det": {
+            "valvas": {
+                "mitral": "As valvas mitral, tricúspide, aórtica e pulmonar apresentam-se normais, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose. Não há sinais de insuficiência valvar, e os gradientes de pressão transvalvar estão dentro dos limites da normalidade.",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "As câmaras cardíacas apresentam tamanho e espessura parietal dentro dos parâmetros normais, com o átrio esquerdo, ventrículo esquerdo, átrio direito e ventrículo direito bem dimensionados. Não há sinais de dilatação ou hipertrofia.",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "Presença de disfunção diastólica grau I (padrão senil), caracterizada por alteração nos padrões de enchimento ventricular. A função sistólica global do coração é adequada, com fração de encurtamento e fração de ejeção normais. ",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "Não há evidência de derrame pericárdico, e o pericárdio apresenta-se normal, sem sinais de espessamento ou inflamação.",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "As valvas mitral, tricúspide, aórtica e pulmonar apresentam-se normais, com movimento valvar adequado e sem evidência de refluxo regurgitante ou estenose. Não há sinais de insuficiência valvar, e os gradientes de pressão transvalvar estão dentro dos limites da normalidade.",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "As câmaras cardíacas apresentam tamanho e espessura parietal dentro dos parâmetros normais, com o átrio esquerdo, ventrículo esquerdo, átrio direito e ventrículo direito bem dimensionados. Não há sinais de dilatação ou hipertrofia.",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "Presença de disfunção diastólica grau I (padrão senil), caracterizada por alteração nos padrões de enchimento ventricular. A função sistólica global do coração é adequada, com fração de encurtamento e fração de ejeção normais. ",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "Não há evidência de derrame pericárdico, e o pericárdio apresenta-se normal, sem sinais de espessamento ou inflamação.",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "patologia teste": {
+        "valvas": "Mitral: teste da patologia teste",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "teste da patologia teste",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "teste da patologia teste",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "avaliacao patologia": {
+        "valvas": "",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        },
+        "q_valvas_mitral": "",
+        "q_valvas_tricuspide": "",
+        "q_valvas_aortica": "",
+        "q_valvas_pulmonar": "",
+        "q_camaras_ae": "",
+        "q_camaras_ad": "",
+        "q_camaras_ve": "",
+        "q_camaras_vd": "",
+        "q_vasos_aorta": "",
+        "q_vasos_art_pulmonar": "",
+        "q_vasos_veias_pulmonares": "",
+        "q_vasos_cava_hepaticas": "",
+        "q_funcao_sistolica_ve": "",
+        "q_funcao_sistolica_vd": "",
+        "q_funcao_diastolica": "",
+        "q_funcao_sincronia": "",
+        "q_pericardio_efusao": "",
+        "q_pericardio_espessamento": "",
+        "q_pericardio_tamponamento": ""
+    },
+    "mais um pato (Leve)": {
+        "valvas": "",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        }
+    },
+    "mais um pato (Moderada)": {
+        "valvas": "",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        }
+    },
+    "mais um pato (Importante)": {
+        "valvas": "",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        }
+    },
+    "mais um pato (Grave)": {
+        "valvas": "",
+        "camaras": "",
+        "funcao": "",
+        "pericardio": "",
+        "vasos": "",
+        "ad_vd": "",
+        "conclusao": "",
+        "det": {
+            "valvas": {
+                "mitral": "",
+                "tricuspide": "",
+                "aortica": "",
+                "pulmonar": ""
+            },
+            "camaras": {
+                "ae": "",
+                "ad": "",
+                "ve": "",
+                "vd": ""
+            },
+            "vasos": {
+                "aorta": "",
+                "art_pulmonar": "",
+                "veias_pulmonares": "",
+                "cava_hepaticas": ""
+            },
+            "funcao": {
+                "sistolica_ve": "",
+                "sistolica_vd": "",
+                "diastolica": "",
+                "sincronia": ""
+            },
+            "pericardio": {
+                "efusao": "",
+                "espessamento": "",
+                "tamponamento": ""
+            }
+        }
+    }
+}

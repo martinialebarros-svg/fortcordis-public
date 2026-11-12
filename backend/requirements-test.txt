@@ -1,0 +1,2 @@
+# Test-only dependency; runtime requirements remain separate.
+pytest==9.0.3

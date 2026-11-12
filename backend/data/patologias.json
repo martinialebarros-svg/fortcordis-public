@@ -1,0 +1,62 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-02-21T22:00:00",
+  "patologias": [
+    {
+      "nome": "Normal",
+      "graus": ["Normal"]
+    },
+    {
+      "nome": "Endocardiose Mitral",
+      "graus": ["Leve", "Moderada", "Importante", "Grave"]
+    },
+    {
+      "nome": "Cardiomiopatia Dilatada",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Cardiomiopatia Hipertrófica",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Estenose Aórtica",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Estenose Pulmonar",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Insuficiência Aórtica",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Insuficiência Pulmonar",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Insuficiência Tricúspide",
+      "graus": ["Leve", "Moderada", "Grave"]
+    },
+    {
+      "nome": "Derrame Pericárdico",
+      "graus": ["Leve", "Moderado", "Importante", "Grave"]
+    },
+    {
+      "nome": "Tumor Cardíaco",
+      "graus": ["Suspeito", "Confirmado"]
+    },
+    {
+      "nome": "Comunicação Interatrial (CIA)",
+      "graus": ["Pequena", "Moderada", "Grande"]
+    },
+    {
+      "nome": "Comunicação Interventricular (CIV)",
+      "graus": ["Pequena", "Moderada", "Grande"]
+    },
+    {
+      "nome": "Persistência do Canal Arterial (PCA)",
+      "graus": ["Pequeno", "Moderado", "Grande"]
+    }
+  ]
+}

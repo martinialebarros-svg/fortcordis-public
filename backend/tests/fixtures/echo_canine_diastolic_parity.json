@@ -1,0 +1,32 @@
+{
+  "description": "Explicit canine methods: only PW E has an individual RI95%; other evidence is mean/SD; fusion leaves independent measurements eligible.",
+  "measurements": {"Onda_E":"0.47","Onda_A":"0.67","E_A":"0.70","TD":"108","TRIV":"85","E_TRIV":"0.55","e_doppler":"0.07","a_doppler":"0.12","doppler_tecidual_relacao":"0.58","E_E_linha":"6.71"},
+  "evidence": {
+    "unconfirmed":{"kind":"unconfirmed","statistic":"","doi":"","numeric_text":""},
+    "fusion":{"kind":"uninterpretable","statistic":"","doi":"","numeric_text":""},
+    "pw_e":{"kind":"reference_interval","statistic":"reference_interval_95","doi":"10.1111/jsap.13472","numeric_text":"0,51-1,10 m/s","min":0.51,"max":1.10},
+    "pereira_a":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1590/S0100-736X2009000400003","numeric_text":"0,487 ± 0,062 m/s"},
+    "pereira_ea":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1590/S0100-736X2009000400003","numeric_text":"1,533 ± 0,198"},
+    "pereira_td":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1590/S0100-736X2009000400003","numeric_text":"88,7 ± 9,2 ms"},
+    "pereira_triv":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1590/S0100-736X2009000400003","numeric_text":"80 ± 9 ms"},
+    "choi_e":{"kind":"descriptive","statistic":"mean_sd","doi":"10.4142/jvs.2013.14.1.85","numeric_text":"0,0658 ± 0,0181 m/s"},
+    "choi_a":{"kind":"descriptive","statistic":"mean_sd","doi":"10.4142/jvs.2013.14.1.85","numeric_text":"0,0510 ± 0,0200 m/s"},
+    "choi_ea":{"kind":"descriptive","statistic":"mean_sd","doi":"10.4142/jvs.2013.14.1.85","numeric_text":"1,40 ± 0,40"},
+    "choi_ee":{"kind":"descriptive","statistic":"mean_sd","doi":"10.4142/jvs.2013.14.1.85","numeric_text":"10,94 ± 3,27"},
+    "wess_septal_e":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1111/j.1939-1676.2009.0460.x","numeric_text":"0,0741 ± 0,0146 m/s"},
+    "wess_septal_a":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1111/j.1939-1676.2009.0460.x","numeric_text":"0,0716 ± 0,0208 m/s"},
+    "wess_lateral_e":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1111/j.1939-1676.2009.0460.x","numeric_text":"0,1041 ± 0,0294 m/s"},
+    "wess_lateral_a":{"kind":"descriptive","statistic":"mean_sd","doi":"10.1111/j.1939-1676.2009.0460.x","numeric_text":"0,0906 ± 0,0247 m/s"}
+  },
+  "cases": [
+    {"id":"confirmed_pw_only","species":"Canina","protocol":{"Diastolica_metodo":"canino_nao_sedado_pw_apical","Diastolica_ondas":"separadas"},"expected":{"Onda_E":"pw_e","Onda_A":"unconfirmed","E_A":"unconfirmed","TD":"unconfirmed","TRIV":"unconfirmed","E_TRIV":"unconfirmed","e_doppler":"unconfirmed","a_doppler":"unconfirmed","doppler_tecidual_relacao":"unconfirmed","E_E_linha":"unconfirmed"}},
+    {"id":"pereira_and_choi","species":"Dog","protocol":{"Diastolica_metodo":"canino_2a6_anos_nao_sedado_pw_apical_fim_fluxo","Diastolica_ondas":"separadas","TDI_metodo":"canino_pw_anel_septal_choi","TDI_ondas":"separadas"},"expected":{"Onda_E":"pw_e","Onda_A":"pereira_a","E_A":"pereira_ea","TD":"pereira_td","TRIV":"pereira_triv","E_TRIV":"unconfirmed","e_doppler":"choi_e","a_doppler":"choi_a","doppler_tecidual_relacao":"choi_ea","E_E_linha":"choi_ee"}},
+    {"id":"wess_septal","species":"Cão","protocol":{"TDI_metodo":"canino_pw_basal_septal_wess","TDI_ondas":"separadas"},"expected":{"Onda_E":"unconfirmed","Onda_A":"unconfirmed","E_A":"unconfirmed","TD":"unconfirmed","TRIV":"unconfirmed","E_TRIV":"unconfirmed","e_doppler":"wess_septal_e","a_doppler":"wess_septal_a","doppler_tecidual_relacao":"unconfirmed","E_E_linha":"unconfirmed"}},
+    {"id":"wess_lateral","species":"Canino","protocol":{"TDI_metodo":"canino_pw_basal_lateral_wess","TDI_ondas":"separadas"},"expected":{"Onda_E":"unconfirmed","Onda_A":"unconfirmed","E_A":"unconfirmed","TD":"unconfirmed","TRIV":"unconfirmed","E_TRIV":"unconfirmed","e_doppler":"wess_lateral_e","a_doppler":"wess_lateral_a","doppler_tecidual_relacao":"unconfirmed","E_E_linha":"unconfirmed"}},
+    {"id":"fused_transmitral_separate_tdi","species":"Canina","protocol":{"Diastolica_metodo":"canino_2a6_anos_nao_sedado_pw_apical_fim_fluxo","Diastolica_ondas":"fundidas","TDI_metodo":"canino_pw_anel_septal_choi","TDI_ondas":"separadas"},"expected":{"Onda_E":"fusion","Onda_A":"fusion","E_A":"fusion","TD":"fusion","TRIV":"pereira_triv","E_TRIV":"fusion","e_doppler":"choi_e","a_doppler":"choi_a","doppler_tecidual_relacao":"choi_ea","E_E_linha":"fusion"}},
+    {"id":"separate_transmitral_fused_tdi","species":"Canina","protocol":{"Diastolica_metodo":"canino_2a6_anos_nao_sedado_pw_apical_fim_fluxo","Diastolica_ondas":"separadas","TDI_metodo":"canino_pw_anel_septal_choi","TDI_ondas":"fundidas"},"expected":{"Onda_E":"pw_e","Onda_A":"pereira_a","E_A":"pereira_ea","TD":"pereira_td","TRIV":"pereira_triv","E_TRIV":"unconfirmed","e_doppler":"fusion","a_doppler":"fusion","doppler_tecidual_relacao":"fusion","E_E_linha":"fusion"}},
+    {"id":"unknown_methods","species":"Canina","protocol":{"Diastolica_metodo":"outro","Diastolica_ondas":"separadas","TDI_metodo":"outro","TDI_ondas":"separadas"},"expected":{"Onda_E":"unconfirmed","Onda_A":"unconfirmed","E_A":"unconfirmed","TD":"unconfirmed","TRIV":"unconfirmed","E_TRIV":"unconfirmed","e_doppler":"unconfirmed","a_doppler":"unconfirmed","doppler_tecidual_relacao":"unconfirmed","E_E_linha":"unconfirmed"}},
+    {"id":"no_confirmation","species":"Canina","protocol":{},"expected":{"Onda_E":"unconfirmed","Onda_A":"unconfirmed","E_A":"unconfirmed","TD":"unconfirmed","TRIV":"unconfirmed","E_TRIV":"unconfirmed","e_doppler":"unconfirmed","a_doppler":"unconfirmed","doppler_tecidual_relacao":"unconfirmed","E_E_linha":"unconfirmed"}},
+    {"id":"canine_evidence_never_applies_to_cat","species":"Felina","protocol":{"Diastolica_metodo":"canino_nao_sedado_pw_apical","Diastolica_ondas":"separadas","TDI_metodo":"canino_pw_anel_septal_choi","TDI_ondas":"separadas"},"expected":{}}
+  ]
+}

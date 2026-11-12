@@ -1,0 +1,53 @@
+{
+  "dataset_version": "1.0.0",
+  "language": "pt-BR",
+  "contains_real_patient_data": false,
+  "metrics": [
+    "numeric_integrity",
+    "target_field_accuracy",
+    "unsupported_information_rate",
+    "accepted_without_edit_rate",
+    "edited_suggestion_rate",
+    "relevant_warning_rate",
+    "processing_time_ms"
+  ],
+  "cases": [
+    {
+      "id": "eco-basic-remodeling-001",
+      "transcript": "Canino, dez quilos. Átrio esquerdo discretamente aumentado, com relação átrio esquerdo aorta de um vírgula setenta e quatro. Ventrículo esquerdo discretamente dilatado, DIVEd normalizado de um vírgula oitenta e dois. Função sistólica preservada. Valva mitral espessada, com refluxo moderado. Velocidade da onda E de um vírgula vinte e cinco metros por segundo. Valva tricúspide com morfologia normal e refluxo leve. Sem efusão pericárdica.",
+      "expected_measurements": {
+        "la_ao": {"value": 1.74, "unit": null, "target_field_key": "AE_Ao"},
+        "lviddn": {"value": 1.82, "unit": null, "target_field_key": "DIVEd_normalizado"},
+        "mitral_e_velocity": {"value": 1.25, "unit": "m/s", "target_field_key": "Onda_E"}
+      },
+      "forbidden": ["tratamento", "dose", "assinatura automática"]
+    },
+    {
+      "id": "eco-tr-gradient-consistent-002",
+      "transcript": "Velocidade do refluxo tricúspide de três vírgula cinco metros por segundo e gradiente estimado de quarenta e nove milímetros de mercúrio.",
+      "expected_measurements": {
+        "tricuspid_regurgitation_velocity": {"value": 3.5, "unit": "m/s", "target_field_key": "IT_Vmax"},
+        "tricuspid_gradient": {"value": 49, "unit": "mmHg", "target_field_key": null}
+      },
+      "expected_warning_types": []
+    },
+    {
+      "id": "eco-contradiction-003",
+      "transcript": "Sem refluxo mitral. Mais adiante, refluxo mitral moderado.",
+      "expected_warning_types": ["mitral_regurgitation_contradiction"],
+      "must_require_review": true
+    },
+    {
+      "id": "eco-invalid-percentage-004",
+      "transcript": "Fração de ejeção de cento e dez por cento.",
+      "expected_warning_types": ["percentage_out_of_range"],
+      "must_not_autocorrect": true
+    },
+    {
+      "id": "eco-suspicion-005",
+      "transcript": "Parece haver hipertensão pulmonar.",
+      "expected_evidence_type": "diagnostic_suggestion",
+      "forbidden": ["Hipertensão pulmonar grave confirmada"]
+    }
+  ]
+}

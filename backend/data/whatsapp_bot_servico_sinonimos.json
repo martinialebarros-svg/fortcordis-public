@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "language": "pt-BR",
+  "_nota": "Vocabulario de procedimentos para casar o que o cliente PEDE com o que o catalogo VENDE. Cada procedimento canonico lista as formas que aparecem em conversa real de clinica veterinaria. O casamento e por conjunto: a pergunta vira um conjunto de procedimentos, o nome do servico tambem, e o servico com o conjunto IGUAL ao pedido ganha. Isso resolve sinonimo e combinacao pela mesma regra.",
+  "procedimentos": {
+    "ecocardiograma": [
+      "ecocardiograma",
+      "ecocardiografia",
+      "ecodopplercardiograma",
+      "ecodoppler cardiograma",
+      "ecodoppler",
+      "eco doppler",
+      "ecocardio",
+      "eco cardiaco",
+      "eco cardiologico",
+      "eco do coracao",
+      "ecocardiograma doppler",
+      "doppler cardiaco",
+      "ultrassom do coracao",
+      "ultrassonografia cardiaca",
+      "us cardiaco",
+      "eco"
+    ],
+    "eletrocardiograma": [
+      "eletrocardiograma",
+      "eletrocardiografia",
+      "eletro cardiograma",
+      "eletrocardio",
+      "ecg",
+      "tracado cardiaco",
+      "tracado",
+      "eletro"
+    ],
+    "pressao_arterial": [
+      "pressao arterial",
+      "afericao de pressao",
+      "medida de pressao",
+      "medicao de pressao",
+      "pressao sanguinea",
+      "pressao",
+      "pa"
+    ],
+    "consulta": [
+      "consulta",
+      "consulta cardiologica",
+      "avaliacao cardiologica",
+      "avaliacao",
+      "atendimento cardiologico",
+      "primeira consulta"
+    ]
+  },
+  "_nomes_no_catalogo": {
+    "_nota": "Como os procedimentos aparecem NO NOME dos servicos cadastrados. Separado dos sinonimos do cliente porque o catalogo usa abreviacao propria.",
+    "ecocardiograma": ["ecocardiograma", "eco"],
+    "eletrocardiograma": ["eletrocardiograma", "eletro"],
+    "pressao_arterial": ["pressao arterial", "pa"],
+    "consulta": ["consulta"]
+  }
+}

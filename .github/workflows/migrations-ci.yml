@@ -1,0 +1,50 @@
+name: Migration CI
+
+on:
+  pull_request:
+    branches:
+      - stage
+      - main
+  push:
+    branches:
+      - stage
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run migration-focused test suite
+        env:
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: migration-ci-workflow-secret-key-1234567890
+        run: |
+          python -m unittest \
+            backend/tests/test_migration_ci_cycle.py \
+            backend/tests/test_people_datetime_normalization_migration.py \
+            backend/tests/test_fiscal_numero_unicidade.py \
+            backend/tests/test_fiscal_numero_sequence.py \
+            backend/tests/test_critical_composite_indexes.py \
+            backend/tests/test_portal_escopo_sessao.py \
+            backend/tests/test_portal_clinic_device_trust.py

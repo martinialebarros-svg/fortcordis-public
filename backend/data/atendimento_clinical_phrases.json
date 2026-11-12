@@ -1,0 +1,203 @@
+{
+  "version": "1.0",
+  "frases": [
+    {
+      "secao": "queixa_principal",
+      "titulo": "Tosse e cansaco",
+      "texto": "Tutor refere tosse cronica associada a cansaco aos esforcos, em investigacao cardiologica.",
+      "ordem": 10
+    },
+    {
+      "secao": "queixa_principal",
+      "titulo": "Sopro em revisao",
+      "texto": "Paciente encaminhado para revisao cardiologica apos identificacao de sopro em avaliacao de rotina.",
+      "ordem": 20
+    },
+    {
+      "secao": "queixa_principal",
+      "titulo": "Sincope",
+      "texto": "Historico recente de episodios de sincope, com recuperacao espontanea e sem trauma associado.",
+      "ordem": 30
+    },
+    {
+      "secao": "anamnese",
+      "titulo": "Progressao lenta",
+      "texto": "Tutor refere progressao lenta dos sinais clinicos, com piora discreta no periodo noturno e aos esforcos.",
+      "ordem": 10
+    },
+    {
+      "secao": "anamnese",
+      "titulo": "Em tratamento",
+      "texto": "Paciente ja faz uso domiciliar de medicacao cardiologica, sem eventos adversos importantes relatados.",
+      "ordem": 20
+    },
+    {
+      "secao": "anamnese",
+      "titulo": "Sem sinais congestivos",
+      "texto": "No domicilio, tutor nao observa dispneia em repouso, ascite ou intolerancia alimentar significativa.",
+      "ordem": 30
+    },
+    {
+      "secao": "exame_fisico",
+      "titulo": "Estavel",
+      "texto": "Paciente alerta, responsivo, normohidratado, com mucosas rosadas e perfusao periferica adequada.",
+      "ordem": 10
+    },
+    {
+      "secao": "exame_fisico",
+      "titulo": "Sopro apical",
+      "texto": "Ausculta cardiaca com sopro em foco mitral, ritmo regular no momento da avaliacao.",
+      "ordem": 20
+    },
+    {
+      "secao": "exame_fisico",
+      "titulo": "Pulmao limpo",
+      "texto": "Ausculta pulmonar sem crepitacoes, sem aumento do esforco respiratorio em repouso.",
+      "ordem": 30
+    },
+    {
+      "secao": "dados_clinicos",
+      "titulo": "PA controlada",
+      "texto": "Pressao arterial sem desvios marcantes na avaliacao atual, com seguimento ambulatorial recomendado.",
+      "ordem": 10
+    },
+    {
+      "secao": "dados_clinicos",
+      "titulo": "Sem congestao",
+      "texto": "Nao ha sinais clinicos de congestao no exame de hoje, apesar do historico cardiologico em acompanhamento.",
+      "ordem": 20
+    },
+    {
+      "secao": "dados_clinicos",
+      "titulo": "Correlacionar ECO",
+      "texto": "Achados devem ser correlacionados ao ecocardiograma e a monitorizacao seriada conforme evolucao clinica.",
+      "ordem": 30
+    },
+    {
+      "secao": "diagnostico_principal",
+      "titulo": "Endocardiose mitral",
+      "texto": "Doenca valvar degenerativa mitral em acompanhamento cardiologico.",
+      "ordem": 10
+    },
+    {
+      "secao": "diagnostico_principal",
+      "titulo": "ICC compensada",
+      "texto": "Insuficiencia cardiaca congestiva previamente tratada, no momento clinicamente compensada.",
+      "ordem": 20
+    },
+    {
+      "secao": "diagnostico_principal",
+      "titulo": "Hipertensao suspeita",
+      "texto": "Suspeita de hipertensao arterial sistemica, demandando afericao seriada e correlacao com lesoes alvo.",
+      "ordem": 30
+    },
+    {
+      "secao": "diagnostico_secundario",
+      "titulo": "Sem comorbidades",
+      "texto": "Sem comorbidades adicionais relevantes registradas nesta consulta.",
+      "ordem": 10
+    },
+    {
+      "secao": "diagnostico_secundario",
+      "titulo": "Degeneracao valvar",
+      "texto": "Degeneracao mixomatosa valvar associada a remodelamento discreto.",
+      "ordem": 20
+    },
+    {
+      "secao": "diagnostico_secundario",
+      "titulo": "Arritmia em investigacao",
+      "texto": "Arritmia intermitente em investigacao complementar.",
+      "ordem": 30
+    },
+    {
+      "secao": "diagnostico_diferencial",
+      "titulo": "Cardiaco x respiratorio",
+      "texto": "Necessario diferenciar componente cardiaco de causa respiratoria primaria.",
+      "ordem": 10
+    },
+    {
+      "secao": "diagnostico_diferencial",
+      "titulo": "Sincope vagal",
+      "texto": "Considerar evento vasovagal ou arritmico conforme recorrencia e contexto clinico.",
+      "ordem": 20
+    },
+    {
+      "secao": "diagnostico_diferencial",
+      "titulo": "Doenca sistemica",
+      "texto": "Nao afastar contribuicao de doenca sistemica ou endocrina sobre o quadro cardiovascular.",
+      "ordem": 30
+    },
+    {
+      "secao": "plano_terapeutico",
+      "titulo": "Solicitar ECO + ECG",
+      "texto": "Solicitar ecocardiograma e eletrocardiograma para complementar o estadiamento cardiologico.",
+      "ordem": 10
+    },
+    {
+      "secao": "plano_terapeutico",
+      "titulo": "Monitorar FRR",
+      "texto": "Orientado tutor a monitorar frequencia respiratoria em repouso e registrar intercorrencias.",
+      "ordem": 20
+    },
+    {
+      "secao": "plano_terapeutico",
+      "titulo": "Ajuste por peso",
+      "texto": "Ajustes de medicacao devem respeitar o peso clinico aferido nesta consulta e a resposta clinica subsequente.",
+      "ordem": 30
+    },
+    {
+      "secao": "retorno_recomendado",
+      "titulo": "Retorno em 7 dias",
+      "texto": "Reavaliacao em 7 dias para revisao clinica, resposta terapeutica e checagem de exames.",
+      "ordem": 10
+    },
+    {
+      "secao": "retorno_recomendado",
+      "titulo": "Retorno se piora",
+      "texto": "Antecipar retorno em caso de dispneia, sincope, piora da tosse ou reducao importante de apetite.",
+      "ordem": 20
+    },
+    {
+      "secao": "retorno_recomendado",
+      "titulo": "Retorno programado",
+      "texto": "Retorno programado apos liberacao dos exames complementares para definicao de conduta.",
+      "ordem": 30
+    },
+    {
+      "secao": "motivo_retorno",
+      "titulo": "Reavaliar congestao",
+      "texto": "Reavaliar sinais de congestao, tolerancia ao protocolo e estabilidade hemodinamica.",
+      "ordem": 10
+    },
+    {
+      "secao": "motivo_retorno",
+      "titulo": "Checar pressao",
+      "texto": "Repetir afericao pressorica e correlacionar com achados de orgao alvo.",
+      "ordem": 20
+    },
+    {
+      "secao": "motivo_retorno",
+      "titulo": "Rever dose",
+      "texto": "Rever doses e resposta clinica domiciliar apos ajustes terapeuticos.",
+      "ordem": 30
+    },
+    {
+      "secao": "observacoes",
+      "titulo": "Tutor orientado",
+      "texto": "Tutor orientado quanto a sinais de alerta, horarios de medicacao e necessidade de retorno programado.",
+      "ordem": 10
+    },
+    {
+      "secao": "observacoes",
+      "titulo": "Sem intercorrencias",
+      "texto": "Consulta transcorrida sem intercorrencias imediatas durante o atendimento.",
+      "ordem": 20
+    },
+    {
+      "secao": "observacoes",
+      "titulo": "Contato aberto",
+      "texto": "Liberado canal de contato para intercorrencias clinicas ate a proxima reavaliacao.",
+      "ordem": 30
+    }
+  ]
+}

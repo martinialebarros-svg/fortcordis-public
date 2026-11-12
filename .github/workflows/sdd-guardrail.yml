@@ -1,0 +1,34 @@
+name: SDD Guardrail
+
+on:
+  pull_request:
+    branches:
+      - stage
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  sdd-guardrail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve diff range
+        id: diff
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Run SDD guardrail
+        run: |
+          python3 scripts/ci/check_sdd_guardrail.py \
+            --base-sha "${{ steps.diff.outputs.base_sha }}" \
+            --head-sha "${{ steps.diff.outputs.head_sha }}"

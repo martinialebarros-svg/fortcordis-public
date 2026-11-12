@@ -1,0 +1,44 @@
+name: Google Maps Cost Control
+
+on:
+  pull_request:
+    branches: [stage, main]
+  push:
+    branches: [stage, main]
+
+permissions:
+  contents: read
+
+jobs:
+  shared-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: maps_cost_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d maps_cost_test"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt -r backend/requirements-test.txt
+      - name: Prove grants, limits, concurrency and provider boundaries without Google
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./maps-cost-ci.db
+          SECRET_KEY: maps-cost-ci-synthetic-secret-key-123456789
+          MAPS_COST_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/maps_cost_test
+        run: |
+          python -m unittest discover -s backend/tests -p 'test_google_maps*.py' -v
+          python -m unittest discover -s backend/tests -p 'test_agenda_maps_budget_atomicity.py' -v

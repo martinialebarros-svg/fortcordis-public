@@ -1,0 +1,50 @@
+{
+  "operation_mode": "paid_budget",
+  "enabled": false,
+  "agenda_budget_mode": "monitor",
+  "limits": {
+    "action": {
+      "calls": 4096,
+      "estimated_brl": 5
+    },
+    "day": {
+      "calls": 650,
+      "estimated_brl": 25
+    },
+    "month": {
+      "calls": 13000,
+      "estimated_brl": 500
+    }
+  },
+  "prices_usd": {
+    "routes_essentials": 0.005,
+    "routes_pro": 0.01,
+    "distance_matrix_essentials": 0.005,
+    "distance_matrix_pro": 0.01,
+    "geocoding": 0.005
+  },
+  "fx_brl_per_usd_upper": 6,
+  "price_multiplier": 1.2,
+  "pricing_valid_until": "2026-11-21T23:59:59-03:00",
+  "action_call_caps": {
+    "agenda_create": 64,
+    "agenda_update": 64,
+    "agenda_status": 64,
+    "agenda_reservation": 64,
+    "agenda_validate_offer": 64,
+    "agenda_search": 1024,
+    "agenda_proximity": 4096,
+    "agenda_offers": 4096,
+    "agenda_tutor_geocode": 1,
+    "matrix_recalculate": 0,
+    "route_lookup": 2,
+    "clinic_geocode": 1,
+    "tutor_geocode": 1,
+    "assistant_chat": 0,
+    "assistant_decision": 0
+  },
+  "automatic_policies": {},
+  "opening_usage": null,
+  "opening_usage_as_of": null,
+  "opening_usage_basis": null
+}

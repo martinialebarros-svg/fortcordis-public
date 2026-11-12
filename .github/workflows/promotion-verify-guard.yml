@@ -1,0 +1,69 @@
+name: Promotion Verify Guard
+
+# Barra promocao `stage -> main` que leve criterio de aceitacao ainda pendente
+# no `verify.md` das features promovidas.
+#
+# So roda em PR que mira `main`, de proposito: no fluxo stage-first, criterio
+# pendente e o estado normal de um PR de feature -- boa parte so pode ser
+# verificada depois de chegar em stage. Bloquear PRs para `stage` inverteria o
+# processo. A promocao e o momento em que a pendencia vira risco de producao.
+#
+# O gate SDD e complementar: ele exige que `spec.md` e `verify.md` mudem junto
+# com o codigo, mas nao le o conteudo do verify.
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# Abrir o PR ja com a label dispara dois eventos quase juntos (`opened` e
+# `labeled`). Sem isto, os dois rodam e o mais antigo pode terminar depois,
+# deixando o resultado errado como conclusao do check.
+concurrency:
+  group: promotion-verify-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  criterios-devem-estar-fechados:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout do head do PR
+        uses: actions/checkout@v5
+        with:
+          # `head.sha` e nao o merge ref: o verify.md lido tem que ser
+          # exatamente o que o diff aponta.
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Verificar criterios das features promovidas
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # As labels sao lidas pela API, nao pelo payload do evento. `gh pr
+          # create --label` cria o PR e so depois anexa a label, entao o payload
+          # do `opened` chega sem ela e o gate reprovava uma promocao que tinha
+          # a excecao aplicada. A API responde o estado atual.
+          LABELS="$(gh pr view "${PR_NUMBER}" --json labels --jq '[.labels[].name] | join(",")')"
+          echo "Labels no momento da checagem: ${LABELS:-<nenhuma>}"
+
+          ALLOW=""
+          if [[ ",${LABELS}," == *,promocao-com-pendencia,* ]]; then
+            echo "Label 'promocao-com-pendencia' presente: pendencia liberada conscientemente."
+            ALLOW="--allow-pending"
+          fi
+
+          python3 scripts/ci/check_promotion_verify_pending.py \
+            --base-sha "${BASE_SHA}" \
+            --head-sha "${HEAD_SHA}" \
+            ${ALLOW}

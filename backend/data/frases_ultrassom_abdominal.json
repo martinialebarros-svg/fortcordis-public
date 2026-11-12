@@ -1,0 +1,1318 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-03-11T00:14:17.510Z",
+  "frases": [
+    {
+      "id": 1,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Normal - ecotextura preservada",
+      "texto": "Fígado com topografia habitual, dimensões preservadas, contornos regulares, ecotextura homogênea e ecogenicidade mantida.",
+      "ativo": 1
+    },
+    {
+      "id": 2,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações significativas",
+      "texto": "Fígado de dimensões normais para a espécie e porte do paciente, com contornos bem definidos, parênquima homogêneo e ecogenicidade dentro dos padrões de normalidade. Vasos hepáticos com calibre e distribuição preservados.",
+      "ativo": 1
+    },
+    {
+      "id": 3,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - hepatite",
+      "texto": "Fígado com leve aumento volumétrico, ecotextura heterogênea e ecogenicidade difusamente alterada. Achados ultrassonográficos compatíveis com processo inflamatório hepático. Recomenda-se correlação com perfil hepático e histórico clínico.",
+      "ativo": 1
+    },
+    {
+      "id": 4,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hepatomegalia difusa",
+      "texto": "Fígado com aumento volumétrico difuso, ultrapassando o rebordo costal, com arredondamento dos bordos, ecotextura heterogênea e ecogenicidade discretamente aumentada. Achados compatíveis com hepatomegalia de origem a correlacionar clinicamente.",
+      "ativo": 1
+    },
+    {
+      "id": 5,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hepatopatia difusa leve",
+      "texto": "Parênquima hepático com leve aumento difuso da ecogenicidade, mantendo ecotextura relativamente homogênea. Achados compatíveis com hepatopatia difusa leve, sugerindo correlação com exames laboratoriais.",
+      "ativo": 1
+    },
+    {
+      "id": 6,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hepatopatia difusa moderada",
+      "texto": "Fígado com aumento moderado da ecogenicidade parenquimatosa, com leve heterogeneidade difusa. Atenuação discreta do feixe ultrassonográfico em porções profundas. Achados sugestivos de hepatopatia difusa moderada, possivelmente de origem vacuolar ou infiltrativa.",
+      "ativo": 1
+    },
+    {
+      "id": 7,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hepatopatia difusa acentuada",
+      "texto": "Parênquima hepático com acentuado aumento da ecogenicidade e marcada heterogeneidade difusa, com atenuação do feixe acústico nas porções profundas. Dimensões aumentadas. Achados compatíveis com hepatopatia difusa grave, recomendando-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 8,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Vascular - congestão hepática",
+      "texto": "Fígado com leve aumento volumétrico, veias hepáticas e veia cava caudal com calibre aumentado e paredes evidentes. Parênquima com ecogenicidade discretamente reduzida. Achados compatíveis com congestão hepática passiva, sugerindo avaliação cardiovascular.",
+      "ativo": 1
+    },
+    {
+      "id": 9,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Cavitário - nódulo hepático",
+      "texto": "Identificado nódulo hepático de contornos regulares, com ecogenicidade heterogênea, medindo aproximadamente [x] cm no maior eixo, localizado no lobo [x]. Recomenda-se acompanhamento ultrassonográfico e correlação clínica para definição de conduta.",
+      "ativo": 1
+    },
+    {
+      "id": 10,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Cavitário - múltiplos nódulos hepáticos",
+      "texto": "Parênquima hepático com presença de múltiplos nódulos de ecogenicidade variável, distribuídos difusamente, com contornos regulares a irregulares. Achados compatíveis com processo nodular hepático multifocal, sendo necessária investigação complementar para caracterização etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 11,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa hepática",
+      "texto": "Identificada massa de contornos irregulares, ecogenicidade heterogênea e dimensões aumentadas no parênquima hepático, medindo aproximadamente [x] cm. Achados não permitem exclusão de processo neoplásico primário ou secundário. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 12,
+      "orgao": "figado",
+      "sexo": "Todos",
+      "titulo": "Outros - mineralização hepática",
+      "texto": "Observadas estruturas hiperecogênicas com sombra acústica posterior no parênquima hepático, compatíveis com focos de mineralização. Sem evidência de processo expansivo associado no momento do exame.",
+      "ativo": 1
+    },
+    {
+      "id": 13,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Vesícula biliar de dimensões normais, parede fina e regular, conteúdo anecoico e homogêneo, sem evidência de sedimento, cálculos ou espessamento parietal.",
+      "ativo": 1
+    },
+    {
+      "id": 14,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Normal - discreta variação fisiológica",
+      "texto": "Vesícula biliar com dimensões dentro dos padrões de normalidade para o porte do paciente, parede regular de espessura preservada e conteúdo predominantemente anecoico. Sem achados relevantes.",
+      "ativo": 1
+    },
+    {
+      "id": 15,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - espessamento parietal",
+      "texto": "Vesícula biliar com espessamento difuso da parede, medindo aproximadamente [x] mm, com contorno interno irregular. Pode estar associado a colecistite, hipoalbuminemia ou doença sistêmica. Recomenda-se correlação clínico-laboratorial.",
+      "ativo": 1
+    },
+    {
+      "id": 16,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - colecistite",
+      "texto": "Vesícula biliar com espessamento parietal difuso, conteúdo ecogênico heterogêneo e leve reação pericolecística. Achados compatíveis com colecistite. Recomenda-se correlação clínica e laboratorial.",
+      "ativo": 1
+    },
+    {
+      "id": 17,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - mucocele biliar",
+      "texto": "Vesícula biliar com dimensões aumentadas, conteúdo ecogênico com padrão estrelado ou kiwi, imóvel ao reposicionamento do paciente, compatível com mucocele biliar. Recomenda-se avaliação cirúrgica e laboratorial com urgência.",
+      "ativo": 1
+    },
+    {
+      "id": 18,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - lama biliar",
+      "texto": "Vesícula biliar com presença de material ecogênico em seu interior, móvel à mudança de decúbito, sem sombra acústica posterior, compatível com lama biliar. Parede de espessura normal.",
+      "ativo": 1
+    },
+    {
+      "id": 19,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - lama biliar acentuada",
+      "texto": "Vesícula biliar com marcada quantidade de material ecogênico em suspensão e em nível, com mobilidade ao reposicionamento do paciente, compatível com lama biliar acentuada. Parede com espessura limítrofe.",
+      "ativo": 1
+    },
+    {
+      "id": 20,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - distensão vesicular",
+      "texto": "Vesícula biliar com aumento volumétrico evidente, dimensões aumentadas para o porte do paciente, parede regular e conteúdo anecoico. Achados compatíveis com distensão vesicular, podendo estar relacionados a jejum prolongado ou obstrução biliar.",
+      "ativo": 1
+    },
+    {
+      "id": 21,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - colelitíase",
+      "texto": "Identificadas estruturas hiperecogênicas intraluminais com sombra acústica posterior e mobilidade ao reposicionamento, compatíveis com cálculos biliares. Parede vesicular com espessura [preservada/aumentada].",
+      "ativo": 1
+    },
+    {
+      "id": 22,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - pólipo ou massa",
+      "texto": "Identificada estrutura ecogênica séssil na parede da vesícula biliar, sem sombra acústica e imóvel ao reposicionamento, medindo aproximadamente [x] mm. Não é possível excluir pólipo ou lesão neoplásica. Recomenda-se acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 23,
+      "orgao": "vesicula_biliar",
+      "sexo": "Todos",
+      "titulo": "Outros - vesícula biliar colapsada",
+      "texto": "Vesícula biliar com paredes justapostas e sem conteúdo luminal identificável, podendo estar relacionada à alimentação recente ou processo patológico. Recomenda-se reavaliação em jejum adequado.",
+      "ativo": 1
+    },
+    {
+      "id": 24,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Estômago com estratificação parietal preservada, espessura de parede dentro dos padrões de normalidade, conteúdo variável compatível com o estado de jejum do paciente e peristaltismo presente.",
+      "ativo": 1
+    },
+    {
+      "id": 25,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Normal - conteúdo alimentar presente",
+      "texto": "Estômago com conteúdo alimentar misto em seu interior, peristaltismo ativo e parede de estratificação preservada. Achados compatíveis com jejum insuficiente ou alimentação recente.",
+      "ativo": 1
+    },
+    {
+      "id": 26,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - gastrite leve",
+      "texto": "Parede gástrica com leve espessamento difuso, estratificação preservada e camadas identificáveis. Achados compatíveis com processo inflamatório gástrico leve. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 27,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - gastrite moderada",
+      "texto": "Parede gástrica com espessamento moderado e difuso, com estratificação parcialmente preservada. Peristaltismo reduzido. Achados sugestivos de gastrite moderada. Recomenda-se avaliação endoscópica complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 28,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - espessamento parietal focal",
+      "texto": "Identificado espessamento parietal focal na região do antro gástrico, com estratificação preservada e sem componente intraluminal associado. Recomenda-se correlação clínica e acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 29,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento parietal com perda de estratificação",
+      "texto": "Parede gástrica com espessamento segmentar e perda focal da estratificação em camadas. Achados não permitem exclusão de processo infiltrativo ou neoplásico. Recomenda-se investigação endoscópica e histopatológica.",
+      "ativo": 1
+    },
+    {
+      "id": 30,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa intraluminal",
+      "texto": "Identificada estrutura de ecogenicidade heterogênea com implantação na parede gástrica, projetando-se para o lúmen. Não é possível excluir processo neoplásico. Recomenda-se endoscopia e biópsia.",
+      "ativo": 1
+    },
+    {
+      "id": 31,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Outros - hipomotilidade gástrica",
+      "texto": "Estômago com redução da motilidade e esvaziamento gástrico aparentemente lentificado ao tempo do exame. Conteúdo líquido e gasoso em seu interior. Achados compatíveis com hipomotilidade gástrica.",
+      "ativo": 1
+    },
+    {
+      "id": 32,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Outros - distensão gástrica por gás",
+      "texto": "Estômago marcadamente distendido por conteúdo gasoso, limitando a avaliação das paredes e estruturas adjacentes. Recomenda-se correlação clínica para exclusão de síndrome dilatação-vólvulo gástrico.",
+      "ativo": 1
+    },
+    {
+      "id": 33,
+      "orgao": "estomago",
+      "sexo": "Todos",
+      "titulo": "Outros - corpo estranho gástrico",
+      "texto": "Observada estrutura hiperecogênica intraluminal com sombra acústica posterior, de posicionamento variável, compatível com corpo estranho gástrico. Recomenda-se avaliação radiográfica complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 34,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Alças intestinais delgadas com estratificação parietal preservada, espessura de parede dentro dos padrões de normalidade, peristaltismo ativo e conteúdo luminal variável.",
+      "ativo": 1
+    },
+    {
+      "id": 35,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Normal - peristaltismo ativo",
+      "texto": "Alças de intestino delgado com movimentação ativa observada ao tempo real, paredes de espessura normal, estratificação em camadas preservada e conteúdo luminal misto.",
+      "ativo": 1
+    },
+    {
+      "id": 36,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - enterite leve",
+      "texto": "Alças intestinais com leve espessamento difuso da parede, estratificação preservada e peristaltismo presente, porém com discreta redução. Achados compatíveis com processo inflamatório intestinal leve.",
+      "ativo": 1
+    },
+    {
+      "id": 37,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - enterite moderada",
+      "texto": "Alças intestinais com espessamento moderado e difuso das paredes, com estratificação parcialmente preservada e redução do peristaltismo. Conteúdo luminal com aspecto heterogêneo. Achados compatíveis com enterite moderada.",
+      "ativo": 1
+    },
+    {
+      "id": 38,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - enterite acentuada",
+      "texto": "Espessamento parietal difuso e acentuado das alças intestinais, com perda parcial da estratificação em camadas, peristaltismo marcadamente reduzido e conteúdo luminal heterogêneo. Achados compatíveis com enterite grave. Recomenda-se investigação etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 39,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - processo infiltrativo difuso",
+      "texto": "Alças intestinais com espessamento parietal difuso e heterogêneo, com perda da estratificação em múltiplos segmentos. Achados sugestivos de processo infiltrativo difuso, não sendo possível excluir etiologia inflamatória crônica ou neoplásica. Recomenda-se investigação histopatológica.",
+      "ativo": 1
+    },
+    {
+      "id": 40,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - padrão de íleo",
+      "texto": "Alças intestinais com distensão luminal, conteúdo líquido em quantidade aumentada e peristaltismo ausente ou marcadamente reduzido. Achados compatíveis com íleo paralítico ou obstrutivo. Recomenda-se correlação clínica e radiográfica.",
+      "ativo": 1
+    },
+    {
+      "id": 41,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento focal com perda de estratificação",
+      "texto": "Identificado segmento de alça intestinal com espessamento parietal focal, perda da estratificação em camadas e ausência de peristaltismo no segmento afetado. Achados não permitem exclusão de processo infiltrativo ou neoplásico. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 42,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa de parede intestinal",
+      "texto": "Identificada massa de ecogenicidade heterogênea originando-se da parede intestinal, com contornos irregulares e sem plano de clivagem evidente com estruturas adjacentes. Não é possível excluir neoplasia. Recomenda-se biópsia guiada ou exploração cirúrgica.",
+      "ativo": 1
+    },
+    {
+      "id": 43,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Outros - corrugação intestinal",
+      "texto": "Identificadas alças intestinais com aspecto corrugado, sem peristaltismo evidente. Achados compatíveis com espasmo ou processo infiltrativo. Recomenda-se correlação clínica e acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 44,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Outros - corpo estranho intestinal",
+      "texto": "Identificada estrutura hiperecogênica intraluminal com sombra acústica posterior em segmento de alça intestinal, compatível com corpo estranho. Recomenda-se avaliação radiográfica e correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 45,
+      "orgao": "alcas_intestinais",
+      "sexo": "Todos",
+      "titulo": "Outros - hipomotilidade intestinal",
+      "texto": "Alças intestinais com peristaltismo difusamente reduzido ao tempo do exame, conteúdo luminal com predomínio líquido e sem evidência de obstrução mecânica identificável. Achados compatíveis com hipomotilidade intestinal.",
+      "ativo": 1
+    },
+    {
+      "id": 46,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Duodeno com estratificação parietal preservada, espessura de parede dentro dos padrões de normalidade, peristaltismo presente e conteúdo luminal variável.",
+      "ativo": 1
+    },
+    {
+      "id": 47,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Normal - avaliação parcialmente limitada",
+      "texto": "Duodeno identificado com estratificação parietal aparentemente preservada, porém com avaliação parcialmente limitada pela presença de gás intraluminal. Sem alterações significativas nas porções avaliadas.",
+      "ativo": 1
+    },
+    {
+      "id": 48,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - duodenite leve",
+      "texto": "Parede duodenal com leve espessamento difuso, estratificação em camadas preservada e peristaltismo presente. Achados compatíveis com processo inflamatório duodenal leve. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 49,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - duodenite moderada",
+      "texto": "Parede duodenal com espessamento moderado e difuso, estratificação parcialmente preservada e redução do peristaltismo. Mucosa com aspecto irregular. Achados compatíveis com duodenite moderada. Recomenda-se correlação com avaliação pancreática.",
+      "ativo": 1
+    },
+    {
+      "id": 50,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - espessamento com perda de estratificação",
+      "texto": "Parede duodenal com espessamento focal e perda parcial da estratificação em camadas, com reação mesentérica perilesional discreta. Recomenda-se investigação complementar para exclusão de processo infiltrativo.",
+      "ativo": 1
+    },
+    {
+      "id": 51,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - duodenite associada a pancreatite",
+      "texto": "Parede duodenal com espessamento difuso e reação periduodenal evidenciada por aumento da ecogenicidade do mesentério adjacente. Achados compatíveis com duodenite secundária, possivelmente associada a processo pancreático. Recomenda-se avaliação conjunta do pâncreas.",
+      "ativo": 1
+    },
+    {
+      "id": 52,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - distensão duodenal",
+      "texto": "Duodeno com distensão luminal e conteúdo líquido aumentado, peristaltismo reduzido. Achados compatíveis com obstrução ou hipomotilidade duodenal. Recomenda-se correlação clínica e radiográfica.",
+      "ativo": 1
+    },
+    {
+      "id": 53,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento focal",
+      "texto": "Identificado espessamento focal da parede duodenal com perda da estratificação em camadas no segmento afetado. Achados não permitem exclusão de processo neoplásico ou infiltrativo. Recomenda-se investigação endoscópica e histopatológica.",
+      "ativo": 1
+    },
+    {
+      "id": 54,
+      "orgao": "duodeno",
+      "sexo": "Todos",
+      "titulo": "Outros - conteúdo bilioso aumentado",
+      "texto": "Duodeno com conteúdo luminal ecogênico em quantidade aumentada, compatível com material bilioso. Parede de espessura preservada e estratificação mantida. Sem outros achados significativos.",
+      "ativo": 1
+    },
+    {
+      "id": 55,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Cólon identificado com parede de espessura normal, estratificação preservada e conteúdo fecal em quantidade fisiológica. Haustrações presentes. Sem evidência de distensão ou espessamento parietal.",
+      "ativo": 1
+    },
+    {
+      "id": 56,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Normal - conteúdo fecal abundante",
+      "texto": "Cólon com grande quantidade de conteúdo fecal heterogêneo e gasoso, limitando parcialmente a avaliação da parede. Nas porções avaliadas, estratificação parietal preservada, sem espessamento identificado.",
+      "ativo": 1
+    },
+    {
+      "id": 57,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - colite leve",
+      "texto": "Parede do cólon com leve espessamento difuso, estratificação preservada e conteúdo fecal reduzido. Achados compatíveis com processo inflamatório colônico leve. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 58,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - colite moderada",
+      "texto": "Parede do cólon com espessamento moderado e difuso, estratificação parcialmente preservada, com leve hipomotilidade. Achados compatíveis com colite moderada. Recomenda-se investigação etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 59,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - colite acentuada",
+      "texto": "Espessamento parietal acentuado e difuso do cólon, com perda parcial da estratificação em camadas e reação mesentérica pericolônica. Conteúdo luminal líquido aumentado. Achados compatíveis com colite grave. Recomenda-se investigação complementar urgente.",
+      "ativo": 1
+    },
+    {
+      "id": 60,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - distensão colônica",
+      "texto": "Cólon com distensão luminal difusa por conteúdo gasoso e fecal, sem evidência de peristaltismo ativo. Achados compatíveis com obstrução funcional ou mecânica. Recomenda-se correlação radiográfica e clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 61,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - megacólon",
+      "texto": "Cólon com marcada distensão luminal e grande quantidade de conteúdo fecal ressecado, compatível com megacólon. Parede de espessura preservada nas porções avaliadas. Recomenda-se correlação clínica e manejo adequado.",
+      "ativo": 1
+    },
+    {
+      "id": 62,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento focal com perda de estratificação",
+      "texto": "Identificado espessamento focal da parede colônica com perda da estratificação em camadas no segmento comprometido. Achados não permitem exclusão de processo neoplásico. Recomenda-se colonoscopia e biópsia.",
+      "ativo": 1
+    },
+    {
+      "id": 63,
+      "orgao": "colon",
+      "sexo": "Todos",
+      "titulo": "Outros - retenção fecal sem distensão",
+      "texto": "Cólon com conteúdo fecal em quantidade aumentada, porém sem distensão parietal significativa. Parede de espessura preservada. Achados compatíveis com retenção fecal sem obstrução mecânica.",
+      "ativo": 1
+    },
+    {
+      "id": 64,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Junção íleo-ceco-cólica identificada com paredes de espessura normal, estratificação preservada e sem evidência de espessamento regional, linfadenomegalia ou reação mesentérica local.",
+      "ativo": 1
+    },
+    {
+      "id": 65,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Normal - avaliação limitada por gás",
+      "texto": "Avaliação da junção íleo-ceco-cólica parcialmente limitada pela presença de conteúdo gasoso intraluminal. Nas porções visualizadas, sem evidência de espessamento parietal ou alterações significativas.",
+      "ativo": 1
+    },
+    {
+      "id": 66,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - espessamento regional",
+      "texto": "Região da junção íleo-ceco-cólica com espessamento parietal focal, estratificação parcialmente preservada e leve reação mesentérica perilesional. Achados compatíveis com processo inflamatório regional. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 67,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - linfadenomegalia regional",
+      "texto": "Identificados linfonodos regionais com aumento volumétrico na topografia da junção íleo-ceco-cólica, com ecogenicidade alterada. Achados compatíveis com linfadenomegalia reativa ao processo inflamatório local.",
+      "ativo": 1
+    },
+    {
+      "id": 68,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - reação mesentérica acentuada",
+      "texto": "Mesentério na topografia da junção íleo-ceco-cólica com marcado aumento de ecogenicidade e espessamento, associado a espessamento parietal regional. Achados compatíveis com reação inflamatória mesentérica acentuada.",
+      "ativo": 1
+    },
+    {
+      "id": 69,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - padrão obstrutivo regional",
+      "texto": "Alças ileais pré-juncionais com discreta distensão e conteúdo líquido aumentado, sem peristaltismo efetivo no segmento. Achados sugestivos de obstrução ou estenose na região da junção íleo-ceco-cólica. Recomenda-se avaliação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 70,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento com perda de estratificação",
+      "texto": "Identificado espessamento parietal focal na região da junção íleo-ceco-cólica, com perda da estratificação em camadas e contornos irregulares. Achados não permitem exclusão de processo neoplásico ou infiltrativo. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 71,
+      "orgao": "juncao_ileo_ceco_colica",
+      "sexo": "Todos",
+      "titulo": "Outros - intussuscepção",
+      "texto": "Identificada estrutura tubular com aspecto em alvo ou pseudorrim na topografia da junção íleo-ceco-cólica, compatível com intussuscepção intestinal. Recomenda-se confirmação e avaliação cirúrgica imediata.",
+      "ativo": 1
+    },
+    {
+      "id": 72,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Baço com dimensões normais para o porte do paciente, contornos regulares, ecotextura homogênea e ecogenicidade preservada. Sem evidência de lesões focais ou alterações vasculares.",
+      "ativo": 1
+    },
+    {
+      "id": 73,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Normal - variação anatômica sem significado patológico",
+      "texto": "Baço com morfologia e ecogenicidade dentro dos padrões de normalidade. Leve variação de posicionamento sem repercussão clínica identificada. Sem lesões focais.",
+      "ativo": 1
+    },
+    {
+      "id": 74,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - esplenomegalia leve",
+      "texto": "Baço com leve aumento volumétrico, contornos preservados e ecotextura homogênea. Achados compatíveis com esplenomegalia leve. Recomenda-se correlação clínica e laboratorial para investigação da etiologia.",
+      "ativo": 1
+    },
+    {
+      "id": 75,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - esplenomegalia moderada",
+      "texto": "Baço com aumento volumétrico moderado, ultrapassando os limites habituais para o porte do paciente, com ecotextura homogênea e contornos regulares. Recomenda-se investigação de causa subjacente.",
+      "ativo": 1
+    },
+    {
+      "id": 76,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - esplenomegalia acentuada",
+      "texto": "Baço com marcado aumento volumétrico, deslocando estruturas adjacentes, com parênquima heterogêneo. Achados compatíveis com esplenomegalia acentuada. Recomenda-se investigação complementar urgente.",
+      "ativo": 1
+    },
+    {
+      "id": 77,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hiperplasia esplênica nodular",
+      "texto": "Baço com dimensões aumentadas e presença de múltiplos nódulos hiperecogênicos de pequenas dimensões distribuídos pelo parênquima, compatíveis com hiperplasia nodular benigna. Recomenda-se acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 78,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Vascular - congestão esplênica",
+      "texto": "Baço com aumento volumétrico e ecogenicidade discretamente reduzida, com veia esplênica de calibre aumentado. Achados compatíveis com congestão esplênica passiva. Recomenda-se avaliação da circulação porta e função hepática.",
+      "ativo": 1
+    },
+    {
+      "id": 79,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Cavitário - nódulo esplênico isolado",
+      "texto": "Identificado nódulo esplênico de ecogenicidade heterogênea, contornos regulares, medindo aproximadamente [x] cm. Sem outros achados associados. Recomenda-se acompanhamento ultrassonográfico e correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 80,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Cavitário - múltiplos nódulos esplênicos",
+      "texto": "Parênquima esplênico com presença de múltiplos nódulos de ecogenicidade variável, distribuídos difusamente, com contornos regulares a irregulares. Achados compatíveis com processo nodular multifocal. Recomenda-se investigação etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 81,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa esplênica",
+      "texto": "Identificada massa de ecogenicidade heterogênea no parênquima esplênico, com contornos irregulares, medindo aproximadamente [x] cm. Achados não permitem exclusão de processo neoplásico primário ou metastático. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 82,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Outros - mineralização esplênica",
+      "texto": "Observadas estruturas hiperecogênicas com sombra acústica posterior no parênquima esplênico, compatíveis com focos de mineralização. Sem evidência de processo expansivo associado.",
+      "ativo": 1
+    },
+    {
+      "id": 83,
+      "orgao": "baco",
+      "sexo": "Todos",
+      "titulo": "Outros - hematoma esplênico",
+      "texto": "Identificada área de ecogenicidade heterogênea, mal delimitada, no parênquima esplênico, com contorno irregular e sem vascularização evidente ao Doppler. Achados compatíveis com hematoma esplênico. Recomenda-se correlação com histórico de trauma e monitorização.",
+      "ativo": 1
+    },
+    {
+      "id": 84,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Rins com dimensões, morfologia e posicionamento normais para a espécie e porte do paciente. Relação corticomedular preservada, ecogenicidade cortical dentro dos padrões de normalidade, pelve renal não dilatada e cápsula íntegra.",
+      "ativo": 1
+    },
+    {
+      "id": 85,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Normal - avaliação bilateral sem alterações",
+      "texto": "Rins direito e esquerdo com dimensões simétricas, contornos regulares, parênquima homogêneo e relação corticomedular preservada. Pelve renal de calibre normal. Sem lesões focais identificadas.",
+      "ativo": 1
+    },
+    {
+      "id": 86,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - pielonefrite",
+      "texto": "Rim com aumento volumétrico, ecogenicidade cortical aumentada de forma difusa, pelve renal com conteúdo ecogênico e leve dilatação. Achados compatíveis com pielonefrite. Recomenda-se urinálise, urocultura e tratamento adequado.",
+      "ativo": 1
+    },
+    {
+      "id": 87,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - nefropatia difusa leve",
+      "texto": "Rins com leve aumento da ecogenicidade cortical bilateral, mantendo relação corticomedular preservada e dimensões normais. Achados compatíveis com nefropatia difusa leve. Recomenda-se correlação com perfil renal.",
+      "ativo": 1
+    },
+    {
+      "id": 88,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - nefropatia difusa moderada",
+      "texto": "Rins com aumento moderado da ecogenicidade cortical, leve redução da relação corticomedular e ecotextura heterogênea. Achados compatíveis com nefropatia difusa moderada. Recomenda-se avaliação laboratorial complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 89,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - doença renal crônica",
+      "texto": "Rins com redução volumétrica bilateral, superfície irregular, aumento acentuado da ecogenicidade cortical, perda da diferenciação corticomedular e arquitetura interna heterogênea. Achados compatíveis com doença renal crônica avançada.",
+      "ativo": 1
+    },
+    {
+      "id": 90,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - assimetria renal",
+      "texto": "Rins com assimetria volumétrica evidente, sendo o rim [direito/esquerdo] de dimensões reduzidas com ecogenicidade aumentada e perda da arquitetura interna. Achados compatíveis com processo degenerativo unilateral. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 91,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - pieloectasia leve",
+      "texto": "Identificada discreta dilatação da pelve renal de forma uni ou bilateral, sem evidência de obstrução mecânica identificável ao exame. Achados compatíveis com pieloectasia leve. Recomenda-se correlação clínica e acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 92,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - hidronefrose",
+      "texto": "Rim com dilatação da pelve renal e cálices, com compressão do parênquima adjacente, compatível com hidronefrose. Recomenda-se investigação da causa obstrutiva e avaliação da função renal.",
+      "ativo": 1
+    },
+    {
+      "id": 93,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - nefrolitíase",
+      "texto": "Identificadas estruturas hiperecogênicas com sombra acústica posterior no parênquima ou pelve renal, compatíveis com nefrólitos. Sem evidência de dilatação pélvica significativa associada no momento do exame.",
+      "ativo": 1
+    },
+    {
+      "id": 94,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Cavitário - cisto renal",
+      "texto": "Identificada estrutura cística de paredes finas e regulares, conteúdo anecoico e reforço acústico posterior no parênquima renal, compatível com cisto renal simples. Sem evidência de septações ou componente sólido.",
+      "ativo": 1
+    },
+    {
+      "id": 95,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa renal",
+      "texto": "Identificada massa de ecogenicidade heterogênea no parênquima renal, com contornos irregulares, medindo aproximadamente [x] cm. Achados não permitem exclusão de processo neoplásico. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 96,
+      "orgao": "rins",
+      "sexo": "Todos",
+      "titulo": "Outros - mineralização renal",
+      "texto": "Observados focos hiperecogênicos com sombra acústica posterior distribuídos no parênquima renal, compatíveis com mineralização. Recomenda-se correlação com exames laboratoriais e investigação da causa subjacente.",
+      "ativo": 1
+    },
+    {
+      "id": 97,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Bexiga urinária com dimensões adequadas ao grau de repleção, paredes regulares de espessura normal, conteúdo anecoico e homogêneo. Sem evidência de sedimento, cálculos ou espessamento parietal.",
+      "ativo": 1
+    },
+    {
+      "id": 98,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Normal - bexiga pouco repleta",
+      "texto": "Bexiga urinária com baixo grau de repleção ao momento do exame, limitando parcialmente a avaliação da parede. Nas porções avaliadas, sem espessamento parietal ou conteúdo anormal identificado.",
+      "ativo": 1
+    },
+    {
+      "id": 99,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - cistite leve",
+      "texto": "Bexiga urinária com leve espessamento difuso da parede, conteúdo com fina camada de sedimento ecogênico na porção declive. Achados compatíveis com cistite leve. Recomenda-se urinálise e urocultura.",
+      "ativo": 1
+    },
+    {
+      "id": 100,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - cistite moderada",
+      "texto": "Parede vesical com espessamento moderado e difuso, mucosa irregular e conteúdo com sedimento ecogênico em quantidade moderada, móvel ao reposicionamento. Achados compatíveis com cistite moderada.",
+      "ativo": 1
+    },
+    {
+      "id": 101,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - cistite hemorrágica",
+      "texto": "Bexiga urinária com espessamento parietal difuso acentuado, mucosa irregular e conteúdo intraluminal com material ecogênico heterogêneo, sugestivo de hematúria. Achados compatíveis com cistite hemorrágica. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 102,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Obstrutivo - cistólitos",
+      "texto": "Identificadas estruturas hiperecogênicas com sombra acústica posterior no interior da bexiga urinária, móveis ao reposicionamento, compatíveis com cistólitos. Parede vesical com espessura [preservada/aumentada].",
+      "ativo": 1
+    },
+    {
+      "id": 103,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - espessamento focal parietal",
+      "texto": "Identificado espessamento focal da parede vesical, com superfície irregular, imóvel ao reposicionamento, medindo aproximadamente [x] mm. Achados não permitem exclusão de processo neoplásico. Recomenda-se cistoscopia e biópsia.",
+      "ativo": 1
+    },
+    {
+      "id": 104,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa intraluminal",
+      "texto": "Identificada estrutura de ecogenicidade mista com implantação na parede da bexiga, projetando-se para o lúmen, imóvel ao reposicionamento. Não é possível excluir processo neoplásico primário. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 105,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Outros - conteúdo ecogênico em suspensão",
+      "texto": "Bexiga urinária com conteúdo intraluminal difusamente ecogênico em suspensão, sem sombra acústica posterior, compatível com piúria, hematúria ou cristalúria. Recomenda-se urinálise para caracterização.",
+      "ativo": 1
+    },
+    {
+      "id": 106,
+      "orgao": "bexiga",
+      "sexo": "Todos",
+      "titulo": "Outros - bexiga hipercontraída",
+      "texto": "Bexiga urinária com paredes espessas secundariamente ao baixo grau de repleção ou hipercontratilidade do detrusor. Avaliação parietal limitada. Recomenda-se reavaliação com maior repleção vesical.",
+      "ativo": 1
+    },
+    {
+      "id": 107,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Pâncreas identificado com dimensões preservadas, ecogenicidade homogênea e compatível com o parênquima hepático adjacente, sem evidência de aumento de volume, irregularidade de contorno ou alteração peripancreática.",
+      "ativo": 1
+    },
+    {
+      "id": 108,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Normal - avaliação parcialmente limitada",
+      "texto": "Avaliação pancreática parcialmente limitada pela presença de gás intestinal adjacente. Nas porções visualizadas, sem evidências de espessamento, heterogeneidade ou reação peripancreática.",
+      "ativo": 1
+    },
+    {
+      "id": 109,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - pancreatite leve",
+      "texto": "Pâncreas com leve aumento de volume e discreta heterogeneidade do parênquima, associado a leve aumento da ecogenicidade do mesentério peripancreático. Achados compatíveis com pancreatite leve. Recomenda-se dosagem de lipase sérica e correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 110,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - pancreatite moderada",
+      "texto": "Pâncreas com aumento volumétrico moderado, ecotextura heterogênea e contornos irregulares, associado a reação mesentérica peripancreática de moderada intensidade. Achados compatíveis com pancreatite moderada. Recomenda-se internação e suporte clínico.",
+      "ativo": 1
+    },
+    {
+      "id": 111,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - pancreatite grave",
+      "texto": "Pâncreas com marcado aumento volumétrico, parênquima heterogêneo com áreas hipoecogênicas sugestivas de necrose, reação mesentérica peripancreática acentuada e efusão peritoneal local. Achados compatíveis com pancreatite grave. Recomenda-se manejo intensivo.",
+      "ativo": 1
+    },
+    {
+      "id": 112,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Cavitário - pseudocisto pancreático",
+      "texto": "Identificada estrutura cística de paredes espessas e irregulares, conteúdo anecogênico a levemente ecogênico, na topografia pancreática, compatível com pseudocisto pancreático. Recomenda-se correlação clínica e acompanhamento.",
+      "ativo": 1
+    },
+    {
+      "id": 113,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - nódulo pancreático",
+      "texto": "Identificado nódulo hipoecogênico de contornos irregulares no parênquima pancreático, medindo aproximadamente [x] cm. Achados não permitem exclusão de processo neoplásico. Recomenda-se investigação complementar com TC ou biópsia guiada.",
+      "ativo": 1
+    },
+    {
+      "id": 114,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa pancreática",
+      "texto": "Identificada massa de ecogenicidade heterogênea na topografia pancreática, com contornos irregulares e sem plano de clivagem evidente com estruturas adjacentes. Não é possível excluir insulinoma, adenocarcinoma ou outro processo neoplásico. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 115,
+      "orgao": "pancreas",
+      "sexo": "Todos",
+      "titulo": "Outros - pancreatite crônica",
+      "texto": "Pâncreas com ecogenicidade difusamente aumentada, dimensões reduzidas e contornos irregulares, associado a focos hiperecogênicos sugestivos de mineralização. Achados compatíveis com pancreatite crônica.",
+      "ativo": 1
+    },
+    {
+      "id": 116,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Normal - sem alterações",
+      "texto": "Glândulas adrenais identificadas bilateralmente com dimensões, morfologia e ecogenicidade dentro dos padrões de normalidade para a espécie e porte do paciente. Sem evidência de aumento, nódulos ou assimetria significativa.",
+      "ativo": 1
+    },
+    {
+      "id": 117,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Normal - avaliação limitada",
+      "texto": "Avaliação das glândulas adrenais parcialmente limitada por interferência de gás intestinal e adiposidade regional. Nas porções visualizadas, sem alterações morfológicas evidentes.",
+      "ativo": 1
+    },
+    {
+      "id": 118,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - aumento unilateral",
+      "texto": "Glândula adrenal [direita/esquerda] com aumento volumétrico unilateral, mantendo morfologia preservada e ecogenicidade homogênea. Contralateral sem alterações. Achados compatíveis com hiperplasia unilateral ou processo nodular. Recomenda-se correlação hormonal.",
+      "ativo": 1
+    },
+    {
+      "id": 119,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - aumento bilateral",
+      "texto": "Glândulas adrenais com aumento volumétrico bilateral e simétrico, mantendo ecogenicidade homogênea. Achados compatíveis com hiperplasia adrenal bilateral, podendo estar associados a hiperadrenocorticismo hipófise-dependente. Recomenda-se correlação com testes funcionais.",
+      "ativo": 1
+    },
+    {
+      "id": 120,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Degenerativo - hiperplasia adrenal",
+      "texto": "Glândulas adrenais com aumento de dimensões e morfologia preservada, ecogenicidade homogênea e sem lesões focais identificadas. Achados compatíveis com hiperplasia adrenal. Recomenda-se dosagem de cortisol e testes de estimulação/supressão.",
+      "ativo": 1
+    },
+    {
+      "id": 121,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Cavitário - nódulo adrenal",
+      "texto": "Identificado nódulo de ecogenicidade heterogênea na topografia da glândula adrenal [direita/esquerda], medindo aproximadamente [x] cm, com contornos regulares. Recomenda-se correlação hormonal e investigação complementar para caracterização etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 122,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Suspeita neoplásica - massa adrenal",
+      "texto": "Identificada massa de ecogenicidade heterogênea na topografia adrenal, com contornos irregulares, medindo aproximadamente [x] cm. Achados não permitem exclusão de adenoma, feocromocitoma ou processo neoplásico maligno. Recomenda-se investigação complementar.",
+      "ativo": 1
+    },
+    {
+      "id": 123,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Outros - assimetria adrenal",
+      "texto": "Glândulas adrenais com assimetria volumétrica evidente, sendo a glândula [direita/esquerda] de dimensões aumentadas em relação à contralateral. Sem lesões focais identificadas. Recomenda-se correlação clínica e hormonal.",
+      "ativo": 1
+    },
+    {
+      "id": 124,
+      "orgao": "adrenais",
+      "sexo": "Todos",
+      "titulo": "Outros - mineralização adrenal",
+      "texto": "Identificados focos hiperecogênicos com sombra acústica posterior na topografia adrenal, compatíveis com mineralização. Recomenda-se correlação clínica e investigação da etiologia.",
+      "ativo": 1
+    },
+    {
+      "id": 125,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Normal - sem alterações",
+      "texto": "Próstata com dimensões normais para a idade e porte do paciente, localização pélvica habitual, contornos regulares, ecotextura homogênea e ecogenicidade preservada. Sem evidência de cistos, nódulos ou assimetria.",
+      "ativo": 1
+    },
+    {
+      "id": 126,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Inflamatório - prostatite",
+      "texto": "Próstata com aumento volumétrico, ecotextura heterogênea e contornos irregulares, associada a leve reação periprostática. Achados compatíveis com prostatite. Recomenda-se urinálise, urocultura e tratamento adequado.",
+      "ativo": 1
+    },
+    {
+      "id": 127,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Degenerativo - prostatomegalia leve",
+      "texto": "Próstata com leve aumento volumétrico, mantendo contornos regulares, ecotextura homogênea e localização pélvica preservada. Achados compatíveis com prostatomegalia leve, possivelmente associada a hiperplasia benigna. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 128,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Degenerativo - hiperplasia prostática benigna",
+      "texto": "Próstata com aumento volumétrico moderado, ecotextura heterogênea difusa, contornos regulares e presença de pequenas estruturas císticas internas. Achados compatíveis com hiperplasia prostática benigna. Recomenda-se correlação hormonal e clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 129,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Cavitário - cistos prostáticos",
+      "texto": "Identificadas estruturas císticas de paredes finas, conteúdo anecoico e dimensões variáveis no parênquima prostático, compatíveis com cistos de retenção. Sem evidência de comunicação com a uretra ou componente sólido associado.",
+      "ativo": 1
+    },
+    {
+      "id": 130,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Cavitário - abscesso prostático",
+      "texto": "Identificada estrutura de paredes espessas e irregulares, conteúdo ecogênico heterogêneo, no parênquima prostático, compatível com abscesso. Recomenda-se avaliação cirúrgica e antibioticoterapia direcionada.",
+      "ativo": 1
+    },
+    {
+      "id": 131,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Suspeita neoplásica - massa prostática",
+      "texto": "Próstata com aumento volumétrico acentuado, ecotextura marcadamente heterogênea, contornos irregulares e perda da simetria. Achados não permitem exclusão de processo neoplásico. Recomenda-se investigação complementar com biópsia guiada.",
+      "ativo": 1
+    },
+    {
+      "id": 132,
+      "orgao": "prostata",
+      "sexo": "Macho",
+      "titulo": "Outros - cisto paraprostático",
+      "texto": "Identificada estrutura cística de grandes dimensões adjacente à próstata, com paredes finas e conteúdo anecoico, compatível com cisto paraprostático. Recomenda-se avaliação cirúrgica conforme sintomatologia.",
+      "ativo": 1
+    },
+    {
+      "id": 133,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Normal - sem alterações",
+      "texto": "Testículos identificados com dimensões simétricas, contornos regulares, ecotextura homogênea e ecogenicidade preservada. Epidídimos sem alterações identificadas. Sem evidência de nódulos, assimetria ou alterações vasculares.",
+      "ativo": 1
+    },
+    {
+      "id": 134,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Inflamatório - orquite",
+      "texto": "Testículo [direito/esquerdo] com aumento volumétrico, ecotextura heterogênea e hipervascularização ao Doppler colorido. Epidídimo ipsilateral espessado. Achados compatíveis com orquite, possivelmente epidídimo-orquite. Recomenda-se investigação etiológica e tratamento.",
+      "ativo": 1
+    },
+    {
+      "id": 135,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Degenerativo - degeneração testicular",
+      "texto": "Testículos com redução volumétrica bilateral, ecotextura heterogênea difusa e ecogenicidade alterada. Achados compatíveis com degeneração testicular. Recomenda-se correlação com histórico reprodutivo e perfil hormonal.",
+      "ativo": 1
+    },
+    {
+      "id": 136,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Cavitário - nódulo testicular",
+      "texto": "Identificado nódulo de ecogenicidade heterogênea no parênquima testicular [direito/esquerdo], medindo aproximadamente [x] cm, com contornos regulares a irregulares. Recomenda-se acompanhamento e investigação complementar para exclusão de neoplasia.",
+      "ativo": 1
+    },
+    {
+      "id": 137,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Suspeita neoplásica - massa testicular",
+      "texto": "Testículo [direito/esquerdo] com aumento volumétrico assimétrico, ecotextura marcadamente heterogênea e presença de área expansiva com contornos irregulares. Achados não permitem exclusão de neoplasia testicular. Recomenda-se orquiectomia e exame histopatológico.",
+      "ativo": 1
+    },
+    {
+      "id": 138,
+      "orgao": "testiculos",
+      "sexo": "Macho",
+      "titulo": "Outros - criptorquidismo",
+      "texto": "Testículo [direito/esquerdo] não identificado na bolsa escrotal. Identificada estrutura de ecogenicidade reduzida e dimensões aumentadas na topografia inguinal ou abdominal, compatível com testículo criptorquídico. Risco aumentado de degeneração neoplásica. Recomenda-se orquiectomia.",
+      "ativo": 1
+    },
+    {
+      "id": 139,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Normal - útero não gestante",
+      "texto": "Útero identificado com dimensões normais para o estado reprodutivo da paciente, paredes regulares, sem conteúdo luminal anormal e sem evidência de distensão ou alteração do miométrio.",
+      "ativo": 1
+    },
+    {
+      "id": 140,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Normal - útero não visualizado",
+      "texto": "Útero não identificado de forma individualizada ao exame, o que pode ser compatível com involução uterina em fêmeas castradas ou dimensões reduzidas dificultando a visualização. Sem massas ou estruturas anômalas na topografia uterina.",
+      "ativo": 1
+    },
+    {
+      "id": 141,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Inflamatório - suspeita de piometra",
+      "texto": "Identificadas estruturas tubulares de paredes espessas, com conteúdo luminal ecogênico heterogêneo e distensão variável, na topografia uterina. Achados altamente sugestivos de piometra. Recomenda-se avaliação cirúrgica e laboratorial com urgência.",
+      "ativo": 1
+    },
+    {
+      "id": 142,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Inflamatório - conteúdo luminal uterino",
+      "texto": "Corno uterino com discreta quantidade de conteúdo luminal ecogênico, paredes espessadas e leve distensão. Achados compatíveis com endometrite ou início de acúmulo luminal. Recomenda-se correlação com fase do ciclo estral e histórico clínico.",
+      "ativo": 1
+    },
+    {
+      "id": 143,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Degenerativo - hiperplasia endometrial cística",
+      "texto": "Útero com paredes espessadas e presença de múltiplas estruturas císticas de pequenas dimensões no endométrio, compatíveis com hiperplasia endometrial cística. Achados frequentemente associados a desequilíbrio hormonal. Recomenda-se correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 144,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Suspeita neoplásica - massa uterina",
+      "texto": "Identificada estrutura de ecogenicidade heterogênea com implantação na parede uterina, com contornos irregulares e vascularização ao Doppler. Achados não permitem exclusão de processo neoplásico uterino. Recomenda-se investigação cirúrgica e histopatológica.",
+      "ativo": 1
+    },
+    {
+      "id": 145,
+      "orgao": "utero",
+      "sexo": "Femea",
+      "titulo": "Outros - coto uterino pós-castração",
+      "texto": "Identificada pequena estrutura tubular na topografia do coto uterino, com paredes regulares e sem conteúdo luminal significativo, compatível com remanescente uterino pós-ovariohisterectomia. Sem evidência de processo inflamatório ou neoplásico associado.",
+      "ativo": 1
+    },
+    {
+      "id": 146,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Normal - ovários sem alterações",
+      "texto": "Ovários identificados bilateralmente com dimensões normais para o estado reprodutivo da paciente, ecotextura homogênea e sem evidência de estruturas císticas, nódulos ou alterações de ecogenicidade.",
+      "ativo": 1
+    },
+    {
+      "id": 147,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Normal - folículos fisiológicos",
+      "texto": "Ovários com presença de folículos anecogênicos de pequenas dimensões, compatíveis com folículos em desenvolvimento fisiológico. Dimensões ovarianas preservadas e sem alterações estruturais associadas.",
+      "ativo": 1
+    },
+    {
+      "id": 148,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Degenerativo - cisto ovariano",
+      "texto": "Identificada estrutura cística de paredes finas, conteúdo anecoico e dimensões aumentadas no ovário [direito/esquerdo], compatível com cisto ovariano. Recomenda-se correlação com histórico reprodutivo e hormonal.",
+      "ativo": 1
+    },
+    {
+      "id": 149,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Degenerativo - cistos ovarianos múltiplos",
+      "texto": "Ovário [direito/esquerdo] com aumento volumétrico e presença de múltiplas estruturas císticas de dimensões variadas, compatível com degeneração cística ovariana. Recomenda-se avaliação hormonal e correlação clínica.",
+      "ativo": 1
+    },
+    {
+      "id": 150,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Suspeita neoplásica - massa ovariana",
+      "texto": "Identificada massa de ecogenicidade heterogênea na topografia ovariana, com contornos irregulares, componente sólido e cístico associados, medindo aproximadamente [x] cm. Achados não permitem exclusão de neoplasia ovariana. Recomenda-se investigação cirúrgica.",
+      "ativo": 1
+    },
+    {
+      "id": 151,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Outros - corpo lúteo",
+      "texto": "Identificada estrutura de ecogenicidade mista com parede espessa e conteúdo heterogêneo no ovário, compatível com corpo lúteo. Achados consistentes com fase lútea do ciclo estral ou gestação recente.",
+      "ativo": 1
+    },
+    {
+      "id": 152,
+      "orgao": "ovarios",
+      "sexo": "Femea",
+      "titulo": "Outros - ovários não identificados",
+      "texto": "Ovários não individualizados ao exame, podendo ser compatível com ovariohisterectomia prévia, dimensões reduzidas ou limitação técnica. Sem estruturas anômalas evidentes na topografia ovariana.",
+      "ativo": 1
+    },
+    {
+      "id": 153,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Inflamatório - peritonite localizada",
+      "texto": "Identificada região de aumento da ecogenicidade mesentérica focal, com reação peritoneal localizada e discreta quantidade de líquido livre adjacente. Achados compatíveis com peritonite localizada. Recomenda-se correlação clínica e investigação da causa.",
+      "ativo": 1
+    },
+    {
+      "id": 154,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - efusão abdominal discreta",
+      "texto": "Identificada pequena quantidade de líquido livre na cavidade abdominal, distribuído em goteiras parietocólicas e região pélvica. Achados compatíveis com efusão abdominal discreta. Recomenda-se correlação clínica e investigação da etiologia.",
+      "ativo": 1
+    },
+    {
+      "id": 155,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - efusão abdominal moderada",
+      "texto": "Identificada quantidade moderada de líquido livre na cavidade abdominal, com distribuição difusa entre as alças intestinais e em regiões declives. Recomenda-se abdominocentese diagnóstica e investigação da causa subjacente.",
+      "ativo": 1
+    },
+    {
+      "id": 156,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - efusão abdominal acentuada",
+      "texto": "Grande quantidade de líquido livre na cavidade abdominal, limitando parcialmente a avaliação das estruturas abdominais. Achados compatíveis com efusão abdominal acentuada. Recomenda-se abdominocentese e investigação etiológica com urgência.",
+      "ativo": 1
+    },
+    {
+      "id": 157,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - linfonodomegalia abdominal",
+      "texto": "Identificados linfonodos mesentéricos e/ou sublombares com aumento volumétrico, ecogenicidade alterada e perda da arquitetura interna em alguns casos. Achados compatíveis com linfadenomegalia reativa ou infiltrativa. Recomenda-se correlação clínica e investigação etiológica.",
+      "ativo": 1
+    },
+    {
+      "id": 158,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - limitação por conteúdo gasoso",
+      "texto": "A avaliação ultrassonográfica foi parcialmente limitada pela presença de gás intraluminal em alças intestinais e/ou estômago, dificultando a avaliação de estruturas adjacentes. Recomenda-se repetir o exame com jejum adequado se clinicamente indicado.",
+      "ativo": 1
+    },
+    {
+      "id": 159,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - limitação por falta de colaboração",
+      "texto": "A realização do exame foi parcialmente limitada pela reduzida colaboração do paciente, comprometendo a avaliação pormenorizada de algumas estruturas. Os achados descritos referem-se às porções adequadamente avaliadas.",
+      "ativo": 1
+    },
+    {
+      "id": 160,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - correlação clínica recomendada",
+      "texto": "Os achados ultrassonográficos descritos devem ser interpretados em conjunto com os dados clínicos, laboratoriais e anamnésicos do paciente. Recomenda-se correlação clínica para definição de conduta diagnóstica e terapêutica.",
+      "ativo": 1
+    },
+    {
+      "id": 161,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - exame sem alterações significativas",
+      "texto": "Avaliação ultrassonográfica abdominal sem alterações significativas identificadas nas estruturas avaliadas. Achados dentro dos padrões de normalidade para a espécie e porte do paciente no momento do exame.",
+      "ativo": 1
+    },
+    {
+      "id": 162,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - acompanhamento recomendado",
+      "texto": "Considerando os achados identificados, recomenda-se acompanhamento ultrassonográfico em [x] dias/semanas para avaliação da evolução das alterações descritas e resposta ao tratamento instituído.",
+      "ativo": 1
+    },
+    {
+      "id": 163,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - limitação por obesidade",
+      "texto": "A avaliação ultrassonográfica foi parcialmente comprometida pelo excesso de tecido adiposo abdominal, que reduz a penetração do feixe ultrassonográfico e a resolução das imagens obtidas. Os achados referem-se às estruturas adequadamente visualizadas.",
+      "ativo": 1
+    },
+    {
+      "id": 164,
+      "orgao": "observacoes_gerais",
+      "sexo": "Todos",
+      "titulo": "Outros - investigação complementar recomendada",
+      "texto": "Diante dos achados ultrassonográficos identificados, recomenda-se investigação complementar por meio de exames laboratoriais, radiografia, tomografia computadorizada ou outros métodos de diagnóstico por imagem conforme indicação clínica.",
+      "ativo": 1
+    }
+  ]
+}

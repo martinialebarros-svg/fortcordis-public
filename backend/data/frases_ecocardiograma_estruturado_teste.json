@@ -1,0 +1,6095 @@
+{
+  "version": "1.0",
+  "mode": "teste",
+  "last_updated": "2026-10-04T11:14:12.601593",
+  "aspectos": [
+    {
+      "key": "valva_mitral",
+      "label": "Valva mitral",
+      "categoria": "Valvas",
+      "descricao": "Morfologia e funcionamento da valva mitral.",
+      "placeholder": "Descreva espessamento, prolapso, refluxo, estenose e mobilidade da valva mitral.",
+      "legacy_field": "valvas",
+      "ordem": 10,
+      "frases": [
+        {
+          "id": 1,
+          "titulo": "Mitral normal",
+          "texto": "Valva mitral com folhetos delgados, de ecogenicidade habitual, mobilidade preservada e coaptacao adequada. Sem evidências de refluxo ao mapeamento com Doppler colorido.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 2,
+          "titulo": "Espessamento mitral discreto",
+          "texto": "Folhetos da valva mitral com espessamento discreto nas extremidades distais, mantendo mobilidade e coaptacao adequadas. Refluxo mitral trivial ao Doppler colorido, sem repercussão hemodinâmica aparente.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao",
+            "B1"
+          ],
+          "patologias": [
+            "DMVM"
+          ],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 3,
+          "titulo": "Espessamento mitral leve com refluxo leve",
+          "texto": "Valva mitral com espessamento leve a moderado dos folhetos, predominando no folheto septal. Refluxo mitral de grau leve ao Doppler colorido, com jato estreito restrito a porcao proximal do átrio esquerdo.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao",
+            "B1"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 4,
+          "titulo": "Espessamento mitral moderado com refluxo moderado",
+          "texto": "Folhetos da valva mitral com espessamento moderado e aspecto mixomatoso, com irregularidade das bordas livres. Refluxo mitral de grau moderado ao Doppler colorido, com jato excedendo o terco proximal do átrio esquerdo.",
+          "tags": [
+            "endocardiose",
+            "moderado",
+            "cao",
+            "B2"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 5,
+          "titulo": "Endocardiose mitral importante",
+          "texto": "Valva mitral com espessamento importante dos folhetos, aspecto mixomatoso acentuado e deformacao nodular das extremidades. Prolapso do folheto septal em direcao ao átrio esquerdo durante a sístole. Refluxo mitral de grau importante ao Doppler colorido, com jato amplo atingindo a parede posterior do átrio esquerdo.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "C",
+            "D"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 6,
+          "titulo": "Prolapso mitral isolado",
+          "texto": "Prolapso discreto do folheto septal da valva mitral em direcao ao átrio esquerdo durante a sístole, com folhetos levemente espessados. Refluxo mitral leve associado ao prolapso.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao",
+            "prolapso"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 7,
+          "titulo": "Prolapso mitral com refluxo moderado a importante",
+          "texto": "Prolapso evidente do folheto septal da valva mitral, com espessamento moderado e perda da coaptacao normal dos folhetos. Refluxo mitral de grau moderado a importante ao Doppler colorido, com jato excêntrico direcionado a parede lateral do átrio esquerdo.",
+          "tags": [
+            "endocardiose",
+            "moderado",
+            "grave",
+            "cao",
+            "prolapso"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 8,
+          "titulo": "Endocardiose mitral com ruptura de cordoalha",
+          "texto": "Valva mitral com espessamento importante e aspecto mixomatoso avancado. Identificado folheto com mobilidade excessiva e movimento erratico, compativel com ruptura parcial de cordoalha tendinea. Refluxo mitral de grau importante com jato excêntrico.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "ruptura_cordoalha"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 9,
+          "titulo": "Mitral com refluxo trivial fisiologico",
+          "texto": "Valva mitral com morfologia preservada, sem espessamento significativo. Refluxo trivial ao Doppler colorido, considerado fisiologico, sem repercussão hemodinâmica.",
+          "tags": [
+            "normal",
+            "fisiologico",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 10,
+          "titulo": "Displasia mitral",
+          "texto": "Valva mitral com alterações morfologicas congênitas, incluindo folhetos displasicos, assimetricos e com inserção anômala das cordoalhas tendineas. Refluxo mitral presente ao Doppler colorido, decorrente da malformacao valvar.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 11,
+          "titulo": "Displasia mitral com refluxo importante",
+          "texto": "Malformacao congênita da valva mitral com folhetos displasicos, irregulares e com aparelho subvalvar anomalo. Refluxo mitral de grau importante ao Doppler colorido, com repercussão sobre as câmaras esquerdas.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "grave",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 12,
+          "titulo": "Mitral com SAM",
+          "texto": "Valva mitral com movimento anterior sistólico do folheto septal (SAM), promovendo obstrução dinâmica da via de saida do ventrículo esquerdo durante a sístole. Refluxo mitral de grau variavel associado.",
+          "tags": [
+            "hcm",
+            "obstrutiva",
+            "SAM",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 13,
+          "titulo": "Mitral com espessamento leve em gato",
+          "texto": "Valva mitral com discreto espessamento dos folhetos, sem prolapso ou SAM. Refluxo mitral trivial a leve ao Doppler colorido.",
+          "tags": [
+            "gato",
+            "leve"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        },
+        {
+          "id": 14,
+          "titulo": "Mitral com refluxo funcional por dilatacao do anel",
+          "texto": "Folhetos da valva mitral delgados, porem com refluxo mitral moderado ao Doppler colorido decorrente de dilatacao do anel valvar por remodelamento ventricular esquerdo. Coaptacao incompleta dos folhetos.",
+          "tags": [
+            "dcm",
+            "funcional",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 140,
+          "ativo": 1
+        },
+        {
+          "id": 15,
+          "titulo": "Espessamento mitral leve sem refluxo significativo",
+          "texto": "Valva mitral com discreto espessamento dos folhetos, mais evidente nas extremidades distais, sem prolapso. Ausencia de refluxo significativo ao Doppler colorido.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao",
+            "B1"
+          ],
+          "patologias": [],
+          "ordem": 150,
+          "ativo": 1
+        },
+        {
+          "id": 16,
+          "titulo": "Endocardiose mitral B2",
+          "texto": "Valva mitral com espessamento moderado dos folhetos e aspecto mixomatoso. Prolapso discreto do folheto septal. Refluxo mitral moderado ao Doppler colorido, com remodelamento atrial e ventricular esquerdo associado.",
+          "tags": [
+            "endocardiose",
+            "moderado",
+            "cao",
+            "B2"
+          ],
+          "patologias": [],
+          "ordem": 160,
+          "ativo": 1
+        },
+        {
+          "id": 17,
+          "titulo": "Endocardiose mitral estagio C",
+          "texto": "Valva mitral com espessamento importante de ambos os folhetos, aspecto mixomatoso acentuado com prolapso evidente. Refluxo mitral importante ao Doppler colorido, com remodelamento significativo das câmaras esquerdas compativel com sobrecarga volumétrica crônica.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "C"
+          ],
+          "patologias": [],
+          "ordem": 170,
+          "ativo": 1
+        },
+        {
+          "id": 18,
+          "titulo": "Endocardiose mitral estagio D",
+          "texto": "Valva mitral com degeneracao mixomatosa avancada, espessamento acentuado e deformacao importante dos folhetos. Refluxo mitral severo e amplo ao Doppler colorido. Remodelamento cardíaco avancado com dilatacao acentuada do átrio e ventrículo esquerdos, compativel com quadro refratário.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "D"
+          ],
+          "patologias": [],
+          "ordem": 180,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "valva_aortica",
+      "label": "Valva aortica",
+      "categoria": "Valvas",
+      "descricao": "Morfologia e funcionamento da valva aortica.",
+      "placeholder": "Descreva cuspides, fluxo, refluxo ou estenose da valva aortica.",
+      "legacy_field": "valvas",
+      "ordem": 20,
+      "frases": [
+        {
+          "id": 19,
+          "titulo": "Aórtica normal",
+          "texto": "Valva aórtica com cúspides delgadas, de ecogenicidade habitual, com abertura e fechamento normais. Sem evidências de refluxo ou estenose ao Doppler.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 20,
+          "titulo": "Aórtica com refluxo trivial",
+          "texto": "Valva aórtica com cúspides de aspecto preservado. Refluxo aortico trivial ao Doppler colorido, sem repercussão hemodinâmica significativa.",
+          "tags": [
+            "leve",
+            "fisiologico",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 21,
+          "titulo": "Aórtica com espessamento discreto",
+          "texto": "Cúspides da valva aórtica com discreto espessamento, sem restricao de mobilidade. Fluxo aortico dentro dos parametros normais ao Doppler espectral.",
+          "tags": [
+            "leve",
+            "degenerativo",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 22,
+          "titulo": "Estenose subaortica leve",
+          "texto": "Identificada crista de tecido subvalvar na via de saida do ventrículo esquerdo, promovendo aceleracao discreta do fluxo aortico ao Doppler espectral, compativel com estenose subaortica de grau leve.",
+          "tags": [
+            "congenita",
+            "estenose_subaortica",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 23,
+          "titulo": "Estenose subaortica moderada",
+          "texto": "Obstrução fixa na via de saida do ventrículo esquerdo por tecido subvalvar, promovendo aceleracao moderada do fluxo aortico ao Doppler espectral. Turbulencia pos-estenose visivel ao Doppler colorido. Compativel com estenose subaortica de grau moderado.",
+          "tags": [
+            "congenita",
+            "estenose_subaortica",
+            "moderado",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 24,
+          "titulo": "Estenose subaortica importante",
+          "texto": "Obstrução significativa na via de saida do ventrículo esquerdo por anel fibroso subvalvar, promovendo aceleracao acentuada do fluxo aortico ao Doppler espectral. Hipertrofia concentrica compensatoria do ventrículo esquerdo. Compativel com estenose subaortica de grau importante.",
+          "tags": [
+            "congenita",
+            "estenose_subaortica",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 25,
+          "titulo": "Aórtica com refluxo leve",
+          "texto": "Valva aórtica com cúspides discretamente espessadas. Refluxo aortico de grau leve ao Doppler colorido, sem dilatacao ventricular esquerda associada.",
+          "tags": [
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 26,
+          "titulo": "Aórtica com insuficiencia secundaria a estenose subaortica",
+          "texto": "Cúspides da valva aórtica com espessamento secundario ao jato de alta velocidade subvalvar. Refluxo aortico associado, decorrente de lesao cuspidal pela turbulencia crônica.",
+          "tags": [
+            "estenose_subaortica",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 27,
+          "titulo": "Obstrução dinâmica VSVE gato",
+          "texto": "Aceleracao do fluxo na via de saida do ventrículo esquerdo ao Doppler espectral, de configuração dinâmica, compativel com obstrução funcional associada a hipertrofia septal e movimento anterior sistólico da valva mitral.",
+          "tags": [
+            "hcm",
+            "obstrutiva",
+            "gato",
+            "SAM"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 28,
+          "titulo": "Aórtica com esclerose degenerativa",
+          "texto": "Cúspides da valva aórtica com espessamento degenerativo e aumento de ecogenicidade, sem restricao significativa de mobilidade. Gradiente transvalvar dentro dos limites aceitaveis.",
+          "tags": [
+            "degenerativo",
+            "cao",
+            "idoso"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "valva_tricuspide",
+      "label": "Valva tricuspide",
+      "categoria": "Valvas",
+      "descricao": "Morfologia e funcionamento da valva tricuspide.",
+      "placeholder": "Descreva refluxo, espessamento, degeneracao ou estenose da valva tricuspide.",
+      "legacy_field": "valvas",
+      "ordem": 30,
+      "frases": [
+        {
+          "id": 29,
+          "titulo": "Tricúspide normal",
+          "texto": "Valva tricúspide com folhetos delgados, mobilidade preservada e coaptacao adequada. Sem refluxo significativo ao Doppler colorido.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 30,
+          "titulo": "Tricúspide com refluxo trivial fisiologico",
+          "texto": "Valva tricúspide com morfologia preservada. Refluxo tricúspide trivial ao Doppler colorido, considerado fisiologico.",
+          "tags": [
+            "normal",
+            "fisiologico",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 31,
+          "titulo": "Espessamento tricúspide discreto",
+          "texto": "Folhetos da valva tricúspide com espessamento discreto das extremidades, sem restricao de mobilidade. Refluxo tricúspide trivial a leve.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 32,
+          "titulo": "Endocardiose tricúspide com refluxo leve",
+          "texto": "Valva tricúspide com espessamento leve dos folhetos, de aspecto degenerativo. Refluxo tricúspide de grau leve ao Doppler colorido, sem sinais de sobrecarga de câmaras direitas.",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 33,
+          "titulo": "Endocardiose tricúspide com refluxo moderado",
+          "texto": "Folhetos da valva tricúspide com espessamento moderado e aspecto mixomatoso. Refluxo tricúspide de grau moderado ao Doppler colorido, com repercussão sobre as câmaras direitas.",
+          "tags": [
+            "endocardiose",
+            "moderado",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 34,
+          "titulo": "Endocardiose tricúspide com refluxo importante",
+          "texto": "Valva tricúspide com espessamento importante e degeneracao mixomatosa avancada dos folhetos. Refluxo tricúspide de grau importante ao Doppler colorido, com dilatacao do átrio e ventrículo direitos.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 35,
+          "titulo": "Refluxo tricúspide funcional leve",
+          "texto": "Folhetos da valva tricúspide delgados. Refluxo tricúspide de grau leve ao Doppler colorido, de carater funcional, sem alteração estrutural dos folhetos.",
+          "tags": [
+            "funcional",
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 36,
+          "titulo": "Refluxo tricúspide funcional por hipertensao pulmonar",
+          "texto": "Valva tricúspide com folhetos de morfologia preservada. Refluxo tricúspide presente ao Doppler colorido, permitindo estimativa de pressão sistólica do ventrículo direito elevada, compativel com hipertensao pulmonar.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "funcional",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 37,
+          "titulo": "Displasia tricúspide",
+          "texto": "Valva tricúspide com alterações morfologicas congênitas, incluindo folhetos displasicos, implantação anômala e aparelho subvalvar malformado. Refluxo tricúspide presente ao Doppler colorido.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 38,
+          "titulo": "Displasia tricúspide com refluxo importante",
+          "texto": "Malformacao congênita da valva tricúspide com displasia acentuada dos folhetos e inserção anômala das cordoalhas. Refluxo tricúspide de grau importante ao Doppler colorido, com dilatacao acentuada das câmaras direitas.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 39,
+          "titulo": "Tricúspide com refluxo moderado a importante por sobrecarga direita",
+          "texto": "Valva tricúspide com folhetos levemente espessados e coaptacao incompleta por dilatacao do anel valvar. Refluxo tricúspide de grau moderado a importante, secundario a sobrecarga de pressão e/ou volume das câmaras direitas.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "moderado",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 40,
+          "titulo": "Tricúspide normal em gato",
+          "texto": "Valva tricúspide com folhetos delgados e mobilidade adequada. Sem refluxo significativo ao Doppler colorido.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "valva_pulmonar",
+      "label": "Valva pulmonar",
+      "categoria": "Valvas",
+      "descricao": "Morfologia e funcionamento da valva pulmonar.",
+      "placeholder": "Descreva valva pulmonar, refluxo, estenose e comportamento do fluxo.",
+      "legacy_field": "valvas",
+      "ordem": 40,
+      "frases": [
+        {
+          "id": 41,
+          "titulo": "Pulmonar normal",
+          "texto": "Valva pulmonar com cúspides delgadas, mobilidade preservada e abertura adequada. Fluxo anterogrado laminar ao Doppler espectral, sem refluxo significativo.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 42,
+          "titulo": "Pulmonar com refluxo trivial fisiologico",
+          "texto": "Valva pulmonar com morfologia preservada. Refluxo pulmonar trivial ao Doppler colorido, considerado fisiologico.",
+          "tags": [
+            "normal",
+            "fisiologico",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 43,
+          "titulo": "Estenose pulmonar leve",
+          "texto": "Valva pulmonar com cúspides discretamente espessadas e restricao leve de abertura. Aceleracao discreta do fluxo ao Doppler espectral, compativel com estenose pulmonar de grau leve.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 44,
+          "titulo": "Estenose pulmonar moderada",
+          "texto": "Valva pulmonar com espessamento das cúspides e restricao moderada de abertura. Aceleracao moderada do fluxo ao Doppler espectral com turbulencia pos-estenose. Compativel com estenose pulmonar de grau moderado.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "moderado",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 45,
+          "titulo": "Estenose pulmonar importante",
+          "texto": "Valva pulmonar com espessamento acentuado das cúspides, abertura em domo e restricao importante do fluxo. Aceleracao acentuada do fluxo ao Doppler espectral. Hipertrofia concentrica do ventrículo direito compensatoria. Compativel com estenose pulmonar de grau importante.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 46,
+          "titulo": "Insuficiencia pulmonar por hipertensao pulmonar",
+          "texto": "Refluxo pulmonar ao Doppler colorido e espectral, com velocidade diástólica final sugestiva de pressão diástólica elevada na artéria pulmonar, compativel com hipertensao pulmonar.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 47,
+          "titulo": "Pulmonar com refluxo leve",
+          "texto": "Valva pulmonar com morfologia habitual. Refluxo pulmonar de grau leve ao Doppler colorido, sem repercussão hemodinâmica significativa.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 48,
+          "titulo": "Estenose pulmonar tipo B displasica",
+          "texto": "Valva pulmonar com cúspides hipoplasicas e anel pulmonar estreitado, compativel com estenose pulmonar do tipo displasico. Aceleracao importante do fluxo ao Doppler espectral.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "displasia",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 49,
+          "titulo": "Estenose pulmonar com dilatacao pos-estenotica",
+          "texto": "Valva pulmonar estenotica com aceleracao significativa do fluxo ao Doppler espectral. Dilatacao pos-estenotica do tronco da artéria pulmonar identificada.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 50,
+          "titulo": "Pulmonar normal em gato",
+          "texto": "Valva pulmonar de aspecto habitual, com fluxo anterogrado normal ao Doppler espectral. Sem sinais de estenose ou refluxo significativo.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "atrio_esquerdo",
+      "label": "Atrio esquerdo",
+      "categoria": "Camaras esquerdas",
+      "descricao": "Tamanho, remodelamento e comportamento do atrio esquerdo.",
+      "placeholder": "Descreva dimensoes, aumento atrial e sinais de remodelamento do atrio esquerdo.",
+      "legacy_field": "camaras",
+      "ordem": 50,
+      "frases": [
+        {
+          "id": 51,
+          "titulo": "AE normal",
+          "texto": "Átrio esquerdo com dimensões dentro dos limites da normalidade para a espécie e porte, sem sinais de remodelamento. Relação átrio esquerdo/aorta (AE/Ao) preservada.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 52,
+          "titulo": "AE discretamente aumentado",
+          "texto": "Átrio esquerdo com discreto aumento dimensional, com relação AE/Ao levemente elevada. Remodelamento atrial esquerdo incipiente.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 53,
+          "titulo": "AE moderadamente aumentado",
+          "texto": "Átrio esquerdo com aumento moderado de suas dimensões e relação AE/Ao moderadamente elevada, compativel com sobrecarga volumétrica crônica.",
+          "tags": [
+            "moderado",
+            "endocardiose",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 54,
+          "titulo": "AE acentuadamente aumentado",
+          "texto": "Átrio esquerdo com dilatacao acentuada, relação AE/Ao significativamente elevada. Remodelamento atrial importante compativel com sobrecarga volumétrica crônica avancada.",
+          "tags": [
+            "grave",
+            "endocardiose",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 55,
+          "titulo": "AE com contraste espontâneo",
+          "texto": "Átrio esquerdo dilatado com presença de ecocontraste espontâneo (smoke) em seu interior, sugerindo estase sanguinea e risco de formacao de trombo.",
+          "tags": [
+            "grave",
+            "hcm",
+            "gato",
+            "trombo"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 56,
+          "titulo": "AE com trombo",
+          "texto": "Átrio esquerdo dilatado com imagem sugestiva de trombo intracavitario, apresentando ecogenicidade aumentada e aspecto organizado.",
+          "tags": [
+            "grave",
+            "hcm",
+            "gato",
+            "trombo"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 57,
+          "titulo": "AE normal cão",
+          "texto": "Átrio esquerdo com dimensões normais para a espécie canina. Relação AE/Ao dentro dos parametros de referencia.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 58,
+          "titulo": "AE normal gato",
+          "texto": "Átrio esquerdo com dimensões dentro dos limites normais para a espécie felina. Sem sinais de remodelamento ou dilatacao.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 59,
+          "titulo": "AE aumentado por DCM",
+          "texto": "Átrio esquerdo com dilatacao moderada a importante, compativel com sobrecarga volumétrica secundaria a disfunção miocárdica e regurgitação mitral funcional.",
+          "tags": [
+            "dcm",
+            "moderado",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 60,
+          "titulo": "AE aumentado por HCM",
+          "texto": "Átrio esquerdo com aumento dimensional, secundario a disfunção diástólica e elevacao das pressões de enchimento ventricular esquerdo, no contexto de cardiomiopatia hipertrófica.",
+          "tags": [
+            "hcm",
+            "gato",
+            "moderado"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 61,
+          "titulo": "AE com dilatacao leve sem remodelamento significativo",
+          "texto": "Átrio esquerdo no limite superior da normalidade ou com dilatacao discreta, sem remodelamento estrutural significativo associado.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 62,
+          "titulo": "AE acentuadamente dilatado com ICC",
+          "texto": "Átrio esquerdo com dilatacao acentuada e relação AE/Ao significativamente elevada, compativel com sobrecarga volumétrica grave e sinais de insuficiencia cardíaca congestiva.",
+          "tags": [
+            "grave",
+            "ICC",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 63,
+          "titulo": "AE aumentado moderado gato",
+          "texto": "Átrio esquerdo com aumento moderado de suas dimensões para a espécie felina, sugestivo de elevacao crônica das pressões de enchimento.",
+          "tags": [
+            "moderado",
+            "gato",
+            "hcm"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "ventriculo_esquerdo",
+      "label": "Ventriculo esquerdo",
+      "categoria": "Camaras esquerdas",
+      "descricao": "Dimensoes e geometria do ventriculo esquerdo.",
+      "placeholder": "Descreva espessuras, diametros, remodelamento e padrao estrutural do VE.",
+      "legacy_field": "camaras",
+      "ordem": 60,
+      "frases": [
+        {
+          "id": 64,
+          "titulo": "VE normal",
+          "texto": "Ventrículo esquerdo com dimensões internas, espessuras parietais e geometria dentro dos limites normais para a espécie e porte. Sem sinais de hipertrofia ou dilatacao.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 65,
+          "titulo": "VE com sobrecarga volumétrica leve",
+          "texto": "Ventrículo esquerdo com discreto aumento dos diametros internos, compativel com sobrecarga volumétrica leve. Espessuras parietais preservadas.",
+          "tags": [
+            "leve",
+            "endocardiose",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 66,
+          "titulo": "VE com sobrecarga volumétrica moderada",
+          "texto": "Ventrículo esquerdo com aumento moderado dos diametros internos em diástole, indicando remodelamento excêntrico por sobrecarga volumétrica crônica. Espessuras parietais relativamente preservadas.",
+          "tags": [
+            "moderado",
+            "endocardiose",
+            "cao",
+            "B2"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 67,
+          "titulo": "VE com sobrecarga volumétrica importante",
+          "texto": "Ventrículo esquerdo com dilatacao acentuada dos diametros internos em diástole e sístole, com remodelamento excêntrico significativo por sobrecarga volumétrica crônica avancada.",
+          "tags": [
+            "grave",
+            "endocardiose",
+            "cao",
+            "C",
+            "D"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 68,
+          "titulo": "VE dilatado DCM",
+          "texto": "Ventrículo esquerdo com dilatacao significativa dos diametros internos em diástole e sístole, afilamento relativo das paredes e geometria esferoide. Padrao compativel com cardiomiopatia dilatada.",
+          "tags": [
+            "dcm",
+            "cao",
+            "grave"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 69,
+          "titulo": "VE com hipertrofia concentrica leve",
+          "texto": "Ventrículo esquerdo com discreto aumento das espessuras parietais de forma simetrica, compativel com hipertrofia concentrica leve. Diametros internos preservados.",
+          "tags": [
+            "leve",
+            "hipertrofia",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 70,
+          "titulo": "VE com hipertrofia concentrica moderada",
+          "texto": "Ventrículo esquerdo com aumento moderado das espessuras parietais, com redução relativa dos diametros internos, compativel com hipertrofia concentrica moderada.",
+          "tags": [
+            "moderado",
+            "hipertrofia",
+            "gato",
+            "hcm"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 71,
+          "titulo": "VE com hipertrofia concentrica importante",
+          "texto": "Ventrículo esquerdo com hipertrofia concentrica acentuada, espessuras parietais significativamente aumentadas e redução importante dos diametros internos. Cavidade ventricular esquerda reduzida.",
+          "tags": [
+            "grave",
+            "hipertrofia",
+            "gato",
+            "hcm"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 72,
+          "titulo": "VE com hipertrofia septal assimétrica",
+          "texto": "Ventrículo esquerdo com hipertrofia assimétrica predominando no septo interventricular, com relação septo/parede livre aumentada. Padrao compativel com cardiomiopatia hipertrófica com predomínio septal.",
+          "tags": [
+            "hcm",
+            "gato",
+            "assimetrica"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 73,
+          "titulo": "VE com hipertrofia por estenose subaortica",
+          "texto": "Ventrículo esquerdo com hipertrofia concentrica secundaria a obstrução fixa na via de saida, compativel com resposta compensatoria a estenose subaortica.",
+          "tags": [
+            "estenose_subaortica",
+            "hipertrofia",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 74,
+          "titulo": "VE com hipertrofia por estenose pulmonar",
+          "texto": "Ventrículo esquerdo com dimensões e espessuras dentro dos limites normais. Geometria preservada.",
+          "tags": [
+            "normal",
+            "estenose_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 75,
+          "titulo": "VE normal cão",
+          "texto": "Ventrículo esquerdo com diametros internos e espessuras parietais dentro dos limites de referencia para a espécie canina. Geometria e proporcoes adequadas.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 76,
+          "titulo": "VE normal gato",
+          "texto": "Ventrículo esquerdo com dimensões e espessuras parietais dentro dos limites normais para a espécie felina. Sem sinais de hipertrofia ou dilatacao.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        },
+        {
+          "id": 77,
+          "titulo": "VE com dilatacao leve DCM inicial",
+          "texto": "Ventrículo esquerdo com discreto aumento dos diametros internos e leve redução da espessura parietal relativa, sugestivo de fase inicial de cardiomiopatia dilatada.",
+          "tags": [
+            "dcm",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 140,
+          "ativo": 1
+        },
+        {
+          "id": 78,
+          "titulo": "VE com remodelamento excêntrico avancado",
+          "texto": "Ventrículo esquerdo com remodelamento excêntrico avancado, dilatacao acentuada dos diametros em diástole e sístole, e geometria esferoide, compativel com doenca miocárdica avancada.",
+          "tags": [
+            "dcm",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 150,
+          "ativo": 1
+        },
+        {
+          "id": 79,
+          "titulo": "VE com padrao restritivo",
+          "texto": "Ventrículo esquerdo com dimensões internas normais a discretamente reduzidas, espessuras parietais normais ou levemente aumentadas, com padrao funcional sugestivo de cardiomiopatia restritiva.",
+          "tags": [
+            "restritiva",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 160,
+          "ativo": 1
+        },
+        {
+          "id": 80,
+          "titulo": "VE dilatado DCM felina",
+          "texto": "Ventrículo esquerdo com dilatacao dos diametros internos e afilamento das paredes, compativel com cardiomiopatia dilatada felina.",
+          "tags": [
+            "dcm",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 170,
+          "ativo": 1
+        },
+        {
+          "id": 81,
+          "titulo": "VE com sobrecarga volumétrica por PDA",
+          "texto": "Ventrículo esquerdo com dilatacao dos diametros internos e remodelamento excêntrico, compativel com sobrecarga volumétrica secundaria a persistencia do ducto arterioso.",
+          "tags": [
+            "congenita",
+            "PDA",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 180,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "funcao_sistolica_ve",
+      "label": "Funcao sistolica do VE",
+      "categoria": "Funcao",
+      "descricao": "Comportamento da contratilidade e da funcao sistolica global.",
+      "placeholder": "Descreva funcao sistolica, hipercinesia, hipocinesia ou preservacao da contratilidade.",
+      "legacy_field": "funcao",
+      "ordem": 70,
+      "frases": [
+        {
+          "id": 82,
+          "titulo": "Função sistólica normal",
+          "texto": "Função sistólica global do ventrículo esquerdo preservada, com fração de encurtamento e fração de ejeção dentro dos parametros normais para a espécie.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 83,
+          "titulo": "Função sistólica hiperdinamica",
+          "texto": "Função sistólica global do ventrículo esquerdo hiperdinamica, com fração de encurtamento acima dos valores de referencia, compativel com estado hipercontratil.",
+          "tags": [
+            "hiperdinamica",
+            "endocardiose",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 84,
+          "titulo": "Função sistólica preservada com hipercinesia compensatoria",
+          "texto": "Função sistólica global do ventrículo esquerdo com hipercinesia parietal, interpretada como resposta compensatoria a sobrecarga volumétrica crônica. Fração de encurtamento elevada.",
+          "tags": [
+            "endocardiose",
+            "hiperdinamica",
+            "cao",
+            "B2",
+            "C"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 85,
+          "titulo": "Função sistólica levemente reduzida",
+          "texto": "Função sistólica global do ventrículo esquerdo com redução leve dos indices de contratilidade, com fração de encurtamento no limite inferior ou discretamente abaixo dos valores de referencia.",
+          "tags": [
+            "leve",
+            "dcm",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 86,
+          "titulo": "Função sistólica moderadamente reduzida",
+          "texto": "Função sistólica global do ventrículo esquerdo moderadamente comprometida, com redução significativa da fração de encurtamento e da fração de ejeção. Hipocinesia difusa das paredes.",
+          "tags": [
+            "moderado",
+            "dcm",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 87,
+          "titulo": "Função sistólica gravemente reduzida",
+          "texto": "Função sistólica global do ventrículo esquerdo gravemente comprometida, com hipocinesia difusa acentuada e redução importante da fração de encurtamento e da fração de ejeção. Compativel com disfunção miocárdica avancada.",
+          "tags": [
+            "grave",
+            "dcm",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 88,
+          "titulo": "Função sistólica preservada HCM",
+          "texto": "Função sistólica global do ventrículo esquerdo preservada ou supranormal, com fração de encurtamento dentro ou acima dos parametros normais, no contexto de hipertrofia miocárdica.",
+          "tags": [
+            "hcm",
+            "gato",
+            "normal"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 89,
+          "titulo": "Função sistólica reduzida DCM felina",
+          "texto": "Função sistólica global do ventrículo esquerdo reduzida, com hipocinesia difusa e fração de encurtamento abaixo dos valores de referencia para a espécie felina, compativel com cardiomiopatia dilatada.",
+          "tags": [
+            "dcm",
+            "gato",
+            "moderado"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 90,
+          "titulo": "Função sistólica normal cão",
+          "texto": "Função sistólica do ventrículo esquerdo preservada, com contratilidade global adequada e fração de encurtamento dentro dos limites normais para a espécie canina.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 91,
+          "titulo": "Função sistólica normal gato",
+          "texto": "Função sistólica do ventrículo esquerdo preservada, com contratilidade global adequada e fração de encurtamento dentro dos limites normais para a espécie felina.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 92,
+          "titulo": "Função sistólica em declinio incipiente",
+          "texto": "Função sistólica global do ventrículo esquerdo com indices de contratilidade no limite inferior da normalidade, sugerindo declinio funcional incipiente.",
+          "tags": [
+            "leve",
+            "dcm",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 93,
+          "titulo": "Função sistólica com hipocinesia segmentar",
+          "texto": "Função sistólica global do ventrículo esquerdo comprometida, com areas de hipocinesia segmentar identificadas, sugestivas de acometimento miocárdico regional.",
+          "tags": [
+            "moderado",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 94,
+          "titulo": "Hipercinesia por endocardiose avancada",
+          "texto": "Função sistólica global do ventrículo esquerdo com hipercinesia compensatoria secundaria a sobrecarga volumétrica crônica por regurgitação mitral importante. Fração de encurtamento superestimada pela sobrecarga volumétrica.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "C",
+            "D"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "funcao_diastolica",
+      "label": "Funcao diastolica",
+      "categoria": "Funcao",
+      "descricao": "Padrao de enchimento e relaxamento ventricular.",
+      "placeholder": "Descreva funcao diastolica, padrao de enchimento e relaxamento.",
+      "legacy_field": "funcao",
+      "ordem": 80,
+      "frases": [
+        {
+          "id": 95,
+          "titulo": "Função diástólica normal",
+          "texto": "Função diástólica do ventrículo esquerdo preservada, com padrao de enchimento normal ao Doppler transmitral. Relação E/A dentro dos parametros normais.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 96,
+          "titulo": "Relaxamento diástólico alterado",
+          "texto": "Padrao de enchimento ventricular esquerdo com alteração do relaxamento (padrao tipo I), com inversao da relação E/A ao Doppler transmitral e tempo de relaxamento isovolumico prolongado.",
+          "tags": [
+            "alterado",
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 97,
+          "titulo": "Padrao pseudonormal",
+          "texto": "Padrao de enchimento ventricular esquerdo com relação E/A aparentemente normal (pseudonormal), porem com tempo de desaceleracao reduzido e velocidade do anel mitral ao Doppler tecidual diminuida, sugestivo de disfunção diástólica de grau moderado.",
+          "tags": [
+            "moderado",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 98,
+          "titulo": "Padrao restritivo",
+          "texto": "Padrao de enchimento ventricular esquerdo restritivo (padrao tipo III), com relação E/A acentuadamente elevada, tempo de desaceleracao encurtado e velocidade de onda E elevada. Compativel com pressões de enchimento acentuadamente elevadas.",
+          "tags": [
+            "grave",
+            "restritivo",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 99,
+          "titulo": "Disfunção diástólica por HCM",
+          "texto": "Função diástólica do ventrículo esquerdo comprometida no contexto de hipertrofia miocárdica, com alteração do relaxamento e elevacao das pressões de enchimento. Padrao de enchimento compativel com disfunção diástólica.",
+          "tags": [
+            "hcm",
+            "gato",
+            "alterado"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 100,
+          "titulo": "Disfunção diástólica por HCM com padrao restritivo",
+          "texto": "Função diástólica gravemente comprometida no contexto de cardiomiopatia hipertrófica, com padrao de enchimento restritivo e pressões de enchimento acentuadamente elevadas.",
+          "tags": [
+            "hcm",
+            "gato",
+            "grave",
+            "restritivo"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 101,
+          "titulo": "Função diástólica preservada cão",
+          "texto": "Função diástólica do ventrículo esquerdo preservada, com padrao de enchimento normal ao Doppler transmitral para a espécie canina.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 102,
+          "titulo": "Função diástólica preservada gato",
+          "texto": "Função diástólica do ventrículo esquerdo preservada, com padrao de enchimento adequado ao Doppler transmitral para a espécie felina.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 103,
+          "titulo": "Fusao de ondas E e A",
+          "texto": "Fusao das ondas E e A ao Doppler transmitral pela frequencia cardíaca elevada, impossibilitando avaliação adequada do padrao de enchimento diástólico convencional.",
+          "tags": [
+            "taquicardia",
+            "gato",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 104,
+          "titulo": "Disfunção diástólica leve",
+          "texto": "Função diástólica do ventrículo esquerdo com alteração discreta do relaxamento, sem elevacao significativa das pressões de enchimento.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 105,
+          "titulo": "Disfunção diástólica restritiva felina",
+          "texto": "Padrao de enchimento ventricular esquerdo restritivo, com relação E/A elevada e tempo de desaceleracao reduzido, compativel com redução importante da complacencia ventricular no contexto de cardiomiopatia restritiva.",
+          "tags": [
+            "restritiva",
+            "gato",
+            "grave"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 201,
+          "titulo": "Função diastólica felina: padrão preservado",
+          "texto": "Função diastólica ventricular esquerda sem alteração relevante nos parâmetros avaliáveis do exame.",
+          "tags": [
+            "gato",
+            "diastolica",
+            "preservada"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 202,
+          "titulo": "Função diastólica felina: relaxamento retardado",
+          "texto": "Padrão de relaxamento ventricular esquerdo retardado, conforme avaliação integrada dos parâmetros diastólicos disponíveis.",
+          "tags": [
+            "gato",
+            "diastolica",
+            "relaxamento"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        },
+        {
+          "id": 203,
+          "titulo": "Função diastólica felina: padrão pseudonormal",
+          "texto": "Padrão de enchimento ventricular esquerdo pseudonormal, identificado pela avaliação conjunta do fluxo transmitral e dos demais marcadores diastólicos disponíveis.",
+          "tags": [
+            "gato",
+            "diastolica",
+            "pseudonormal"
+          ],
+          "patologias": [],
+          "ordem": 140,
+          "ativo": 1
+        },
+        {
+          "id": 204,
+          "titulo": "Função diastólica felina: padrão restritivo",
+          "texto": "Padrão de enchimento ventricular esquerdo restritivo, segundo a avaliação integrada dos parâmetros diastólicos disponíveis.",
+          "tags": [
+            "gato",
+            "diastolica",
+            "restritivo"
+          ],
+          "patologias": [],
+          "ordem": 150,
+          "ativo": 1
+        },
+        {
+          "id": 205,
+          "titulo": "Função diastólica felina: classificação indeterminada",
+          "texto": "Classificação do padrão diastólico indeterminada neste exame, devido à limitação ou discordância dos parâmetros disponíveis.",
+          "tags": [
+            "gato",
+            "diastolica",
+            "indeterminada"
+          ],
+          "patologias": [],
+          "ordem": 160,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "atrio_direito",
+      "label": "Atrio direito",
+      "categoria": "Camaras direitas",
+      "descricao": "Dimensoes e comportamento do atrio direito.",
+      "placeholder": "Descreva volume e remodelamento do atrio direito.",
+      "legacy_field": "ad_vd",
+      "ordem": 90,
+      "frases": [
+        {
+          "id": 106,
+          "titulo": "AD normal",
+          "texto": "Átrio direito com dimensões normais, sem sinais de dilatacao ou remodelamento.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 107,
+          "titulo": "AD discretamente aumentado",
+          "texto": "Átrio direito com discreto aumento dimensional, sugestivo de sobrecarga volumétrica leve das câmaras direitas.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 108,
+          "titulo": "AD moderadamente aumentado",
+          "texto": "Átrio direito com aumento moderado de suas dimensões, compativel com sobrecarga volumétrica ou de pressão das câmaras direitas.",
+          "tags": [
+            "moderado",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 109,
+          "titulo": "AD acentuadamente dilatado",
+          "texto": "Átrio direito com dilatacao acentuada, indicando sobrecarga crônica importante das câmaras direitas.",
+          "tags": [
+            "grave",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 110,
+          "titulo": "AD dilatado por displasia tricúspide",
+          "texto": "Átrio direito com dilatacao significativa secundaria a regurgitação tricúspide crônica por displasia valvar.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 111,
+          "titulo": "AD dilatado por hipertensao pulmonar",
+          "texto": "Átrio direito com dilatacao secundaria a sobrecarga de pressão por hipertensao pulmonar.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 112,
+          "titulo": "AD normal cão",
+          "texto": "Átrio direito com dimensões dentro dos limites de referencia para a espécie canina.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 113,
+          "titulo": "AD normal gato",
+          "texto": "Átrio direito com dimensões dentro dos limites normais para a espécie felina.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "ventriculo_direito",
+      "label": "Ventriculo direito",
+      "categoria": "Camaras direitas",
+      "descricao": "Dimensoes, espessura e desempenho do ventriculo direito.",
+      "placeholder": "Descreva diametro, hipertrofia, dilatacao e funcao do ventriculo direito.",
+      "legacy_field": "ad_vd",
+      "ordem": 100,
+      "frases": [
+        {
+          "id": 114,
+          "titulo": "VD normal",
+          "texto": "Ventrículo direito com dimensões, espessura parietal e função dentro dos limites normais. Sem sinais de dilatacao ou hipertrofia.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 115,
+          "titulo": "VD com dilatacao leve",
+          "texto": "Ventrículo direito com discreto aumento dos diametros internos, compativel com sobrecarga volumétrica leve. Espessura parietal preservada.",
+          "tags": [
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 116,
+          "titulo": "VD com dilatacao moderada",
+          "texto": "Ventrículo direito com aumento moderado dos diametros, com desvio do septo interventricular em direcao ao ventrículo esquerdo em diástole. Compativel com sobrecarga volumétrica moderada.",
+          "tags": [
+            "moderado",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 117,
+          "titulo": "VD com dilatacao acentuada",
+          "texto": "Ventrículo direito com dilatacao acentuada, predominando sobre o ventrículo esquerdo, com desvio significativo do septo interventricular. Compativel com sobrecarga crônica importante das câmaras direitas.",
+          "tags": [
+            "grave",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 118,
+          "titulo": "VD com hipertrofia concentrica",
+          "texto": "Ventrículo direito com aumento da espessura da parede livre, compativel com hipertrofia concentrica secundaria a sobrecarga de pressão.",
+          "tags": [
+            "hipertrofia",
+            "hipertensao_pulmonar",
+            "estenose_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 119,
+          "titulo": "VD com hipertrofia por estenose pulmonar",
+          "texto": "Ventrículo direito com hipertrofia concentrica da parede livre e do septo interventricular, secundaria a sobrecarga de pressão crônica por estenose pulmonar.",
+          "tags": [
+            "estenose_pulmonar",
+            "hipertrofia",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 120,
+          "titulo": "VD com hipertrofia e dilatacao por hipertensao pulmonar",
+          "texto": "Ventrículo direito com hipertrofia da parede livre e dilatacao da cavidade, compativel com sobrecarga crônica de pressão e volume por hipertensao pulmonar avancada.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 121,
+          "titulo": "VD dilatado por displasia tricúspide",
+          "texto": "Ventrículo direito com dilatacao significativa secundaria a regurgitação tricúspide crônica por displasia valvar. Função sistólica do VD reduzida.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 122,
+          "titulo": "VD normal cão",
+          "texto": "Ventrículo direito com dimensões e espessura parietal dentro dos parametros normais para a espécie canina. Função preservada.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 123,
+          "titulo": "VD normal gato",
+          "texto": "Ventrículo direito com dimensões e espessura parietal normais para a espécie felina. Sem sinais de sobrecarga.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 124,
+          "titulo": "Cor pulmonale",
+          "texto": "Ventrículo direito com hipertrofia e dilatacao significativas, associado a dilatacao do átrio direito, configurando padrao de cor pulmonale compativel com hipertensao pulmonar crônica.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "grave",
+            "cor_pulmonale",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 125,
+          "titulo": "VD com função reduzida",
+          "texto": "Ventrículo direito com redução da excursao sistólica e contratilidade global diminuida, indicando disfunção sistólica do ventrículo direito.",
+          "tags": [
+            "grave",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "septos",
+      "label": "Septos",
+      "categoria": "Estruturas complementares",
+      "descricao": "Avaliacao dos septos interatrial e interventricular.",
+      "placeholder": "Descreva integridade septal, movimento e eventuais defeitos.",
+      "legacy_field": "camaras",
+      "ordem": 110,
+      "frases": [
+        {
+          "id": 126,
+          "titulo": "Septos integros",
+          "texto": "Septos interatrial e interventricular integros, sem evidências de defeitos ou comunicações anômalas ao mapeamento com Doppler colorido.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 127,
+          "titulo": "Septo interventricular integro",
+          "texto": "Septo interventricular integro, com espessura e mobilidade normais. Sem evidências de comunicacao interventricular ao Doppler colorido.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 128,
+          "titulo": "CIV perimembranosa",
+          "texto": "Identificado defeito no septo interventricular em regiao perimembranosa, com fluxo turbulento de alta velocidade da esquerda para a direita ao Doppler colorido, compativel com comunicacao interventricular.",
+          "tags": [
+            "congenita",
+            "CIV",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 129,
+          "titulo": "CIV muscular",
+          "texto": "Identificado defeito no septo interventricular em porcao muscular, com fluxo da esquerda para a direita ao Doppler colorido, compativel com comunicacao interventricular muscular.",
+          "tags": [
+            "congenita",
+            "CIV",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 130,
+          "titulo": "CIV restritiva pequena",
+          "texto": "Pequeno defeito do septo interventricular com fluxo restritivo de alta velocidade ao Doppler, sugestivo de comunicacao interventricular restritiva sem repercussão hemodinâmica significativa.",
+          "tags": [
+            "congenita",
+            "CIV",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 131,
+          "titulo": "CIV ampla com repercussão",
+          "texto": "Defeito amplo do septo interventricular com fluxo bidirecional ou de baixa velocidade ao Doppler, indicando comunicacao interventricular não restritiva com repercussão hemodinâmica significativa.",
+          "tags": [
+            "congenita",
+            "CIV",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 132,
+          "titulo": "CIA",
+          "texto": "Identificado defeito no septo interatrial com fluxo da esquerda para a direita ao Doppler colorido, compativel com comunicacao interatrial.",
+          "tags": [
+            "congenita",
+            "CIA",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 133,
+          "titulo": "Movimento septal paradoxal",
+          "texto": "Septo interventricular com movimento paradoxal, deslocando-se em direcao ao ventrículo esquerdo durante a diástole, compativel com sobrecarga volumétrica ou de pressão do ventrículo direito.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 134,
+          "titulo": "Septo interventricular hipertrofiado",
+          "texto": "Septo interventricular com espessura aumentada, compativel com hipertrofia septal.",
+          "tags": [
+            "hipertrofia",
+            "hcm",
+            "gato",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 135,
+          "titulo": "Septo interventricular hipertrofiado assimetrico gato",
+          "texto": "Septo interventricular com hipertrofia assimétrica, com espessura significativamente superior a da parede livre do ventrículo esquerdo, padrao compativel com cardiomiopatia hipertrófica.",
+          "tags": [
+            "hcm",
+            "gato",
+            "assimetrica"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 136,
+          "titulo": "Septos integros gato",
+          "texto": "Septos interatrial e interventricular integros, sem defeitos identificados ao Doppler colorido na espécie felina.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "aorta",
+      "label": "Aorta",
+      "categoria": "Vasos",
+      "descricao": "Avaliacao da raiz da aorta e comportamento do vaso.",
+      "placeholder": "Descreva raiz aortica, dimensoes e observacoes relevantes da aorta.",
+      "legacy_field": "vasos",
+      "ordem": 120,
+      "frases": [
+        {
+          "id": 137,
+          "titulo": "Aorta normal",
+          "texto": "Raiz da aorta com dimensões dentro dos limites normais para a espécie e porte. Paredes com ecogenicidade habitual.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 138,
+          "titulo": "Aorta com dilatacao discreta",
+          "texto": "Raiz da aorta com discreto aumento dimensional, sem alteração significativa das paredes.",
+          "tags": [
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 139,
+          "titulo": "Aorta normal com anel subaortico visivel",
+          "texto": "Raiz da aorta com dimensões normais. Identificada estrutura subvalvar na via de saida do ventrículo esquerdo, compativel com anel fibroso subaortico.",
+          "tags": [
+            "estenose_subaortica",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 140,
+          "titulo": "Aorta com dilatacao pos-estenotica",
+          "texto": "Raiz da aorta com dilatacao pos-estenotica secundaria a aceleracao crônica do fluxo por estenose subaortica.",
+          "tags": [
+            "estenose_subaortica",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 141,
+          "titulo": "Aorta normal cão",
+          "texto": "Raiz da aorta com dimensões dentro dos parametros de referencia para a espécie canina. Paredes de aspecto habitual.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 142,
+          "titulo": "Aorta normal gato",
+          "texto": "Raiz da aorta com dimensões normais para a espécie felina. Sem alterações parietais.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 143,
+          "titulo": "Aorta com fluxo turbulento por PDA",
+          "texto": "Raiz da aorta com dimensões normais. Fluxo retrogrado diástólico identificado na aorta descendente, compativel com persistencia do ducto arterioso.",
+          "tags": [
+            "congenita",
+            "PDA",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 144,
+          "titulo": "Aorta com esclerose discreta",
+          "texto": "Raiz da aorta com dimensões normais e discreto aumento de ecogenicidade das paredes, compativel com alteração degenerativa senil.",
+          "tags": [
+            "degenerativo",
+            "idoso",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "arteria_pulmonar",
+      "label": "Arteria pulmonar",
+      "categoria": "Vasos",
+      "descricao": "Avaliacao da arteria pulmonar e sua relacao com a aorta.",
+      "placeholder": "Descreva arteria pulmonar, relacao AP/Ao e observacoes do fluxo.",
+      "legacy_field": "vasos",
+      "ordem": 130,
+      "frases": [
+        {
+          "id": 145,
+          "titulo": "AP normal",
+          "texto": "Artéria pulmonar com dimensões normais e relação artéria pulmonar/aorta preservada. Fluxo anterogrado laminar ao Doppler espectral.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 146,
+          "titulo": "AP com dilatacao discreta",
+          "texto": "Artéria pulmonar com discreto aumento dimensional, com relação AP/Ao levemente elevada.",
+          "tags": [
+            "leve",
+            "hipertensao_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 147,
+          "titulo": "AP dilatada por hipertensao pulmonar",
+          "texto": "Artéria pulmonar com dilatacao significativa e relação AP/Ao elevada, compativel com hipertensao pulmonar. Perfil de fluxo ao Doppler espectral com tempo de aceleracao reduzido.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "moderado",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 148,
+          "titulo": "AP com dilatacao pos-estenotica",
+          "texto": "Artéria pulmonar com dilatacao pos-estenotica secundaria a estenose pulmonar, com aumento focal do diametro do tronco pulmonar.",
+          "tags": [
+            "estenose_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 149,
+          "titulo": "AP com fluxo continuo por PDA",
+          "texto": "Fluxo continuo retrogrado identificado na artéria pulmonar ao Doppler colorido e espectral, compativel com persistencia do ducto arterioso.",
+          "tags": [
+            "congenita",
+            "PDA",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 150,
+          "titulo": "AP normal cão",
+          "texto": "Artéria pulmonar com dimensões e fluxo dentro dos limites normais para a espécie canina. Relação AP/Ao preservada.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 151,
+          "titulo": "AP normal gato",
+          "texto": "Artéria pulmonar com dimensões normais para a espécie felina. Fluxo anterogrado adequado ao Doppler espectral.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 152,
+          "titulo": "AP com tempo de aceleracao reduzido",
+          "texto": "Artéria pulmonar com fluxo apresentando tempo de aceleracao reduzido e possível entalhe mesossistolico ao Doppler espectral, sugestivo de resistencia vascular pulmonar elevada.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 153,
+          "titulo": "AP dilatada moderadamente",
+          "texto": "Artéria pulmonar com dilatacao moderada, sugestiva de sobrecarga crônica de pressão ou volume.",
+          "tags": [
+            "moderado",
+            "hipertensao_pulmonar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "pericardio",
+      "label": "Pericardio",
+      "categoria": "Estruturas complementares",
+      "descricao": "Avaliacao do saco pericardico e espaco pericardico.",
+      "placeholder": "Descreva espessamento, derrame ou ausencia de alteracoes pericardicas.",
+      "legacy_field": "pericardio",
+      "ordem": 140,
+      "frases": [
+        {
+          "id": 154,
+          "titulo": "Pericárdio normal",
+          "texto": "Saco pericardico de aspecto habitual, sem evidências de derrame ou espessamento. Folhetos pericardicos com ecogenicidade normal.",
+          "tags": [
+            "normal",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 155,
+          "titulo": "Derrame pericardico discreto",
+          "texto": "Presença de derrame pericardico de volume discreto, com separacao dos folhetos pericardicos predominando na regiao posterior. Sem sinais de compressao de câmaras.",
+          "tags": [
+            "derrame",
+            "leve",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 156,
+          "titulo": "Derrame pericardico moderado",
+          "texto": "Derrame pericardico de volume moderado, circunferencial, com separacao significativa dos folhetos pericardicos. Câmaras cardíacas sem sinais evidentes de tamponamento.",
+          "tags": [
+            "derrame",
+            "moderado",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 157,
+          "titulo": "Derrame pericardico importante",
+          "texto": "Derrame pericardico de volume importante, circunferencial, com grande separacao entre os folhetos pericardicos e o epicardio. Coracao com aspecto oscilante dentro do saco pericardico.",
+          "tags": [
+            "derrame",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 158,
+          "titulo": "Tamponamento cardíaco",
+          "texto": "Derrame pericardico de volume significativo com sinais de tamponamento cardíaco, incluindo colapso diástólico do átrio e/ou ventrículo direito. Comprometimento hemodinâmico evidente.",
+          "tags": [
+            "derrame",
+            "tamponamento",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 159,
+          "titulo": "Derrame pericardico com massa",
+          "texto": "Derrame pericardico presente, associado a imagem sugestiva de massa em topografia de base cardíaca ou auricula direita, sendo necessária investigacao complementar.",
+          "tags": [
+            "derrame",
+            "massa",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 160,
+          "titulo": "Espessamento pericardico",
+          "texto": "Folhetos pericardicos com aumento de espessura e ecogenicidade, sugestivo de pericardite ou processo inflamatorio crônico pericardico.",
+          "tags": [
+            "pericardite",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 161,
+          "titulo": "Derrame pericardico discreto gato",
+          "texto": "Presença de lâmina de derrame pericardico discreto na espécie felina. Sem sinais de compressao de câmaras.",
+          "tags": [
+            "derrame",
+            "leve",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 162,
+          "titulo": "Pericárdio normal cão",
+          "texto": "Espaco pericardico livre, sem derrame ou espessamento dos folhetos, na espécie canina.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 163,
+          "titulo": "Pericárdio normal gato",
+          "texto": "Espaco pericardico livre, sem derrame ou espessamento dos folhetos, na espécie felina.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        }
+      ]
+    },
+    {
+      "key": "conclusao",
+      "label": "Conclusao",
+      "categoria": "Conclusao",
+      "descricao": "Sintese final do ecocardiograma.",
+      "placeholder": "Escreva a sintese final do exame com os principais achados.",
+      "legacy_field": "conclusao",
+      "ordem": 150,
+      "frases": [
+        {
+          "id": 164,
+          "titulo": "Exame normal cão",
+          "texto": "Ecocardiograma dentro dos limites da normalidade para a espécie canina. Dimensões cavitarias, espessuras parietais, função sistólica e diástólica preservadas. Valvas sem alterações morfologicas significativas. Sem evidências de cardiopatia estrutural.",
+          "tags": [
+            "normal",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 10,
+          "ativo": 1
+        },
+        {
+          "id": 165,
+          "titulo": "Exame normal gato",
+          "texto": "Ecocardiograma dentro dos limites da normalidade para a espécie felina. Dimensões cavitarias, espessuras parietais, função sistólica e diástólica preservadas. Sem evidências de cardiomiopatia ou doenca valvar.",
+          "tags": [
+            "normal",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 20,
+          "ativo": 1
+        },
+        {
+          "id": 166,
+          "titulo": "Endocardiose mitral B1",
+          "texto": "Achados ecocardiográficos compativeis com degeneracao mixomatosa da valva mitral com refluxo de grau leve, sem remodelamento cardíaco significativo. Estagio B1 (ACVIM).",
+          "tags": [
+            "endocardiose",
+            "leve",
+            "cao",
+            "B1"
+          ],
+          "patologias": [],
+          "ordem": 30,
+          "ativo": 1
+        },
+        {
+          "id": 167,
+          "titulo": "Endocardiose mitral B2",
+          "texto": "Achados ecocardiográficos compativeis com degeneracao mixomatosa da valva mitral com refluxo moderado e remodelamento das câmaras esquerdas (dilatacao atrial e ventricular). Estagio B2 (ACVIM), indicando sobrecarga volumétrica com repercussão hemodinâmica.",
+          "tags": [
+            "endocardiose",
+            "moderado",
+            "cao",
+            "B2"
+          ],
+          "patologias": [],
+          "ordem": 40,
+          "ativo": 1
+        },
+        {
+          "id": 168,
+          "titulo": "Endocardiose mitral C",
+          "texto": "Achados ecocardiográficos compativeis com degeneracao mixomatosa avancada da valva mitral com refluxo importante e remodelamento significativo das câmaras esquerdas. Estagio C (ACVIM), compativel com insuficiencia cardíaca congestiva.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "C",
+            "ICC"
+          ],
+          "patologias": [],
+          "ordem": 50,
+          "ativo": 1
+        },
+        {
+          "id": 169,
+          "titulo": "Endocardiose mitral D",
+          "texto": "Achados ecocardiográficos compativeis com degeneracao mixomatosa avancada da valva mitral com refluxo severo e remodelamento cardíaco acentuado. Estagio D (ACVIM), compativel com insuficiencia cardíaca refratária.",
+          "tags": [
+            "endocardiose",
+            "grave",
+            "cao",
+            "D",
+            "ICC"
+          ],
+          "patologias": [],
+          "ordem": 60,
+          "ativo": 1
+        },
+        {
+          "id": 170,
+          "titulo": "Endocardiose mitral e tricúspide",
+          "texto": "Achados ecocardiográficos compativeis com degeneracao mixomatosa multivalvar, acometendo as valvas mitral e tricúspide, com graus variaveis de refluxo e remodelamento biventricular.",
+          "tags": [
+            "endocardiose",
+            "multivalvar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 70,
+          "ativo": 1
+        },
+        {
+          "id": 171,
+          "titulo": "DCM compensada",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia dilatada, com dilatacao ventricular esquerda e redução da função sistólica global. Sem sinais de descompensacao congestiva ao momento do exame.",
+          "tags": [
+            "dcm",
+            "cao",
+            "moderado"
+          ],
+          "patologias": [],
+          "ordem": 80,
+          "ativo": 1
+        },
+        {
+          "id": 172,
+          "titulo": "DCM descompensada",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia dilatada avancada, com dilatacao biventricular, disfunção sistólica importante e dilatacao atrial significativa. Quadro compativel com insuficiencia cardíaca congestiva.",
+          "tags": [
+            "dcm",
+            "cao",
+            "grave",
+            "ICC"
+          ],
+          "patologias": [],
+          "ordem": 90,
+          "ativo": 1
+        },
+        {
+          "id": 173,
+          "titulo": "HCM leve gato",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia hipertrófica de grau leve, com hipertrofia ventricular esquerda discreta. Função sistólica preservada. Sem dilatacao atrial significativa.",
+          "tags": [
+            "hcm",
+            "gato",
+            "leve"
+          ],
+          "patologias": [],
+          "ordem": 100,
+          "ativo": 1
+        },
+        {
+          "id": 174,
+          "titulo": "HCM moderada gato",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia hipertrófica de grau moderado, com hipertrofia ventricular esquerda significativa, disfunção diástólica e aumento atrial esquerdo. Função sistólica preservada.",
+          "tags": [
+            "hcm",
+            "gato",
+            "moderado"
+          ],
+          "patologias": [],
+          "ordem": 110,
+          "ativo": 1
+        },
+        {
+          "id": 175,
+          "titulo": "HCM importante gato",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia hipertrófica de grau importante, com hipertrofia ventricular esquerda acentuada, disfunção diástólica grave e dilatacao atrial esquerda significativa. Risco aumentado de tromboembolismo e insuficiencia cardíaca.",
+          "tags": [
+            "hcm",
+            "gato",
+            "grave"
+          ],
+          "patologias": [],
+          "ordem": 120,
+          "ativo": 1
+        },
+        {
+          "id": 176,
+          "titulo": "HCM obstrutiva com SAM",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia hipertrófica obstrutiva, com movimento anterior sistólico da valva mitral (SAM) promovendo obstrução dinâmica da via de saida do ventrículo esquerdo. Hipertrofia ventricular esquerda significativa e refluxo mitral associado.",
+          "tags": [
+            "hcm",
+            "obstrutiva",
+            "SAM",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 130,
+          "ativo": 1
+        },
+        {
+          "id": 177,
+          "titulo": "Cardiomiopatia restritiva felina",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia restritiva, com disfunção diástólica importante, padrao de enchimento restritivo e dilatacao atrial esquerda. Dimensões e função sistólica do ventrículo esquerdo relativamente preservadas.",
+          "tags": [
+            "restritiva",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 140,
+          "ativo": 1
+        },
+        {
+          "id": 178,
+          "titulo": "DCM felina",
+          "texto": "Achados ecocardiográficos compativeis com cardiomiopatia dilatada felina, com dilatacao ventricular esquerda, afilamento parietal e disfunção sistólica global.",
+          "tags": [
+            "dcm",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 150,
+          "ativo": 1
+        },
+        {
+          "id": 179,
+          "titulo": "Hipertensao pulmonar leve",
+          "texto": "Achados ecocardiográficos sugestivos de hipertensao pulmonar de grau leve, com refluxo tricúspide permitindo estimativa de pressão sistólica do ventrículo direito levemente elevada. Câmaras direitas sem remodelamento significativo.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 160,
+          "ativo": 1
+        },
+        {
+          "id": 180,
+          "titulo": "Hipertensao pulmonar moderada",
+          "texto": "Achados ecocardiográficos compativeis com hipertensao pulmonar de grau moderado, com refluxo tricúspide e estimativa de pressão sistólica do ventrículo direito moderadamente elevada. Remodelamento incipiente das câmaras direitas.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "moderado",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 170,
+          "ativo": 1
+        },
+        {
+          "id": 181,
+          "titulo": "Hipertensao pulmonar importante",
+          "texto": "Achados ecocardiográficos compativeis com hipertensao pulmonar de grau importante, com pressão sistólica do ventrículo direito significativamente elevada. Dilatacao e hipertrofia do ventrículo direito, dilatacao da artéria pulmonar e do átrio direito. Padrao de cor pulmonale.",
+          "tags": [
+            "hipertensao_pulmonar",
+            "grave",
+            "cor_pulmonale",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 180,
+          "ativo": 1
+        },
+        {
+          "id": 182,
+          "titulo": "Estenose subaortica leve conclusão",
+          "texto": "Achados ecocardiográficos compativeis com estenose subaortica de grau leve, com obstrução fixa discreta na via de saida do ventrículo esquerdo e aceleracao leve do fluxo aortico.",
+          "tags": [
+            "congenita",
+            "estenose_subaortica",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 190,
+          "ativo": 1
+        },
+        {
+          "id": 183,
+          "titulo": "Estenose subaortica moderada a importante conclusão",
+          "texto": "Achados ecocardiográficos compativeis com estenose subaortica de grau moderado a importante, com obstrução fixa significativa na via de saida do ventrículo esquerdo, aceleracao acentuada do fluxo e hipertrofia concentrica compensatoria do ventrículo esquerdo.",
+          "tags": [
+            "congenita",
+            "estenose_subaortica",
+            "moderado",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 200,
+          "ativo": 1
+        },
+        {
+          "id": 184,
+          "titulo": "Estenose pulmonar leve conclusão",
+          "texto": "Achados ecocardiográficos compativeis com estenose pulmonar de grau leve, com aceleracao discreta do fluxo pulmonar. Sem hipertrofia significativa do ventrículo direito.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "leve",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 210,
+          "ativo": 1
+        },
+        {
+          "id": 185,
+          "titulo": "Estenose pulmonar moderada a importante conclusão",
+          "texto": "Achados ecocardiográficos compativeis com estenose pulmonar de grau moderado a importante, com aceleracao significativa do fluxo pulmonar e hipertrofia concentrica do ventrículo direito.",
+          "tags": [
+            "congenita",
+            "estenose_pulmonar",
+            "moderado",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 220,
+          "ativo": 1
+        },
+        {
+          "id": 186,
+          "titulo": "Displasia tricúspide conclusão",
+          "texto": "Achados ecocardiográficos compativeis com displasia congênita da valva tricúspide, com malformacao valvar, refluxo tricúspide significativo e dilatacao das câmaras direitas.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 230,
+          "ativo": 1
+        },
+        {
+          "id": 187,
+          "titulo": "Displasia mitral conclusão",
+          "texto": "Achados ecocardiográficos compativeis com displasia congênita da valva mitral, com malformacao valvar, refluxo mitral e repercussão sobre as câmaras esquerdas.",
+          "tags": [
+            "congenita",
+            "displasia",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 240,
+          "ativo": 1
+        },
+        {
+          "id": 188,
+          "titulo": "PDA conclusão",
+          "texto": "Achados ecocardiográficos compativeis com persistencia do ducto arterioso (PDA), com fluxo retrogrado continuo na artéria pulmonar e sobrecarga volumétrica das câmaras esquerdas.",
+          "tags": [
+            "congenita",
+            "PDA",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 250,
+          "ativo": 1
+        },
+        {
+          "id": 189,
+          "titulo": "CIV conclusão",
+          "texto": "Achados ecocardiográficos compativeis com comunicacao interventricular, com defeito septal e fluxo da esquerda para a direita identificado ao Doppler colorido.",
+          "tags": [
+            "congenita",
+            "CIV",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 260,
+          "ativo": 1
+        },
+        {
+          "id": 190,
+          "titulo": "CIA conclusão",
+          "texto": "Achados ecocardiográficos compativeis com comunicacao interatrial, com defeito no septo interatrial e fluxo da esquerda para a direita ao Doppler colorido.",
+          "tags": [
+            "congenita",
+            "CIA",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 270,
+          "ativo": 1
+        },
+        {
+          "id": 191,
+          "titulo": "Derrame pericardico conclusão",
+          "texto": "Presença de derrame pericardico. Investigacao etiológica recomendada. Monitoramento ecocardiográfico indicado para avaliação evolutiva.",
+          "tags": [
+            "derrame",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 280,
+          "ativo": 1
+        },
+        {
+          "id": 192,
+          "titulo": "Tamponamento cardíaco conclusão",
+          "texto": "Derrame pericardico com sinais de tamponamento cardíaco, configurando emergencia cardiologica. Pericardiocentese indicada.",
+          "tags": [
+            "derrame",
+            "tamponamento",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 290,
+          "ativo": 1
+        },
+        {
+          "id": 193,
+          "titulo": "Doenca valvar mixomatosa multivalvar",
+          "texto": "Achados ecocardiográficos compativeis com doenca valvar mixomatosa multivalvar, com espessamento e refluxo em mais de uma valva atrioventricular. Remodelamento cardíaco bilateral de grau variavel.",
+          "tags": [
+            "endocardiose",
+            "multivalvar",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 300,
+          "ativo": 1
+        },
+        {
+          "id": 194,
+          "titulo": "Remodelamento sem ICC",
+          "texto": "Remodelamento cardíaco presente, porem sem sinais ecocardiográficos sugestivos de insuficiencia cardíaca congestiva ao momento do exame. Monitoramento recomendado.",
+          "tags": [
+            "remodelamento",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 310,
+          "ativo": 1
+        },
+        {
+          "id": 195,
+          "titulo": "Remodelamento com ICC",
+          "texto": "Remodelamento cardíaco significativo com achados compativeis com insuficiencia cardíaca congestiva, incluindo dilatacao atrial importante e sinais de elevacao das pressões de enchimento.",
+          "tags": [
+            "remodelamento",
+            "ICC",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 320,
+          "ativo": 1
+        },
+        {
+          "id": 196,
+          "titulo": "Alteração estrutural com função sistólica preservada",
+          "texto": "Alterações estruturais identificadas com função sistólica global do ventrículo esquerdo preservada. A manutencao da contratilidade não exclui disfunção diástólica ou risco de progressao.",
+          "tags": [
+            "funcao_preservada",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 330,
+          "ativo": 1
+        },
+        {
+          "id": 197,
+          "titulo": "Disfunção sistólica evidente",
+          "texto": "Disfunção sistólica do ventrículo esquerdo evidente, com redução significativa dos indices de contratilidade global. Quadro compativel com comprometimento miocárdico.",
+          "tags": [
+            "disfuncao_sistolica",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 340,
+          "ativo": 1
+        },
+        {
+          "id": 198,
+          "titulo": "Disfunção diástólica relevante conclusão",
+          "texto": "Disfunção diástólica do ventrículo esquerdo de grau relevante, com elevacao das pressões de enchimento e risco de descompensacao congestiva. Acompanhamento cardiologico recomendado.",
+          "tags": [
+            "disfuncao_diastolica",
+            "cao",
+            "gato"
+          ],
+          "patologias": [],
+          "ordem": 350,
+          "ativo": 1
+        },
+        {
+          "id": 199,
+          "titulo": "Cor pulmonale conclusão",
+          "texto": "Achados ecocardiográficos compativeis com cor pulmonale, com sobrecarga significativa das câmaras direitas secundaria a hipertensao pulmonar crônica. Investigacao da etiologia da hipertensao pulmonar recomendada.",
+          "tags": [
+            "cor_pulmonale",
+            "hipertensao_pulmonar",
+            "grave",
+            "cao"
+          ],
+          "patologias": [],
+          "ordem": 360,
+          "ativo": 1
+        },
+        {
+          "id": 200,
+          "titulo": "DMVM B1 + DDG1",
+          "texto": "* Achados ecocardiográficos compativeis com degeneracao mixomatosa da valva mitral com refluxo de grau leve, sem remodelamento cardíaco significativo. Estagio B1 (ACVIM).\n* DDG1",
+          "tags": [
+            "disfunção diastolica",
+            "mixomatosa",
+            "b1"
+          ],
+          "patologias": [],
+          "ordem": 370,
+          "ativo": 1
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "id": 1,
+      "key": "normal_cao",
+      "label": "Exame normal - Cão",
+      "patologia": "Nenhuma",
+      "grau": "Normal",
+      "descricao": "Ecocardiograma normal para espécie canina",
+      "tags": [
+        "normal",
+        "cao"
+      ],
+      "ordem": 10,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Exame normal cão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "key": "normal_gato",
+      "label": "Exame normal - Gato",
+      "patologia": "Nenhuma",
+      "grau": "Normal",
+      "descricao": "Ecocardiograma normal para espécie felina",
+      "tags": [
+        "normal",
+        "gato"
+      ],
+      "ordem": 20,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Exame normal gato",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "key": "endo_mitral_b1",
+      "label": "Endocardiose mitral B1",
+      "patologia": "Degeneracao mixomatosa mitral",
+      "grau": "Leve (B1)",
+      "descricao": "Endocardiose mitral sem remodelamento cardíaco significativo",
+      "tags": [
+        "endocardiose",
+        "leve",
+        "cao",
+        "B1"
+      ],
+      "ordem": 30,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Espessamento mitral leve com refluxo leve",
+          "frase_id": 3
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": 19
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": 29
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": 41
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": 57
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": 75
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": 90
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": 101
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": 112
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": 122
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": 126
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": 141
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": 150
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": 162
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "key": "endo_mitral_b2",
+      "label": "Endocardiose mitral B2",
+      "patologia": "Degeneracao mixomatosa mitral",
+      "grau": "Moderado (B2)",
+      "descricao": "Endocardiose mitral com remodelamento das câmaras esquerdas",
+      "tags": [
+        "endocardiose",
+        "moderado",
+        "cao",
+        "B2"
+      ],
+      "ordem": 40,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Endocardiose mitral B2",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada com hipercinesia compensatoria",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Endocardiose mitral B2",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "key": "endo_mitral_c",
+      "label": "Endocardiose mitral C",
+      "patologia": "Degeneracao mixomatosa mitral",
+      "grau": "Grave (C)",
+      "descricao": "Endocardiose mitral com ICC",
+      "tags": [
+        "endocardiose",
+        "grave",
+        "cao",
+        "C",
+        "ICC"
+      ],
+      "ordem": 50,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Endocardiose mitral estagio C",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide com refluxo trivial fisiologico",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE acentuadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Hipercinesia por endocardiose avancada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Endocardiose mitral C",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "key": "endo_mitral_d",
+      "label": "Endocardiose mitral D",
+      "patologia": "Degeneracao mixomatosa mitral",
+      "grau": "Grave refratário (D)",
+      "descricao": "Endocardiose mitral estagio D refratário",
+      "tags": [
+        "endocardiose",
+        "grave",
+        "cao",
+        "D",
+        "ICC"
+      ],
+      "ordem": 60,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Endocardiose mitral estagio D",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide com refluxo trivial fisiologico",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE acentuadamente dilatado com ICC",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Hipercinesia por endocardiose avancada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Padrao restritivo",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Endocardiose mitral D",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "key": "endo_mitral_tricuspide",
+      "label": "Endocardiose mitral e tricúspide",
+      "patologia": "Degeneracao mixomatosa multivalvar",
+      "grau": "Moderado a grave",
+      "descricao": "Doenca valvar mixomatosa acometendo mitral e tricúspide",
+      "tags": [
+        "endocardiose",
+        "multivalvar",
+        "cao"
+      ],
+      "ordem": 70,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Espessamento mitral moderado com refluxo moderado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Endocardiose tricúspide com refluxo moderado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada com hipercinesia compensatoria",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com dilatacao leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Endocardiose mitral e tricúspide",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "key": "dcm_compensada",
+      "label": "DCM canina compensada",
+      "patologia": "Cardiomiopatia dilatada",
+      "grau": "Moderado",
+      "descricao": "Cardiomiopatia dilatada canina sem descompensacao",
+      "tags": [
+        "dcm",
+        "cao",
+        "moderado"
+      ],
+      "ordem": 80,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com refluxo funcional por dilatacao do anel",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE dilatado DCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica moderadamente reduzida",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Relaxamento diástólico alterado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "DCM compensada",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "key": "dcm_descompensada",
+      "label": "DCM canina descompensada",
+      "patologia": "Cardiomiopatia dilatada",
+      "grau": "Grave",
+      "descricao": "Cardiomiopatia dilatada canina com ICC",
+      "tags": [
+        "dcm",
+        "cao",
+        "grave",
+        "ICC"
+      ],
+      "ordem": 90,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com refluxo funcional por dilatacao do anel",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado por DCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com remodelamento excêntrico avancado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica gravemente reduzida",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Padrao restritivo",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com dilatacao leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "DCM descompensada",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "key": "hcm_leve",
+      "label": "HCM felina leve",
+      "patologia": "Cardiomiopatia hipertrófica",
+      "grau": "Leve",
+      "descricao": "HCM felina de grau leve sem dilatacao atrial",
+      "tags": [
+        "hcm",
+        "gato",
+        "leve"
+      ],
+      "ordem": 100,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia concentrica leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "HCM leve gato",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "key": "hcm_moderada",
+      "label": "HCM felina moderada",
+      "patologia": "Cardiomiopatia hipertrófica",
+      "grau": "Moderado",
+      "descricao": "HCM felina com hipertrofia e dilatacao atrial",
+      "tags": [
+        "hcm",
+        "gato",
+        "moderado"
+      ],
+      "ordem": 110,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado moderado gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia concentrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septo interventricular hipertrofiado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "HCM moderada gato",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "key": "hcm_importante",
+      "label": "HCM felina importante",
+      "patologia": "Cardiomiopatia hipertrófica",
+      "grau": "Grave",
+      "descricao": "HCM felina com hipertrofia importante e dilatacao atrial acentuada",
+      "tags": [
+        "hcm",
+        "gato",
+        "grave"
+      ],
+      "ordem": 120,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE com contraste espontâneo",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia concentrica importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septo interventricular hipertrofiado assimetrico gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "HCM importante gato",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "key": "hcm_obstrutiva_sam",
+      "label": "HCM obstrutiva com SAM",
+      "patologia": "Cardiomiopatia hipertrófica obstrutiva",
+      "grau": "Moderado a grave",
+      "descricao": "HCM felina obstrutiva com movimento anterior sistólico da mitral",
+      "tags": [
+        "hcm",
+        "obstrutiva",
+        "SAM",
+        "gato"
+      ],
+      "ordem": 130,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com SAM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Obstrução dinâmica VSVE gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado por HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia septal assimétrica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septo interventricular hipertrofiado assimetrico gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "HCM obstrutiva com SAM",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "key": "restritiva_felina",
+      "label": "Cardiomiopatia restritiva felina",
+      "patologia": "Cardiomiopatia restritiva",
+      "grau": "Moderado a grave",
+      "descricao": "Cardiomiopatia restritiva com disfunção diástólica importante",
+      "tags": [
+        "restritiva",
+        "gato"
+      ],
+      "ordem": 140,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado moderado gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com padrao restritivo",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Cardiomiopatia restritiva felina",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "key": "dcm_felina",
+      "label": "DCM felina",
+      "patologia": "Cardiomiopatia dilatada felina",
+      "grau": "Moderado a grave",
+      "descricao": "Cardiomiopatia dilatada na espécie felina",
+      "tags": [
+        "dcm",
+        "gato"
+      ],
+      "ordem": 150,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado moderado gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE dilatado DCM felina",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica reduzida DCM felina",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "DCM felina",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "key": "hp_leve",
+      "label": "Hipertensao pulmonar leve",
+      "patologia": "Hipertensao pulmonar",
+      "grau": "Leve",
+      "descricao": "Hipertensao pulmonar leve sem remodelamento direito significativo",
+      "tags": [
+        "hipertensao_pulmonar",
+        "leve",
+        "cao"
+      ],
+      "ordem": 160,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional por hipertensao pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar com refluxo leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com dilatacao discreta",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Hipertensao pulmonar leve",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "key": "hp_moderada",
+      "label": "Hipertensao pulmonar moderada",
+      "patologia": "Hipertensao pulmonar",
+      "grau": "Moderado",
+      "descricao": "Hipertensao pulmonar moderada com remodelamento direito incipiente",
+      "tags": [
+        "hipertensao_pulmonar",
+        "moderado",
+        "cao"
+      ],
+      "ordem": 170,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional por hipertensao pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Insuficiencia pulmonar por hipertensao pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com hipertrofia concentrica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP dilatada moderadamente",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Hipertensao pulmonar moderada",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "key": "hp_importante",
+      "label": "Hipertensao pulmonar importante",
+      "patologia": "Hipertensao pulmonar",
+      "grau": "Grave",
+      "descricao": "Hipertensao pulmonar grave com cor pulmonale",
+      "tags": [
+        "hipertensao_pulmonar",
+        "grave",
+        "cor_pulmonale",
+        "cao"
+      ],
+      "ordem": 180,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide com refluxo moderado a importante por sobrecarga direita",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Insuficiencia pulmonar por hipertensao pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD acentuadamente dilatado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "Cor pulmonale",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Movimento septal paradoxal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP dilatada por hipertensao pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Hipertensao pulmonar importante",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "key": "estenose_subaortica_leve",
+      "label": "Estenose subaortica leve",
+      "patologia": "Estenose subaortica",
+      "grau": "Leve",
+      "descricao": "Estenose subaortica de grau leve",
+      "tags": [
+        "congenita",
+        "estenose_subaortica",
+        "leve",
+        "cao"
+      ],
+      "ordem": 190,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Estenose subaortica leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal com anel subaortico visivel",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Estenose subaortica leve conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "key": "estenose_subaortica_mod_imp",
+      "label": "Estenose subaortica moderada a importante",
+      "patologia": "Estenose subaortica",
+      "grau": "Moderado a grave",
+      "descricao": "Estenose subaortica de grau moderado a importante com hipertrofia VE",
+      "tags": [
+        "congenita",
+        "estenose_subaortica",
+        "moderado",
+        "grave",
+        "cao"
+      ],
+      "ordem": 200,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Estenose subaortica importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia por estenose subaortica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septo interventricular hipertrofiado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta com dilatacao pos-estenotica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Estenose subaortica moderada a importante conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "key": "estenose_pulmonar_leve",
+      "label": "Estenose pulmonar leve",
+      "patologia": "Estenose pulmonar",
+      "grau": "Leve",
+      "descricao": "Estenose pulmonar de grau leve",
+      "tags": [
+        "congenita",
+        "estenose_pulmonar",
+        "leve",
+        "cao"
+      ],
+      "ordem": 210,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Estenose pulmonar leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com dilatacao pos-estenotica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Estenose pulmonar leve conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "key": "estenose_pulmonar_mod_imp",
+      "label": "Estenose pulmonar moderada a importante",
+      "patologia": "Estenose pulmonar",
+      "grau": "Moderado a grave",
+      "descricao": "Estenose pulmonar de grau moderado a importante com hipertrofia VD",
+      "tags": [
+        "congenita",
+        "estenose_pulmonar",
+        "moderado",
+        "grave",
+        "cao"
+      ],
+      "ordem": 220,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Estenose pulmonar importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com hipertrofia por estenose pulmonar",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com dilatacao pos-estenotica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Estenose pulmonar moderada a importante conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "key": "displasia_tricuspide",
+      "label": "Displasia tricúspide",
+      "patologia": "Displasia tricúspide congênita",
+      "grau": "Moderado a grave",
+      "descricao": "Malformacao congênita da valva tricúspide",
+      "tags": [
+        "congenita",
+        "displasia",
+        "cao"
+      ],
+      "ordem": 230,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Displasia tricúspide com refluxo importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD dilatado por displasia tricúspide",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD dilatado por displasia tricúspide",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Displasia tricúspide conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "key": "displasia_mitral",
+      "label": "Displasia mitral",
+      "patologia": "Displasia mitral congênita",
+      "grau": "Moderado a grave",
+      "descricao": "Malformacao congênita da valva mitral",
+      "tags": [
+        "congenita",
+        "displasia",
+        "cao",
+        "gato"
+      ],
+      "ordem": 240,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Displasia mitral com refluxo importante",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica hiperdinamica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Displasia mitral conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "key": "pda",
+      "label": "Persistencia do ducto arterioso",
+      "patologia": "PDA",
+      "grau": "Variavel",
+      "descricao": "Persistencia do ducto arterioso com sobrecarga de câmaras esquerdas",
+      "tags": [
+        "congenita",
+        "PDA",
+        "cao"
+      ],
+      "ordem": 250,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com refluxo trivial fisiologico",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica por PDA",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica hiperdinamica",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta com fluxo turbulento por PDA",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com fluxo continuo por PDA",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "PDA conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "key": "civ",
+      "label": "Comunicacao interventricular",
+      "patologia": "CIV",
+      "grau": "Variavel",
+      "descricao": "Defeito do septo interventricular congênito",
+      "tags": [
+        "congenita",
+        "CIV",
+        "cao"
+      ],
+      "ordem": 260,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com dilatacao leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "CIV perimembranosa",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com dilatacao discreta",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "CIV conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "key": "cia",
+      "label": "Comunicacao interatrial",
+      "patologia": "CIA",
+      "grau": "Variavel",
+      "descricao": "Defeito do septo interatrial congênito",
+      "tags": [
+        "congenita",
+        "CIA",
+        "cao",
+        "gato"
+      ],
+      "ordem": 270,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD com dilatacao leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "CIA",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP com dilatacao discreta",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "CIA conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "key": "derrame_pericardico",
+      "label": "Derrame pericardico",
+      "patologia": "Derrame pericardico",
+      "grau": "Moderado",
+      "descricao": "Derrame pericardico sem tamponamento",
+      "tags": [
+        "derrame",
+        "cao"
+      ],
+      "ordem": 280,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Derrame pericardico moderado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Derrame pericardico conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "key": "tamponamento",
+      "label": "Tamponamento cardíaco",
+      "patologia": "Tamponamento cardíaco",
+      "grau": "Grave",
+      "descricao": "Derrame pericardico com sinais de tamponamento",
+      "tags": [
+        "derrame",
+        "tamponamento",
+        "grave",
+        "cao"
+      ],
+      "ordem": 290,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Tamponamento cardíaco",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Tamponamento cardíaco conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "key": "remodelamento_sem_icc",
+      "label": "Remodelamento sem ICC",
+      "patologia": "Remodelamento cardíaco",
+      "grau": "Moderado",
+      "descricao": "Remodelamento cardíaco sem sinais de insuficiencia congestiva",
+      "tags": [
+        "remodelamento",
+        "cao"
+      ],
+      "ordem": 300,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Espessamento mitral moderado com refluxo moderado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide com refluxo trivial fisiologico",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada com hipercinesia compensatoria",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Remodelamento sem ICC",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "key": "alteracao_estrutural_funcao_preservada",
+      "label": "Alteração estrutural com função preservada",
+      "patologia": "Alteração estrutural",
+      "grau": "Leve a moderado",
+      "descricao": "Alterações estruturais identificadas mas função sistólica preservada",
+      "tags": [
+        "funcao_preservada",
+        "cao",
+        "gato"
+      ],
+      "ordem": 310,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Espessamento mitral leve com refluxo leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Espessamento tricúspide discreto",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE discretamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com sobrecarga volumétrica leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Alteração estrutural com função sistólica preservada",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "key": "disfuncao_sistolica",
+      "label": "Disfunção sistólica evidente",
+      "patologia": "Disfunção miocárdica",
+      "grau": "Moderado a grave",
+      "descricao": "Disfunção sistólica significativa do ventrículo esquerdo",
+      "tags": [
+        "disfuncao_sistolica",
+        "cao"
+      ],
+      "ordem": 320,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com refluxo funcional por dilatacao do anel",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Refluxo tricúspide funcional leve",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE moderadamente aumentado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE dilatado DCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica gravemente reduzida",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Padrao pseudonormal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Disfunção sistólica evidente",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "key": "disfuncao_diastolica_relevante",
+      "label": "Disfunção diástólica relevante",
+      "patologia": "Disfunção diástólica",
+      "grau": "Moderado a grave",
+      "descricao": "Disfunção diástólica relevante com pressões de enchimento elevadas",
+      "tags": [
+        "disfuncao_diastolica",
+        "gato"
+      ],
+      "ordem": 330,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Mitral com espessamento leve em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal em gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE aumentado moderado gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE com hipertrofia concentrica moderada",
+          "frase_id": null
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica preservada HCM",
+          "frase_id": null
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septo interventricular hipertrofiado",
+          "frase_id": null
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal gato",
+          "frase_id": null
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "Disfunção diástólica relevante conclusão",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "key": "endocardiose_mitral_b1_copia",
+      "label": "Endocardiose mitral B1 + DDG1",
+      "patologia": "Degeneracao mixomatosa mitral",
+      "grau": "Leve (B1)",
+      "descricao": "Preset criado a partir da selecao atual do laudo.",
+      "tags": [
+        "endocardiose",
+        "leve",
+        "cao",
+        "B1"
+      ],
+      "ordem": 30,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "valva_mitral",
+          "frase_titulo": "Espessamento mitral leve com refluxo leve",
+          "frase_id": 3
+        },
+        {
+          "aspecto": "valva_aortica",
+          "frase_titulo": "Aórtica normal",
+          "frase_id": 19
+        },
+        {
+          "aspecto": "valva_tricuspide",
+          "frase_titulo": "Tricúspide normal",
+          "frase_id": 29
+        },
+        {
+          "aspecto": "valva_pulmonar",
+          "frase_titulo": "Pulmonar normal",
+          "frase_id": 41
+        },
+        {
+          "aspecto": "atrio_esquerdo",
+          "frase_titulo": "AE normal cão",
+          "frase_id": 57
+        },
+        {
+          "aspecto": "ventriculo_esquerdo",
+          "frase_titulo": "VE normal cão",
+          "frase_id": 75
+        },
+        {
+          "aspecto": "funcao_sistolica_ve",
+          "frase_titulo": "Função sistólica normal cão",
+          "frase_id": 90
+        },
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diástólica preservada cão",
+          "frase_id": 101
+        },
+        {
+          "aspecto": "atrio_direito",
+          "frase_titulo": "AD normal cão",
+          "frase_id": 112
+        },
+        {
+          "aspecto": "ventriculo_direito",
+          "frase_titulo": "VD normal cão",
+          "frase_id": 122
+        },
+        {
+          "aspecto": "septos",
+          "frase_titulo": "Septos integros",
+          "frase_id": 126
+        },
+        {
+          "aspecto": "aorta",
+          "frase_titulo": "Aorta normal cão",
+          "frase_id": 141
+        },
+        {
+          "aspecto": "arteria_pulmonar",
+          "frase_titulo": "AP normal cão",
+          "frase_id": 150
+        },
+        {
+          "aspecto": "pericardio",
+          "frase_titulo": "Pericárdio normal cão",
+          "frase_id": 162
+        },
+        {
+          "aspecto": "conclusao",
+          "frase_titulo": "DMVM B1 + DDG1",
+          "frase_id": 200
+        }
+      ]
+    },
+    {
+      "id": 35,
+      "key": "felino_diastolica_preservada",
+      "label": "Função diastólica felina: padrão preservado",
+      "patologia": "Função diastólica felina",
+      "grau": "",
+      "descricao": "Selecionar após integrar fluxo transmitral, Doppler tecidual e dimensões atriais; não aplicar apenas por E/A normal.",
+      "tags": [
+        "gato",
+        "diastolica",
+        "complementar"
+      ],
+      "ordem": 520,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diastólica felina: padrão preservado",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 36,
+      "key": "felino_diastolica_relaxamento",
+      "label": "Função diastólica felina: relaxamento retardado",
+      "patologia": "Função diastólica felina",
+      "grau": "",
+      "descricao": "Corresponde ao padrão de relaxamento alterado (classe 2 no estudo felino); considerar E/A, IVRT, e' e tamanho atrial, sem atribuição automática à idade.",
+      "tags": [
+        "gato",
+        "diastolica",
+        "complementar"
+      ],
+      "ordem": 530,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diastólica felina: relaxamento retardado",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 37,
+      "key": "felino_diastolica_pseudonormal",
+      "label": "Função diastólica felina: padrão pseudonormal",
+      "patologia": "Função diastólica felina",
+      "grau": "",
+      "descricao": "E/A aparentemente usual não basta: integrar e', átrio esquerdo, IVRT e, quando disponível, fluxo venoso pulmonar.",
+      "tags": [
+        "gato",
+        "diastolica",
+        "complementar"
+      ],
+      "ordem": 540,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diastólica felina: padrão pseudonormal",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 38,
+      "key": "felino_diastolica_restritivo",
+      "label": "Função diastólica felina: padrão restritivo",
+      "patologia": "Função diastólica felina",
+      "grau": "",
+      "descricao": "Descreve o padrão de enchimento, sem diagnosticar cardiomiopatia restritiva ou insuficiência cardíaca por si só.",
+      "tags": [
+        "gato",
+        "diastolica",
+        "complementar"
+      ],
+      "ordem": 550,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diastólica felina: padrão restritivo",
+          "frase_id": null
+        }
+      ]
+    },
+    {
+      "id": 39,
+      "key": "felino_diastolica_indeterminada",
+      "label": "Função diastólica felina: classificação indeterminada",
+      "patologia": "Função diastólica felina",
+      "grau": "",
+      "descricao": "Usar quando fusão E/A, taquicardia, medidas ausentes ou resultados discordantes impedirem classificação segura.",
+      "tags": [
+        "gato",
+        "diastolica",
+        "complementar"
+      ],
+      "ordem": 560,
+      "ativo": 1,
+      "selecoes": [
+        {
+          "aspecto": "funcao_diastolica",
+          "frase_titulo": "Função diastólica felina: classificação indeterminada",
+          "frase_id": null
+        }
+      ]
+    }
+  ]
+}

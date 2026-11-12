@@ -1,0 +1,469 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      activate_whatsapp_reminder_service:
+        description: "Ativar lembrete com serviço após os gates de produção"
+        type: boolean
+        required: false
+        default: false
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: fortcordis-vps-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: fortcordis_stage
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fortcordis_stage"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Validate immutable deploy target
+        env:
+          BRANCH: main
+          DEPLOY_REF: ${{ github.ref }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          source scripts/deploy_prod_vps.sh
+          validate_deploy_target
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+      - name: Test immutable deploy SHA
+        run: python3 scripts/tests/test_deploy_immutable_sha.py
+
+      - name: Test per-release Nginx preservation
+        run: python3 scripts/tests/test_prod_nginx_preserve_workflow.py
+
+      - name: Test WhatsApp stage Meta isolation
+        run: bash scripts/tests/test_whatsapp_stage_meta_isolation.sh
+
+      - name: Test controlled WhatsApp reminder activation
+        run: bash scripts/tests/test_whatsapp_reminder_activation.sh
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-test.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-test.txt
+
+      - name: Run backend test suite
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: deploy-main-quality-gate-secret-key-1234567890
+        run: |
+          python -m unittest discover -s backend/tests -p "test_*.py"
+
+      - name: Test WhatsApp triage regressions
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: whatsapp-triage-ci-secret-key-1234567890
+        run: python -m pytest -q backend/tests/test_recebimento_desconto_baixa_credito.py backend/tests/test_whatsapp_bot_reacoes.py backend/tests/test_whatsapp_bot_mensagens_automaticas.py backend/tests/test_whatsapp_bot_saudacoes_agrupadas.py
+
+      - name: Test clinical edit history, document persistence and PostgreSQL concurrency
+        env:
+          FORTCORDIS_PROCESS_ROLE: api
+          DATABASE_URL: sqlite:///./fortcordis-ci.db
+          SECRET_KEY: document-persistence-ci-secret-key-1234567890
+          DOCUMENT_TEST_POSTGRES_URL: postgresql://postgres:postgres@127.0.0.1:5432/document_test
+        run: |
+          psql postgresql://postgres:postgres@127.0.0.1:5432/postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE document_test'
+          python -m pytest -q backend/tests/test_atendimento_documentos_persistencia.py backend/tests/test_atendimento_documentos_concorrencia_postgres.py backend/tests/test_atendimento_edicao_historico.py backend/tests/test_atendimento_edicoes_concorrencia_postgres.py backend/tests/test_paciente_mesclagem.py
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            whatsapp-stage-backend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Run frontend tests
+        working-directory: frontend
+        run: npm test
+
+      - name: Run frontend build
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install WhatsApp backend dependencies
+        working-directory: whatsapp-stage-backend
+        run: npm ci
+
+      - name: Build WhatsApp backend
+        working-directory: whatsapp-stage-backend
+        run: npm run build
+
+      - name: Test WhatsApp backend
+        working-directory: whatsapp-stage-backend
+        run: |
+          npm run test:reservation-template
+          npm run test:approved-templates
+          npm run test:document-templates
+          npm run test:database-config
+          npm run test:express-http
+          npm run test:inbox-ui
+          npm run test:customer-service-window
+          npm run test:phone-number
+          npm run test:whatsapp-retry
+          npm run test:message-attachment
+          npm run test:auth-policy
+          npm run test:webhook-cleanup-config
+          npm run test:log-redaction
+          npm audit --omit=dev
+
+      - name: Test WhatsApp productivity with isolated database
+        working-directory: whatsapp-stage-backend
+        env:
+          DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/fortcordis_whatsapp_test
+        run: |
+          node <<'JS'
+          const { Client } = require("pg");
+          const url = new URL(process.env.DATABASE_URL);
+          url.pathname = "/postgres";
+          const client = new Client({ connectionString: url.toString() });
+          (async () => {
+            await client.connect();
+            await client.query("CREATE DATABASE fortcordis_whatsapp_test");
+          })().catch(error => { console.error(error); process.exitCode = 1; })
+            .finally(() => client.end());
+          JS
+          npm run migrate
+          npm run test:conversation-productivity
+          npm run test:conversation-ordering
+          npm run test:conversation-reply-queue
+          npm run test:change-request-acknowledgement
+          npm run test:quick-replies
+          npm run test:follow-ups
+          WHATSAPP_ACCESS_TOKEN=synthetic-test-token PHONE_NUMBER_ID=synthetic-number npm run test:bot-auto
+
+  sdd-guardrail:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve diff range
+        id: diff
+        run: |
+          set -euo pipefail
+          BASE_SHA="${{ github.event.before }}"
+          HEAD_SHA="${{ github.sha }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="$(git rev-parse "${HEAD_SHA}^" 2>/dev/null || true)"
+          fi
+          if [ -z "$BASE_SHA" ]; then
+            BASE_SHA="$HEAD_SHA"
+          fi
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$HEAD_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Run SDD guardrail
+        run: |
+          python3 scripts/ci/check_sdd_guardrail.py \
+            --base-sha "${{ steps.diff.outputs.base_sha }}" \
+            --head-sha "${{ steps.diff.outputs.head_sha }}"
+
+  deploy:
+    environment: production
+    if: github.ref == 'refs/heads/main' && github.repository == 'martinialebarros-svg/fortcordis-public' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs:
+      - quality-gate
+      - sdd-guardrail
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ github.sha }}
+
+    - name: Validate immutable deploy target
+      env:
+        BRANCH: main
+        DEPLOY_REF: ${{ github.ref }}
+        DEPLOY_SHA: ${{ github.sha }}
+      run: |
+        source scripts/deploy_prod_vps.sh
+        validate_deploy_target
+        test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+    - name: Setup SSH key
+      env:
+        VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      run: |
+        mkdir -p ~/.ssh
+        chmod 700 ~/.ssh
+        printf '%s' "$VPS_SSH_KEY" > ~/.ssh/id_vps
+        chmod 600 ~/.ssh/id_vps
+
+    - name: Add VPS to known hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Verify approved SHA on VPS before configuration
+      env:
+        DEPLOY_SHA: ${{ github.sha }}
+      run: |
+        set -euo pipefail
+        [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+        # Stream the gated installer functions; do not write runtime files.
+        ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} \
+          "APP_DIR='/var/www/fortcordis-v2' BRANCH='main' DEPLOY_SHA='$DEPLOY_SHA' DEPLOY_REF='refs/heads/main' bash -c 'set -euo pipefail; source /dev/stdin; cd \"\$APP_DIR\"; resolve_deploy_target'" \
+          < scripts/deploy_prod_vps.sh
+
+    - name: Configure OpenAI secret on Production VPS
+      env:
+        OPENAI_API_KEY_PROD: ${{ secrets.OPENAI_API_KEY_PROD }}
+      run: |
+        if [ -z "$OPENAI_API_KEY_PROD" ]; then
+          echo "OPENAI_API_KEY_PROD is not configured."
+          exit 1
+        fi
+
+        printf '%s\n' "$OPENAI_API_KEY_PROD" | \
+          ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} '
+            set -euo pipefail
+            umask 077
+            IFS= read -r openai_api_key
+            if [ -z "$openai_api_key" ]; then
+              echo "Received an empty OpenAI API key."
+              exit 1
+            fi
+
+            env_file="/var/www/fortcordis-v2/backend/.env"
+            if [ ! -f "$env_file" ]; then
+              echo "Production backend env file not found."
+              exit 1
+            fi
+
+            temp_file="${env_file}.openai.$$"
+            trap "rm -f \"$temp_file\"" EXIT
+            found=0
+            : > "$temp_file"
+            while IFS= read -r line || [ -n "$line" ]; do
+              case "$line" in
+                OPENAI_API_KEY=*)
+                  printf "OPENAI_API_KEY=%s\n" "$openai_api_key" >> "$temp_file"
+                  found=1
+                  ;;
+                *)
+                  printf "%s\n" "$line" >> "$temp_file"
+                  ;;
+              esac
+            done < "$env_file"
+            if [ "$found" -eq 0 ]; then
+              printf "OPENAI_API_KEY=%s\n" "$openai_api_key" >> "$temp_file"
+            fi
+
+            chmod --reference="$env_file" "$temp_file"
+            mv "$temp_file" "$env_file"
+            trap - EXIT
+            unset openai_api_key
+            echo "Production backend OpenAI secret configured."
+          '
+
+    - name: Configure echo voice assistant on Production VPS
+      run: |
+        ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -euo pipefail
+          env_file="/var/www/fortcordis-v2/backend/.env"
+          if [ ! -f "$env_file" ]; then
+            echo "Production backend env file not found."
+            exit 1
+          fi
+
+          upsert_env() {
+            key="$1"
+            value="$2"
+            temp_file="${env_file}.${key}.$$"
+            awk -v key="$key" -v value="$value" '
+              BEGIN { found = 0 }
+              index($0, key "=") == 1 {
+                print key "=" value
+                found = 1
+                next
+              }
+              { print }
+              END {
+                if (!found) print key "=" value
+              }
+            ' "$env_file" > "$temp_file"
+            chmod --reference="$env_file" "$temp_file"
+            mv "$temp_file" "$env_file"
+          }
+
+          upsert_env AI_ECHO_ASSISTANT_ENABLED true
+          upsert_env AI_PROVIDER openai
+          upsert_env AI_TRANSCRIPTION_MODEL gpt-4o-transcribe
+          upsert_env AI_STRUCTURING_MODEL gpt-5.6-sol
+          upsert_env AI_ECHO_REASONING_EFFORT low
+          upsert_env AI_ECHO_MAX_OUTPUT_TOKENS 8000
+          upsert_env AI_AUDIO_RETENTION_HOURS 2
+          upsert_env AI_ECHO_AUDIO_MAX_BYTES 20971520
+          upsert_env AI_ECHO_AUDIO_MAX_SECONDS 600
+          upsert_env AI_ECHO_MAX_ATTEMPTS 3
+          upsert_env AI_ECHO_MONTHLY_SESSION_LIMIT 100
+          echo "Production echo voice assistant configuration updated."
+        EOF
+
+    - name: Configure portal clinic link base URL on Production VPS
+      run: |
+        ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -euo pipefail
+          env_file="/var/www/fortcordis-v2/backend/.env"
+          if [ ! -f "$env_file" ]; then
+            echo "Production backend env file not found."
+            exit 1
+          fi
+
+          upsert_env() {
+            key="$1"
+            value="$2"
+            temp_file="${env_file}.${key}.$$"
+            awk -v key="$key" -v value="$value" '
+              BEGIN { found = 0 }
+              index($0, key "=") == 1 {
+                print key "=" value
+                found = 1
+                next
+              }
+              { print }
+              END {
+                if (!found) print key "=" value
+              }
+            ' "$env_file" > "$temp_file"
+            chmod --reference="$env_file" "$temp_file"
+            mv "$temp_file" "$env_file"
+          }
+
+          # So fixa a URL base; nao liga nada. PORTAL_CLINIC_EXAM_LINK_ENABLED e
+          # PORTAL_CLINIC_DEVICE_TRUST_ENABLED seguem desligadas pelo default de
+          # config.py, e esta variavel so e lida na hora de emitir um link.
+          #
+          # Fica pronta de antemao porque o dia de ligar a flag e o dia em que sai
+          # mensagem para clinica de verdade, e sem ela build_exam_link_url cairia no
+          # request.base_url: o uvicorn de producao tambem sobe sem --proxy-headers
+          # (ver README-DEPLOY.md), entao montaria http:// e o token do laudo, que e
+          # credencial ao portador, viajaria em texto claro ate o 301 do nginx.
+          upsert_env PORTAL_CLINIC_EXAM_LINK_BASE_URL https://app.fortcordis.com.br
+          echo "Production portal clinic link base URL updated."
+        EOF
+
+    - name: Deploy to VPS
+      run: |
+        ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -euo pipefail
+          APP_DIR="/var/www/fortcordis-v2"
+          BRANCH="main"
+          DEPLOY_SHA="${{ github.sha }}"
+          DEPLOY_REF="${{ github.ref }}"
+          test "$DEPLOY_REF" = "refs/heads/$BRANCH"
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+
+          if [ ! -d "$APP_DIR/.git" ]; then
+            echo "ERROR: $APP_DIR is not a git checkout"
+            exit 1
+          fi
+
+          cd "$APP_DIR"
+          echo "Loading production deploy scripts from gated SHA $DEPLOY_SHA..."
+          git fetch --no-tags origin "$DEPLOY_SHA"
+          test "$(git rev-parse --verify "${DEPLOY_SHA}^{commit}")" = "$DEPLOY_SHA"
+          DEPLOY_SCRIPT_DIR="$(mktemp -d)"
+          trap 'rm -rf "$DEPLOY_SCRIPT_DIR"' EXIT
+          git archive --format=tar "$DEPLOY_SHA" -- \
+            scripts/deploy_prod_vps.sh \
+            scripts/ensure_nginx_http2.sh | tar -xf - -C "$DEPLOY_SCRIPT_DIR"
+          chmod 700 "$DEPLOY_SCRIPT_DIR/scripts/deploy_prod_vps.sh" "$DEPLOY_SCRIPT_DIR/scripts/ensure_nginx_http2.sh"
+          # BEGIN per-release Nginx policy: read only the immutable gated commit.
+          NGINX_HTTP2_FOR_DEPLOY=1
+          NGINX_RELOAD_FOR_DEPLOY=1
+          DEPLOY_COMMIT_MESSAGE="$(git show -s --format=%B "$DEPLOY_SHA")"
+          if [[ "$DEPLOY_COMMIT_MESSAGE" == *"[preserve-nginx]"* ]]; then
+            NGINX_HTTP2_FOR_DEPLOY=0
+            NGINX_RELOAD_FOR_DEPLOY=0
+          fi
+          echo "Production Nginx policy for $DEPLOY_SHA: enable_http2=$NGINX_HTTP2_FOR_DEPLOY reload=$NGINX_RELOAD_FOR_DEPLOY"
+          # END per-release Nginx policy.
+          echo "Running standardized production deploy script..."
+          SUDO_PASSWORD='${{ secrets.VPS_SUDO_PASSWORD }}' \
+            DEPLOY_ACTIVATE_WHATSAPP_REMINDER_SERVICE='${{ github.event_name == 'workflow_dispatch' && inputs.activate_whatsapp_reminder_service && '1' || '0' }}' \
+            APP_DIR="$APP_DIR" \
+            BRANCH="$BRANCH" \
+            DEPLOY_SHA="$DEPLOY_SHA" \
+            DEPLOY_REF="$DEPLOY_REF" \
+            ENABLE_NGINX_HTTP2="$NGINX_HTTP2_FOR_DEPLOY" \
+            RELOAD_NGINX_ON_DEPLOY="$NGINX_RELOAD_FOR_DEPLOY" \
+            NGINX_HTTP2_EXPECTED_HOSTS=app.stage.fortcordis.com.br,app.fortcordis.com.br,fortcordis.com.br,fortcordis.com \
+            ENABLE_WHATSAPP_STAGE_BACKEND=1 \
+            WHATSAPP_STAGE_BACKEND_SERVICE=fortcordis-whatsapp-backend \
+            WHATSAPP_STAGE_BACKEND_PORT=3020 \
+            WHATSAPP_STAGE_BACKEND_URL=http://127.0.0.1:3020 \
+            WHATSAPP_EXPECTED_PHONE_NUMBER_ID=1279142515283484 \
+            WHATSAPP_EXPECTED_META_APP_ID=975334532125008 \
+            WHATSAPP_EXPECTED_BUSINESS_ACCOUNT_ID=1369494994627980 \
+            WHATSAPP_REQUIRE_DISTINCT_FROM_PRODUCTION=0 \
+            WHATSAPP_DATABASE_SSL_REJECT_UNAUTHORIZED=false \
+            WHATSAPP_RUNTIME_LABEL=Production \
+            WHATSAPP_HOME_REPORT_TEMPLATE_ENABLED=true \
+            ENABLE_WHATSAPP_STAGE_SMOKE=0 \
+            bash "$DEPLOY_SCRIPT_DIR/scripts/deploy_prod_vps.sh"
+        EOF
+
+    - name: Synchronize feline diastolic presets on Production
+      run: |
+        ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+          set -euo pipefail
+          cd /var/www/fortcordis-v2
+          test "$(git rev-parse HEAD)" = "${{ github.sha }}"
+          python3 backend/scripts/sync_feline_diastolic_presets.py --apply
+        EOF

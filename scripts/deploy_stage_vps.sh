@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+APP_DIR="/var/www/fortcordis-stage"
+BRANCH="stage"
+BACKEND_SERVICE="fortcordis-stage-backend"
+FRONTEND_SERVICE="fortcordis-stage-frontend"
+BACKEND_PORT="8001"
+FRONTEND_PORT="3001"
+API_BACKEND_URL="http://127.0.0.1:8001"
+PUBLIC_URL="https://stage.fortcordis.com.br"
+# Stage has no live Meta identity unless explicitly provisioned and opted in.
+WHATSAPP_STAGE_LIVE_META_ENABLED="${WHATSAPP_STAGE_LIVE_META_ENABLED:-0}"
+case "${WHATSAPP_STAGE_LIVE_META_ENABLED}" in
+  0|1) ;;
+  *) echo "[ERROR] WHATSAPP_STAGE_LIVE_META_ENABLED deve ser 0 ou 1." >&2; exit 1 ;;
+esac
+ENABLE_WHATSAPP_STAGE_BACKEND="${WHATSAPP_STAGE_LIVE_META_ENABLED}"
+# Never inherit another environment's identity source, including production.
+WHATSAPP_META_SOURCE_ENV_FILE=""
+WHATSAPP_STAGE_BACKEND_SERVICE="fortcordis-stage-whatsapp-backend"
+WHATSAPP_STAGE_BACKEND_PORT="3010"
+WHATSAPP_STAGE_BACKEND_URL="http://127.0.0.1:${WHATSAPP_STAGE_BACKEND_PORT}"
+WHATSAPP_STAGE_BACKEND_DIR="${APP_DIR}/whatsapp-stage-backend"
+WHATSAPP_STAGE_BACKEND_ENV_FILE="${WHATSAPP_STAGE_BACKEND_DIR}/.env"
+# Live smoke creates webhook/conversation rows; require explicit Stage opt-in.
+ENABLE_WHATSAPP_STAGE_SMOKE="${ENABLE_WHATSAPP_STAGE_SMOKE:-0}"
+if [[ "${WHATSAPP_STAGE_LIVE_META_ENABLED}" == "0" ]]; then
+  ENABLE_WHATSAPP_STAGE_SMOKE="0"
+fi
+WHATSAPP_REQUIRE_DISTINCT_FROM_PRODUCTION="1"
+# Não herdar opt-in de produção, mesmo se o chamador tiver essa variável.
+DEPLOY_ACTIVATE_WHATSAPP_REMINDER_SERVICE="0"
+ENABLE_ECO_STUDY_OCR="1"
+REQUIRE_ECO_STUDY_OCR="1"
+# Nginx atende stage e producao; um deploy stage nao administra esse recurso.
+ENABLE_NGINX_HTTP2="0"
+RELOAD_NGINX_ON_DEPLOY="0"
+# A rotacao de backups stage tambem nao deve remover backups de producao.
+RUNTIME_BACKUP_DIR="$HOME/fortcordis-stage-runtime-backups"
+
+export APP_DIR BRANCH BACKEND_SERVICE FRONTEND_SERVICE BACKEND_PORT FRONTEND_PORT API_BACKEND_URL PUBLIC_URL \
+  ENABLE_WHATSAPP_STAGE_BACKEND WHATSAPP_STAGE_BACKEND_SERVICE WHATSAPP_STAGE_BACKEND_PORT \
+  WHATSAPP_STAGE_BACKEND_URL ENABLE_WHATSAPP_STAGE_SMOKE WHATSAPP_REQUIRE_DISTINCT_FROM_PRODUCTION \
+  WHATSAPP_STAGE_LIVE_META_ENABLED WHATSAPP_META_SOURCE_ENV_FILE \
+  WHATSAPP_STAGE_BACKEND_DIR WHATSAPP_STAGE_BACKEND_ENV_FILE
+export ENABLE_ECO_STUDY_OCR REQUIRE_ECO_STUDY_OCR
+export DEPLOY_ACTIVATE_WHATSAPP_REMINDER_SERVICE
+export ENABLE_NGINX_HTTP2 RELOAD_NGINX_ON_DEPLOY RUNTIME_BACKUP_DIR
+
+bash "${SCRIPT_DIR}/deploy_prod_vps.sh"
