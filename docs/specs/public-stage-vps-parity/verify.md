@@ -7,3 +7,5 @@ Os 59 arquivos de código e testes restaurados foram comparados byte a byte com 
 O usuário confirmou backup local das frases e do diff na VPS antes desta etapa. Testes automatizados e CI serão registrados após execução. A migração da VPS e das credenciais permanece por concluir.
 
 Validação local: 151 testes passaram, além de 112 subtestes; 9 testes de PostgreSQL foram ignorados por ausência de instância local. O workflow de stage mantém as etapas de PostgreSQL restauradas para validação no Actions. Guardrail SDD e as restrições dos jobs de deploy foram validados localmente.
+
+Verificação de privacidade adicional: git check-ignore confirmou a exclusão padrão de 13 exemplos representativos dos backups e diagnósticos informados pela VPS. Nenhum desses arquivos foi lido ou enviado ao repositório público.

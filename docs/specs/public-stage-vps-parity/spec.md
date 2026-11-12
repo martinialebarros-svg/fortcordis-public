@@ -5,3 +5,4 @@
 - Preservar as proteções da cópia pública: histórico independente, dados privados excluídos, ambientes restritos, token mínimo e deploy desativado por padrão.
 - Não publicar arquivos da VPS, backups, bancos ou a alteração local de frases.
 - Não alterar main nem habilitar a variável STAGING_DEPLOY_ENABLED nesta mudança.
+- Ignorar por padrão os padrões de backups e diagnósticos privados observados na VPS, incluindo arquivos .tar.gz de backup e cópias locais das frases.
