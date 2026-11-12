@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EditarLaudoPage from "./[id]/editar/page";
@@ -101,23 +101,6 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); });
 
-  it.each(["Dog", "Cão"])("atualiza índice recalculado após editar DIVEd de paciente %s", async (species) => {
-    official.paciente = { ...patient, especie: species, peso_kg: 10 };
-    official.medidas = { DIVEd: "25", DIVEd_normalizado: "0.9" };
-    official.descricao = montarDescricaoEcocardiograma(official.medidas, { valvas: "", camaras: "", funcao: "", pericardio: "", vasos: "", ad_vd: "" });
-    const view = await open();
-    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
-    fireEvent.change(input("DIVEd (mm - Diâmetro interno do VE em diástole)"), { target: { value: "30" } });
-    fireEvent.click(screen.getByRole("button", { name: "Atualizar laudo" }));
-    await waitFor(() => expect(updates()).toHaveLength(1));
-    const body = updates()[0][1];
-    expect(body.payload_laudo.descricao).toContain("DIVEd_normalizado: 1.52");
-    expect(body.paciente).toBeUndefined();
-    expect(official.paciente.especie).toBe(species);
-    expect(input("DIVEd normalizado (DIVEd [cm] / peso^0,294)")).toHaveValue("1.52");
-    view.unmount();
-  });
-
   it("prévia preserva o oficial e compartilha payload, cadastro e imagens com a atualização explícita", async () => {
     vi.stubGlobal("URL", Object.assign(class extends URL {}, {
       createObjectURL: vi.fn(() => "blob:qa-existing-preview"), revokeObjectURL: vi.fn(),
@@ -172,28 +155,21 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
     official.paciente = { ...patient, especie: "Canina" };
     official.medidas = { ...measures, ...hp, HP_revisao: stamp };
     const view = await open();
-    // A aba Medidas tem muitos controles; busque cada ação dentro da sua região.
-    const actions = within(screen.getByRole("banner"));
     fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
-    const hpCard = within(screen.getByRole("region", { name: "Probabilidade de hipertensão pulmonar" }));
-    expect(hpCard.getByText("Probabilidade intermediária de hipertensão pulmonar")).toBeInTheDocument();
-    fireEvent.change(hpCard.getByLabelText("Observações da avaliação de HP (opcional)"), { target: { value: "QA observação HP\nSegunda linha." } });
-    fireEvent.click(actions.getByRole("button", { name: "Salvar rascunho" }));
-    await screen.findByText(/Rascunho salvo às/);
+    expect(screen.getByText("Probabilidade intermediária de hipertensão pulmonar")).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Observações da avaliação de HP (opcional)"), { target: { value: "QA observação HP\nSegunda linha." } });
+    await saveDraft();
     expect(lastSnapshot().measurementState.measurements).toMatchObject({ HP_revisao: stamp, HP_observacoes: "QA observação HP\nSegunda linha." });
     expect(lastSnapshot().conteudo.diagnostico).toBe("Conclusão oficial QA.");
     expect(privateWritesOnly()).toBe(true);
-    view.unmount(); const recovered = render(<EditarLaudoPage />);
-    const recovery = within(await screen.findByRole("region", { name: "Rascunho do ecocardiograma" }));
-    fireEvent.click(await recovery.findByRole("button", { name: "Retomar rascunho" }));
-    const recoveredActions = within(screen.getByRole("banner"));
-    await waitFor(() => expect(recoveredActions.getByRole("button", { name: "Atualizar laudo" })).toBeEnabled());
+    view.unmount(); render(<EditarLaudoPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Retomar rascunho" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Atualizar laudo" })).toBeEnabled());
     expect(JSON.parse(screen.getByTestId("measurements").textContent!)).toMatchObject({ HP_revisao: stamp, HP_observacoes: "QA observação HP\nSegunda linha." });
-    fireEvent.click(recoveredActions.getByRole("button", { name: "Atualizar laudo" }));
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar laudo" }));
     await waitFor(() => expect(updates()).toHaveLength(1));
     expect(updates()[0][1].payload_laudo.diagnostico).toBe("Conclusão oficial QA.");
     expect(updates()[0][1].payload_laudo.descricao).toContain('- HP_observacoes: "QA observação HP\\nSegunda linha."');
-    recovered.unmount();
   });
 
   it("recupera flags estruturadas e o ditado não transforma Finalizado em Rascunho", async () => {

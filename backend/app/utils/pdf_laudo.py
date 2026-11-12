@@ -2104,8 +2104,8 @@ def gerar_pdf_laudo_eco(
 
         # 7. Imagens (se houver) - Layout conforme modelo de referência
         if imagens:
-            # A gap belongs to an image section, never to the end of a report:
-            # it can otherwise create a footer-only page at the frame boundary.
+            # A trailing spacer without images can overflow after a signature
+            # and create a completely blank final page.
             elements.append(Spacer(1, 5*mm))
             paciente_imagens = dados_pdf.get("paciente") or {}
             nome_imagens = _esc(paciente_imagens.get("nome") or "")

@@ -2,7 +2,7 @@ import { hasAnyMeasurement, LV_2D_KEYS, LV_M_MODE_KEYS } from "./echo-derived-me
 import { canonicalEchoDiastolicKey } from "./echo-diastolic-reference";
 import { findEchoNarrativeDiscrepancies } from "./echo-narrative-consistency";
 import { evaluatePulmonaryProbability } from "./echo-pulmonary-probability";
-import { normalizeEchoSpecies } from "./echo-species";
+import { isCanineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { ambiguousEchoLengthKeys } from "./echo-unit-provenance";
 
 export type EchoReviewTarget = "patient" | "technique" | "units" | "references" | "diastolic" | "pulmonary" | "qualitative" | "images";
@@ -41,10 +41,10 @@ export function buildEchoFinalReviewIssues(input: EchoFinalReviewInput): EchoFin
   if (has("AE_Ao", "LA_Ao", "Aorta", "Atrio_esquerdo") && !m.AE_Ao_metodo) {
     add("la-ao-method", "Método de AE/Ao", "Confirme a vista e a fase de aquisição para consultar a referência correspondente.", "references");
   }
-  if (normalizeEchoSpecies(species) === "Canina" && has("TAPSE") && !m.TAPSE_metodo) {
+  if (isCanineEchoSpecies(species) && has("TAPSE") && !m.TAPSE_metodo) {
     add("tapse-method", "Método de TAPSE", "Confirme a técnica de obtenção para consultar a faixa aplicável.", "references");
   }
-  if (normalizeEchoSpecies(species) === "Canina" && hasAnyMeasurement(m, LV_2D_KEYS) && !m.VE_vista_2D) {
+  if (isCanineEchoSpecies(species) && hasAnyMeasurement(m, LV_2D_KEYS) && !m.VE_vista_2D) {
     add("lv-2d-view", "Vista do VE em 2D", "Confirme a vista de obtenção para consultar a faixa 2D aplicável.", "references");
   }
   const knownSpecies = ["Canina", "Felina"].includes(normalizeEchoSpecies(species));

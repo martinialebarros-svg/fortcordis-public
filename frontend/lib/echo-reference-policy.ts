@@ -1,5 +1,5 @@
 import type { EchoRangeMetadata, ReferenciaEco } from "@/app/laudos/types/referencia-eco";
-import { isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
+import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { applyLowWeightReference, makeLowWeightReference } from "./echo-low-weight-reference";
 
 export const ECHO_REFERENCE_METHOD_VALUES = {
@@ -109,7 +109,7 @@ export function resolveEchoReferenceForMeasurements(
   for (const prefix of ["vmax_ao", "vmax_pulm"]) {
     if (!metadata[prefix]) setRange(resolved, prefix, null, null);
   }
-  if (/^canin/i.test(reference.especie)) {
+  if (isCanineEchoSpecies(reference.especie)) {
     for (const [prefix, min, maxima] of [
       ["mv_e", 0.5, [1.09, 1.1]], ["mv_a", 0.3, [0.8]], ["mv_dt", 0, [160]],
     ] as const) {

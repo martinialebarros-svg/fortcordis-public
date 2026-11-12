@@ -5,7 +5,7 @@ import { calculateLeftAtrialFractionalShortening } from "./echo-derived-measurem
 import { ECHO_REFERENCE_METHOD_KEYS, resolveEchoReferenceForMeasurements } from "./echo-reference-policy";
 import { canonicalEchoDiastolicKey, echoDiastolicReferences, type EchoDiastolicReference } from "./echo-diastolic-reference";
 import { FELINE_DIASTOLIC_KEYS } from "./echo-feline-diastolic-reference";
-import { isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
+import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { deriveOutflowGradients, ECHO_OUTFLOW_KEYS, formatOutflowValue, isOutflowMetadataKey, outflowMeasurementLabel } from "./echo-outflow";
 import { lowWeightAgeContext, lowWeightEstimateText, makeLowWeightReference } from "./echo-low-weight-reference";
 
@@ -138,7 +138,7 @@ function normalizeDiastolicAliases(raw: Record<string, string>): Record<string, 
 
 export function prepareEchoReportMeasurements(raw: Record<string, string>, weightKg: unknown, species = "", age?: unknown) {
   const measurements = normalizeDiastolicAliases(raw);
-  const canine = normalizeEchoSpecies(species) === "Canina";
+  const canine = isCanineEchoSpecies(species);
   const ambiguousKeys = ambiguousEchoLengthKeys(raw);
   for (const key of lengthKeys) {
     if (confirmedEchoUnit(raw, key) === "cm") {
@@ -189,7 +189,7 @@ export function prepareEchoReportMeasurements(raw: Record<string, string>, weigh
 
 export function canineAeAoClinicalReference(measurements: Record<string, string>, species: string, ambiguousKeys = ambiguousEchoLengthKeys(measurements)): string | null {
   const ratio = number(measurements.AE_Ao);
-  if (normalizeEchoSpecies(species) !== "Canina" || !["2d_eixo_curto_diastole_inicial", "2d_eixo_curto_diastole_inicial_sueco"].includes(measurements.AE_Ao_metodo)
+  if (!isCanineEchoSpecies(species) || !["2d_eixo_curto_diastole_inicial", "2d_eixo_curto_diastole_inicial_sueco"].includes(measurements.AE_Ao_metodo)
       || ratio === null || ratio <= 0
       || ["AE_Ao", "Aorta", "Atrio_esquerdo"].some((key) => ambiguousKeys.has(key))) return null;
   return "<1,60 (2D, eixo curto)";
@@ -257,7 +257,7 @@ export function buildEchoReportGroups(measurements: Record<string, string>, refe
           if (diastolicReference) return diastolicReference.text;
           const aeAoLimit = item.key === "AE_Ao" ? canineAeAoClinicalReference(measurements, species, ambiguousKeys) : null;
           if (aeAoLimit) return aeAoLimit;
-          const twoD = selected2D && referenceCarrier && normalizeEchoSpecies(referenceCarrier.especie) === "Canina"
+          const twoD = selected2D && referenceCarrier && isCanineEchoSpecies(referenceCarrier.especie)
             && (item.key !== "DeltaD_FS_2D" || fsMatchesPair)
             ? getCanine2DReference(item.key, weightKg, view, currentAge) : null;
           return twoD ? `${twoD.min.toFixed(2)}–${twoD.max.toFixed(2)}${item.unit ? ` ${item.unit}` : ""}`
