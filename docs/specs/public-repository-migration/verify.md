@@ -7,3 +7,5 @@ As branches main e stage exigem pull request e os dois checks do frontend. Exclu
 Os ambientes staging e production aceitam apenas suas branches correspondentes. A migração da VPS e a validação de deploy ainda dependem das credenciais dos novos ambientes; não houve troca do origin nem intervenção na VPS.
 
 O primeiro guardrail detectou documentação ausente da fixture do Maps. Esta correção repõe a estrutura necessária, sem trazer o histórico operacional privado.
+
+O quality-gate completo de main passou na execução 43225634556. Jobs com acesso à VPS ficam desativados por padrão com STAGING_DEPLOY_ENABLED/PRODUCTION_DEPLOY_ENABLED ausentes; cada variável de repositório deverá ser ativada após a migração de cada ambiente.
