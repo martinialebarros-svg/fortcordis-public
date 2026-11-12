@@ -258,7 +258,7 @@ jobs:
 
   whatsapp-persistence-diagnostics:
     environment: staging
-    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.STAGING_DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -302,7 +302,7 @@ jobs:
 
   deploy-stage:
     environment: staging
-    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository == 'martinialebarros-svg/fortcordis-public' && github.ref == 'refs/heads/stage' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && vars.STAGING_DEPLOY_ENABLED == 'true'
     env:
       WHATSAPP_STAGE_LIVE_META_ENABLED: ${{ vars.WHATSAPP_STAGE_LIVE_META_ENABLED || '0' }}
     needs:
