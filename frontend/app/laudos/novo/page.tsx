@@ -26,6 +26,7 @@ import EchoVoiceAssistant from "../components/EchoVoiceAssistant";
 import EchoUnitReview from "../components/EchoUnitReview";
 import EchoNarrativeConsistencyNotice from "../components/EchoNarrativeConsistencyNotice";
 import EchoOutflowMeasurements from "../components/EchoOutflowMeasurements";
+import EchoPulmonaryHypertension from "../components/EchoPulmonaryHypertension";
 import { mapImportedEchoMeasurements, updateEchoOutflowMeasurement } from "@/lib/echo-outflow-editor";
 import { ECHO_OUTFLOW_KEYS } from "@/lib/echo-outflow";
 import FelineWaveReview from "../components/FelineWaveReview";
@@ -2112,10 +2113,13 @@ export default function NovoLaudoPage() {
                           value={medidas["PSAP"] || ""}
                           onChange={(v) => handleMedidaChange("PSAP", v)}
                           readOnly
-                          reference="Estimativa ecocardiográfica; confirmar ausência de obstrução da via de saída do VD."
+                          reference="Estimativa complementar; revisar a avaliação de HP e confirmar ausência de obstrução da via de saída do VD. Não gradua a probabilidade de HP."
                         />
                       </div>
                     </div>
+
+                    <div data-echo-review-target="pulmonary"><EchoPulmonaryHypertension species={paciente.especie} measurements={medidas}
+                      onPatch={(patch) => setMedidas((previous) => ({ ...previous, ...patch }))} /></div>
 
                     <div className="border-t pt-6">
                       <h4 className="mb-4 text-sm font-semibold text-gray-900">VE - Modo 2D</h4>

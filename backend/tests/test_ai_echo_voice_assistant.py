@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -688,17 +689,17 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
         self.assertIn("aumento importante", suggestions["atrio_esquerdo"])
         self.assertIn("sobrecarga volumétrica crônica", suggestions["ventriculo_esquerdo"])
         self.assertIn("pressões de enchimento", suggestions["funcao_diastolica"])
-        self.assertIn("velocidade elevada", suggestions["valva_tricuspide"])
+        self.assertIn("Regurgitação tricúspide documentada", suggestions["valva_tricuspide"])
         for text in suggestions.values():
             self.assertNotRegex(text, r"\b(?:2[,.]5|2[,.]0|1[,.]35|2[,.]2|14|5[,.]5|3[,.]6)\b")
         self.assertIn("repercussão hemodinâmica", suggestions["atrio_direito"])
         self.assertIn("estágio C (ACVIM)", suggestions["conclusao"])
         self.assertIn("congestão venosa pulmonar", suggestions["conclusao"])
-        self.assertIn("alta probabilidade ecocardiográfica", suggestions["conclusao"])
+        self.assertNotIn("alta probabilidade ecocardiográfica", suggestions["conclusao"])
         warning_types = {warning.warning_type for warning in enriched.warnings}
         self.assertNotIn("multimodal_correlation_applied", warning_types)
         self.assertNotIn("mitral_velocity_not_regurgitation_grade", warning_types)
-        self.assertNotIn("tr_velocity_requires_ph_context", warning_types)
+        self.assertIn("tr_velocity_requires_ph_context", warning_types)
         self.assertNotIn("stage_c_requires_chf_evidence", warning_types)
 
     def test_measurements_and_loaded_reference_suggest_advanced_mitral_pattern(self) -> None:
@@ -908,7 +909,7 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
             warning_types,
         )
 
-    def test_calculates_psap_and_high_canine_ph_probability_from_multimodal_findings(
+    def test_legacy_multimodal_findings_keep_psap_estimate_without_unreviewed_ph_grade(
         self,
     ) -> None:
         enriched = validate_and_enrich_clinical_output(
@@ -929,12 +930,10 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
         self.assertAlmostEqual(by_target["IT_Grad"].value, 51.84)
         self.assertEqual(by_target["PAD_estimada"].value, 10)
         self.assertAlmostEqual(by_target["PSAP"].value, 61.84)
-        conclusion = next(
-            item.text
-            for item in enriched.field_suggestions
-            if item.field_key == "conclusao"
-        )
-        self.assertIn("alta probabilidade ecocardiográfica", conclusion)
+        # Narrative does not establish signal quality, RVOT exclusion or three
+        # explicitly assessed sites. It must not create a definitive grade.
+        self.assertFalse(any("alta probabilidade ecocardiográfica" in item.text for item in enriched.field_suggestions))
+        self.assertIn("ph_probability_requires_reviewed_context", {warning.warning_type for warning in enriched.warnings})
         self.assertIn(
             "psap_is_estimate",
             {warning.warning_type for warning in enriched.warnings},
@@ -945,7 +944,8 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
             (3.0, 0, "baixa"),
             (3.0, 1, "baixa"),
             (3.0, 2, "intermediaria"),
-            (3.2, 0, "baixa"),
+            (3.0, 3, "alta"),
+            (3.2, 0, "intermediaria"),
             (3.2, 1, "intermediaria"),
             (3.2, 2, "alta"),
             (3.5, 0, "intermediaria"),
@@ -983,23 +983,92 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
                 self.assertEqual(by_target["PAD_estimada"].value, expected_rap)
                 self.assertEqual(by_target["PSAP"].value, expected_psap)
 
-    def test_feline_ph_uses_orientative_suspicion_not_canine_matrix(self) -> None:
+    def test_feline_ph_is_descriptive_without_arbitrary_velocity_bands(self) -> None:
         enriched = validate_and_enrich_clinical_output(
             empty_output(),
             "Regurgitação tricúspide e dilatação importante do átrio direito.",
             species="Felina",
             current_measurements={"IT_Vmax": "3,0"},
         )
-        conclusion = next(
-            item.text
-            for item in enriched.field_suggestions
-            if item.field_key == "conclusao"
-        )
-        self.assertIn("suspeita ecocardiográfica", conclusion)
+        self.assertFalse(any(re.search(r"(?:alta|baixa|intermediária) (?:probabilidade|suspeita)", item.text) for item in enriched.field_suggestions))
+        self.assertTrue(any("Regurgitação tricúspide documentada" in item.text for item in enriched.field_suggestions))
         self.assertIn(
             "feline_ph_framework_limited",
             {warning.warning_type for warning in enriched.warnings},
         )
+
+    def test_provider_ph_grades_are_removed_without_review_in_every_output_channel(self) -> None:
+        cases = (("Canina", {}), ("Felina", {}), ("Cat", {"IT_Vmax": "3.6"}),
+                 ("Canina", {"HP_ativa": "sim", "HP_TRV": "adequado", "IT_Vmax": "3.6"}))
+        for species, measurements in cases:
+            with self.subTest(species=species, measurements=measurements):
+                output = empty_output(
+                    field_suggestions=[
+                        {"field_key": "conclusao", "text": "Função sistólica preservada. Alta probabilidade de hipertensão pulmonar. Sem evidências de derrame pericárdico.", "confidence": .9, "source_spans": [], "evidence_type": "inference"},
+                        {"field_key": "arteria_pulmonar", "text": "Dimensões preservadas, com probabilidade alta de hipertensão pulmonar.", "confidence": .9, "source_spans": [], "evidence_type": "inference"},
+                        {"field_key": "valva_tricuspide", "text": "Morfologia preservada. Alta suspeita ecocardiográfica de HP.", "confidence": .9, "source_spans": [], "evidence_type": "inference"},
+                    ],
+                    conclusion_suggestion=["Sem evidências de hipertensão pulmonar.", "Alta probabilidade de hipertensão pulmonar."],
+                )
+                result = validate_and_enrich_clinical_output(output, "Revisar achados.", species=species, current_measurements=measurements)
+                texts = [item.text for item in result.field_suggestions] + result.conclusion_suggestion
+                combined = " ".join(texts)
+                self.assertNotRegex(combined.lower(), r"(?:alta\s+(?:probabilidade|suspeita)|probabilidade\s+alta)")
+                self.assertIn("Função sistólica preservada.", combined)
+                self.assertIn("Sem evidências de derrame pericárdico.", combined)
+                self.assertIn("Dimensões preservadas.", combined)
+                self.assertIn("Morfologia preservada.", combined)
+                self.assertIn("Sem evidências de hipertensão pulmonar.", result.conclusion_suggestion)
+                self.assertIn("ph_probability_requires_reviewed_context", {warning.warning_type for warning in result.warnings})
+                # Validation produces a projection, not an edit of provider history.
+                self.assertIn("Alta probabilidade", output.field_suggestions[0].text)
+
+    def test_provider_wrong_ph_grade_is_replaced_only_by_reviewed_deterministic_grade(self) -> None:
+        from app.utils.echo_pulmonary_probability import make_pulmonary_review_stamp
+        measurements = {"HP_ativa": "sim", "HP_TRV": "adequado", "HP_VSVD": "sem_obstrucao", "IT_Vmax": "3.2",
+                        "HP_ventriculos": "sem_sinais", "HP_arteria_pulmonar": "sem_sinais", "HP_atrio_cava": "sem_sinais"}
+        measurements["HP_revisao"] = make_pulmonary_review_stamp(measurements, "Canina")
+        output = empty_output(
+            field_suggestions=[{"field_key": key, "text": "Função preservada. Alta probabilidade de hipertensão pulmonar.",
+                                "confidence": .9, "source_spans": [], "evidence_type": "inference"}
+                               for key in ("conclusao", "valva_tricuspide", "arteria_pulmonar")],
+            conclusion_suggestion=["Sem derrame. Alta probabilidade de hipertensão pulmonar."],
+        )
+        result = validate_and_enrich_clinical_output(output, "Revisar achados.", species="Canina", current_measurements=measurements)
+        combined = " ".join([item.text for item in result.field_suggestions] + result.conclusion_suggestion)
+        self.assertNotIn("Alta probabilidade", combined)
+        self.assertIn("intermediária probabilidade ecocardiográfica de hipertensão pulmonar", combined)
+        self.assertIn("Função preservada.", combined)
+        self.assertIn("Sem derrame.", combined)
+        self.assertTrue(any("intermediária probabilidade" in text for text in result.conclusion_suggestion))
+
+    def test_ph_grade_sanitization_preserves_descriptions_and_local_negative_statements(self) -> None:
+        descriptions = (
+            "Sem evidências de hipertensão pulmonar.",
+            "Regurgitação tricúspide com velocidade elevada; correlacionar com remodelamento direito.",
+            "Não há alta probabilidade de hipertensão pulmonar.",
+            "Sem evidências ecocardiográficas de alta probabilidade de hipertensão pulmonar.",
+            "Alta probabilidade de endocardiose mitral, sem evidências de hipertensão pulmonar.",
+        )
+        for text in descriptions:
+            with self.subTest(text=text):
+                output = empty_output(field_suggestions=[{"field_key": "conclusao", "text": text, "confidence": .9, "source_spans": [], "evidence_type": "inference"}], conclusion_suggestion=[text])
+                result = validate_and_enrich_clinical_output(output, "Revisar achados.", species="Felina")
+                self.assertEqual(result.field_suggestions[0].text, text)
+                self.assertEqual(result.conclusion_suggestion, [text])
+        output = empty_output(conclusion_suggestion=["Não há derrame com alta probabilidade de hipertensão pulmonar."])
+        result = validate_and_enrich_clinical_output(output, "Revisar achados.", species="Felina")
+        self.assertFalse(result.conclusion_suggestion)
+
+    def test_provider_ph_grade_in_conclusion_fallback_does_not_bypass_empty_measurements(self) -> None:
+        for species in ("Canina", "Felina"):
+            for text in ("Alta probabilidade de hipertensão pulmonar.", "Probabilidade de HP: alta.",
+                         "A probabilidade de hipertensão pulmonar é alta.",
+                         "Probabilidade de hipertensão pulmonar classificada como alta."):
+                with self.subTest(species=species, text=text):
+                    result = validate_and_enrich_clinical_output(empty_output(conclusion_suggestion=[text]), "Revisar achados.", species=species)
+                    self.assertEqual(result.conclusion_suggestion, [])
+                    self.assertFalse(any(item.field_key == "conclusao" for item in result.field_suggestions))
 
     def test_contextual_warnings_are_filtered_and_clinical_duplicates_consolidated(
         self,
@@ -1709,6 +1778,173 @@ class AIEchoVoiceAssistantTest(unittest.TestCase):
             refreshed = db.query(AIEchoSession).filter(AIEchoSession.id == session_id).one()
             self.assertEqual(refreshed.status, "awaiting_review")
             self.assertEqual(refreshed.provider_response_id, "resp-test")
+
+    def _structure_reviewed_hp_with_fake_client(self, measurements, *, output=None):
+        """Exercise worker, real prompt projection and persistence without network."""
+        before = dict(measurements)
+        with self.session_factory() as db:
+            session = self.create_session(db)
+            session_id = session.id
+            db.add(AIEchoTranscript(
+                id=f"t-hp-{session_id}", session_id=session_id,
+                raw_text="Revisar avaliação estruturada da circulação pulmonar.",
+                edited_text="Revisar avaliação estruturada da circulação pulmonar.",
+                language="pt-BR",
+            ))
+            db.commit()
+        parse = Mock(return_value=SimpleNamespace(
+            output_parsed=output if output is not None else empty_output(),
+            id="synthetic-hp-response", usage=None,
+        ))
+        with (
+            patch.object(ai_echo_service, "SessionLocal", self.session_factory),
+            patch.object(ai_echo_providers, "OpenAI", return_value=SimpleNamespace(
+                responses=SimpleNamespace(parse=parse),
+            )),
+            patch.object(ai_echo_providers.settings, "AI_STRUCTURING_MODEL", "mock-hp-model"),
+            patch.object(ai_echo_service, "get_clinical_structuring_provider", side_effect=
+                         ai_echo_providers.OpenAIClinicalStructuringProvider),
+            patch.object(ai_echo_service, "load_echo_reference_context",
+                         wraps=load_echo_reference_context) as loader,
+            patch.object(ai_echo_service, "validate_and_enrich_clinical_output",
+                         wraps=validate_and_enrich_clinical_output) as validator,
+        ):
+            ai_echo_service._process_structure(session_id, measurements)
+        parse.assert_called_once()
+        loader.assert_called_once()
+        validator.assert_called_once()
+        safe_measurements = clinically_safe_echo_measurements(before)
+        self.assertEqual(loader.call_args.kwargs["current_measurements"], safe_measurements)
+        self.assertEqual(validator.call_args.kwargs["current_measurements"], safe_measurements)
+        self.assertEqual(measurements, before)
+        prompt = json.loads(parse.call_args.kwargs["input"])
+        with self.session_factory() as db:
+            saved = db.query(AIEchoSession).filter(AIEchoSession.id == session_id).one()
+            self.assertEqual(saved.status, "awaiting_review", saved.last_error_message)
+            suggestions = {item.field_key: item.suggested_value for item in db.query(
+                AIEchoFieldSuggestion).filter(AIEchoFieldSuggestion.session_id == session_id).all()}
+            warning_types = {item.warning_type for item in db.query(AIEchoClinicalWarning).filter(
+                AIEchoClinicalWarning.session_id == session_id).all()}
+            report = db.query(Laudo).filter(Laudo.id == 44).one()
+            self.assertEqual((report.descricao, report.diagnostico), ("texto anterior", "conclusão anterior"))
+        return prompt, suggestions, warning_types
+
+    @staticmethod
+    def _reviewed_hp_measurements(**updates):
+        from app.utils.echo_pulmonary_probability import make_pulmonary_review_stamp
+        measurements = {
+            "HP_ativa": "sim", "HP_TRV": "adequado", "HP_VSVD": "sem_obstrucao",
+            "HP_ventriculos": "sem_sinais", "HP_arteria_pulmonar": "sem_sinais",
+            "HP_atrio_cava": "sem_sinais", "HP_suporte_automatico": "nao",
+            "IT_Vmax": "3.2", "AP": "1.2", "Ao_nivel_AP": "1.1", **updates,
+        }
+        measurements["HP_revisao"] = make_pulmonary_review_stamp(measurements, "Canina")
+        return measurements
+
+    def test_structuring_keeps_reviewed_hp_with_complete_ambiguous_length_cohort(self) -> None:
+        from app.utils.echo_pulmonary_probability import evaluate_pulmonary_probability
+        for lengths in ({"DIVEd": "2.3"}, {"SIVd": "0.7"}, {"DIVEd": "2.3", "SIVd": "0.7"}):
+            for velocity, site, probability, label in (
+                ("3.0", "sem_sinais", "baixa", "baixa"),
+                ("3.2", "sem_sinais", "intermediaria", "intermediária"),
+                ("3.6", "com_sinais", "alta", "alta"),
+            ):
+                with self.subTest(lengths=lengths, probability=probability):
+                    measurements = self._reviewed_hp_measurements(
+                        **lengths, IT_Vmax=velocity, HP_ventriculos=site,
+                    )
+                    raw_assessment = evaluate_pulmonary_probability(measurements, "Canina")
+                    self.assertEqual(raw_assessment["status"], "classified")
+                    self.assertTrue(raw_assessment["review_valid"])
+                    prompt, suggestions, warnings = self._structure_reviewed_hp_with_fake_client(measurements)
+                    safe = prompt["current_measurements"]
+                    self.assertTrue(({"AP", "Ao_nivel_AP"} | lengths.keys()).isdisjoint(safe))
+                    self.assertNotIn("HP_revisao", safe)
+                    self.assertEqual(safe["HP_avaliacao_revisada"]["status"], "classified")
+                    self.assertEqual(safe["HP_avaliacao_revisada"]["probability"], probability)
+                    self.assertIsNone(safe["HP_avaliacao_revisada"]["metrics"]["ap_ao"])
+                    self.assertIn(f"{label} probabilidade ecocardiográfica", suggestions["conclusao"])
+                    self.assertNotIn("ph_probability_requires_reviewed_context", warnings)
+
+    def test_structuring_rejects_hp_stamp_after_length_cohort_changes(self) -> None:
+        from app.utils.echo_pulmonary_probability import has_valid_pulmonary_review
+        for changes in ({"DIVEd": "23", "SIVd": "7"}, {"DIVEd": "", "SIVd": ""}):
+            with self.subTest(changes=changes):
+                measurements = self._reviewed_hp_measurements(DIVEd="2.3", SIVd="0.7")
+                measurements.update(changes)
+                self.assertFalse(has_valid_pulmonary_review(measurements, "Canina"))
+                prompt, suggestions, warnings = self._structure_reviewed_hp_with_fake_client(
+                    measurements, output=empty_output(
+                        conclusion_suggestion=["Alta probabilidade de hipertensão pulmonar."],
+                    ),
+                )
+                assessment = prompt["current_measurements"]["HP_avaliacao_revisada"]
+                self.assertEqual(assessment["status"], "pending")
+                self.assertIsNone(assessment["probability"])
+                self.assertNotIn("probabilidade ecocardiográfica", " ".join(suggestions.values()))
+                self.assertNotIn("Alta probabilidade", " ".join(suggestions.values()))
+                self.assertIn("ph_probability_requires_reviewed_context", warnings)
+
+    def test_structuring_hp_without_review_cannot_restore_provider_probability(self) -> None:
+        measurements = self._reviewed_hp_measurements(
+            DIVEd="2.3", SIVd="0.7", IT_Vmax="3.6", HP_ventriculos="com_sinais",
+            IT_Grad="51.84", PSAP="61.84", Remodelamento_AD="moderado",
+        )
+        measurements.pop("HP_revisao")
+        prompt, suggestions, warnings = self._structure_reviewed_hp_with_fake_client(
+            measurements, output=empty_output(
+                conclusion_suggestion=["Alta probabilidade de hipertensão pulmonar."],
+            ),
+        )
+        safe = prompt["current_measurements"]
+        self.assertEqual(safe["HP_avaliacao_revisada"]["status"], "pending")
+        self.assertIsNone(safe["HP_avaliacao_revisada"]["probability"])
+        self.assertNotIn("PSAP", safe)
+        self.assertNotIn("Alta probabilidade", " ".join(suggestions.values()))
+        self.assertNotIn("probabilidade ecocardiográfica", " ".join(suggestions.values()))
+        self.assertIn("ph_probability_requires_reviewed_context", warnings)
+        with self.session_factory() as db:
+            targets = {item.target_field_key for item in db.query(AIEchoMeasurement).all()}
+        self.assertNotIn("PSAP", targets)
+
+    def test_structuring_nonmeasurable_trv_keeps_reviewed_hp_without_pressure_or_velocity(self) -> None:
+        measurements = self._reviewed_hp_measurements(
+            DIVEd="2.3", SIVd="0.7", HP_TRV="nao_mensuravel",
+            HP_ventriculos="com_sinais", HP_arteria_pulmonar="com_sinais",
+            HP_atrio_cava="com_sinais", IT_Vmax="3.6", IT_Grad="51.84",
+            PSAP="61.84", Remodelamento_AD="moderado",
+        )
+        prompt, suggestions, warnings = self._structure_reviewed_hp_with_fake_client(measurements)
+        safe = prompt["current_measurements"]
+        self.assertEqual(safe["HP_avaliacao_revisada"]["status"], "classified")
+        self.assertEqual(safe["HP_avaliacao_revisada"]["probability"], "alta")
+        self.assertTrue({"PSAP", "IT_Vmax", "IT_Grad"}.isdisjoint(safe))
+        self.assertIsNone(safe["HP_avaliacao_revisada"]["metrics"]["trv"])
+        self.assertIn("alta probabilidade ecocardiográfica", suggestions["conclusao"])
+        self.assertNotIn("ph_probability_requires_reviewed_context", warnings)
+        with self.session_factory() as db:
+            targets = {item.target_field_key for item in db.query(AIEchoMeasurement).all()}
+        self.assertTrue({"PSAP", "IT_Vmax", "IT_Grad"}.isdisjoint(targets))
+
+    def test_structuring_hp_confirmed_lengths_are_converted_once_in_prompt(self) -> None:
+        for unit, values in (("cm", ("1.2", "1.1", "2.3", "0.7")),
+                             ("mm", ("12", "11", "23", "7"))):
+            with self.subTest(unit=unit):
+                length_keys = ("AP", "Ao_nivel_AP", "DIVEd", "SIVd")
+                measurements = self._reviewed_hp_measurements(**{
+                    **dict(zip(length_keys, values)),
+                    **{f"unidade_confirmada_{key}": unit for key in length_keys},
+                })
+                prompt, suggestions, warnings = self._structure_reviewed_hp_with_fake_client(measurements)
+                safe = prompt["current_measurements"]
+                for key, expected in zip(length_keys, (12, 11, 23, 7)):
+                    self.assertEqual(float(safe[key]["value"]), expected)
+                    self.assertEqual(safe[key]["unit"], "mm")
+                self.assertEqual(safe["HP_avaliacao_revisada"]["status"], "classified")
+                self.assertEqual(safe["HP_avaliacao_revisada"]["probability"], "intermediaria")
+                self.assertAlmostEqual(safe["HP_avaliacao_revisada"]["metrics"]["ap_ao"], 12 / 11)
+                self.assertIn("intermediária probabilidade ecocardiográfica", suggestions["conclusao"])
+                self.assertNotIn("ph_probability_requires_reviewed_context", warnings)
 
     def test_structuring_uses_one_patient_age_for_reference_and_exam_context(self) -> None:
         cases = (

@@ -5,6 +5,7 @@ from typing import Any
 from app.utils.echo_unit_provenance import ECHO_LENGTH_KEYS, CONFIRMED_UNIT_PREFIX
 from app.utils.echo_reference_methods import ECHO_REFERENCE_METHOD_VALUES
 from app.utils.echo_diastolic_aliases import ECHO_DIASTOLIC_CANONICAL_KEYS
+from app.utils.echo_pulmonary_probability import HP_MEASUREMENT_KEYS, decode_pulmonary_measurement
 
 
 LV_M_MODE_KEYS = {
@@ -99,6 +100,11 @@ def extrair_medidas_ecocardiograma_da_descricao(
     ):
         key = match.group(1)
         raw_value = match.group(2).strip()
+        if key in HP_MEASUREMENT_KEYS:
+            # HP strings use a quoted one-line codec (including explicit clears
+            # and invalid imported numbers) to preserve review context exactly.
+            measurements[key] = decode_pulmonary_measurement(raw_value)
+            continue
         if key in ECHO_DIASTOLIC_CANONICAL_KEYS:
             # An explicit blank or invalid canonical value blocks older aliases.
             # Preserve it in the read projection without accepting it as a peak.

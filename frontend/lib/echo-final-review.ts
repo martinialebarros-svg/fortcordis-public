@@ -1,10 +1,11 @@
 import { hasAnyMeasurement, LV_2D_KEYS, LV_M_MODE_KEYS } from "./echo-derived-measurements";
 import { canonicalEchoDiastolicKey } from "./echo-diastolic-reference";
 import { findEchoNarrativeDiscrepancies } from "./echo-narrative-consistency";
+import { evaluatePulmonaryProbability } from "./echo-pulmonary-probability";
 import { normalizeEchoSpecies } from "./echo-species";
 import { ambiguousEchoLengthKeys } from "./echo-unit-provenance";
 
-export type EchoReviewTarget = "patient" | "technique" | "units" | "references" | "diastolic" | "qualitative" | "images";
+export type EchoReviewTarget = "patient" | "technique" | "units" | "references" | "diastolic" | "pulmonary" | "qualitative" | "images";
 export type EchoFinalReviewIssue = {
   key: string;
   title: string;
@@ -68,6 +69,12 @@ export function buildEchoFinalReviewIssues(input: EchoFinalReviewInput): EchoFin
       add("tissue-waves", "Ondas teciduais e′/a′", "Confirme se os picos teciduais estão separados e mensuráveis ou fundidos.", "diastolic");
     }
     if (tissue && m.TDI_ondas !== "fundidas" && !m.TDI_metodo) add("tissue-method", "Técnica e sítio do Doppler tecidual", "Confirme a técnica e o local de obtenção para consultar os valores publicados.", "references");
+  }
+  const pulmonary = evaluatePulmonaryProbability(m, species);
+  if (pulmonary.active && pulmonary.status === "pending") {
+    add("pulmonary-pending", "Avaliação de HP pendente", pulmonary.missing.join(" "), "pulmonary");
+  } else if (pulmonary.active && pulmonary.status === "unsupported") {
+    add("pulmonary-descriptive", "HP: registro descritivo", "A classificação canina não é aplicada a esta espécie. Confira os achados descritivos no PDF.", "pulmonary", "info");
   }
   if (!input.qualitativeApplied) add("qualitative-not-applied", "Análise estruturada não aplicada", "Confira o texto qualitativo que será apresentado antes da emissão.", "qualitative");
   if (!conclusion.trim()) add("conclusion", "Conclusão vazia", "Confira e preencha a conclusão do exame.", "qualitative");

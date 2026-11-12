@@ -79,6 +79,7 @@ from app.utils.ecocardiograma_medidas import (
 )
 from app.utils.ecocardiograma_qualitativa import extrair_qualitativa_ecocardiograma_da_descricao
 from app.utils.echo_diastolic_aliases import ECHO_DIASTOLIC_CANONICAL_KEYS
+from app.utils.echo_pulmonary_probability import HP_MEASUREMENT_KEYS, encode_pulmonary_measurement
 from app.utils.paciente_idade import referencia_documento, idade_do_paciente, dados_idade_paciente, alteracoes_idade
 from app.utils.paciente_helpers import (
     data_civil_referencia,
@@ -1186,6 +1187,9 @@ def _montar_descricao_ecocardiograma(
 
     descricao_parts = ["## Medidas Ecocardiograficas\n"]
     for key, value in medidas.items():
+        if key in HP_MEASUREMENT_KEYS:
+            descricao_parts.append(f"- {key}: {encode_pulmonary_measurement(value)}")
+            continue
         if value or key in ECHO_DIASTOLIC_CANONICAL_KEYS:
             # Keep explicit clears alongside historical aliases when creating a
             # report; None denotes a blank, never a fabricated numeric value.

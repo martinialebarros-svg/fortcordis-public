@@ -1,9 +1,10 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EditarLaudoPage from "./[id]/editar/page";
 import { montarDescricaoEcocardiograma, criarEcocardiogramaEstruturadoInicial } from "@/lib/ecocardiograma-estruturado";
 import type { EchoEditorDraftResponse } from "@/lib/echo-editor-draft";
+import { makePulmonaryReviewStamp } from "@/lib/echo-pulmonary-probability";
 
 const qa = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), post: vi.fn(), delete: vi.fn(),
   router: { push: vi.fn(), replace: vi.fn() }, id: "905", records: new Map<string, EchoEditorDraftResponse>(),
@@ -162,6 +163,37 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
     fireEvent.click(resume); await screen.findByDisplayValue("QA CÓPIA PRIVADA");
     expect(JSON.parse(screen.getByTestId("measurements").textContent!)).toMatchObject(measures);
     expect(privateWritesOnly()).toBe(true); view.unmount();
+  });
+
+  it("recupera a avaliação de HP na cópia privada sem alterar a conclusão e envia a revisão na atualização explícita", async () => {
+    const hp = { HP_ativa: "sim", HP_TRV: "adequado", HP_VSVD: "sem_obstrucao", HP_suporte_automatico: "sim",
+      HP_ventriculos: "sem_sinais", HP_arteria_pulmonar: "sem_sinais", HP_atrio_cava: "sem_sinais", IT_Vmax: "3.2" };
+    const stamp = makePulmonaryReviewStamp(hp, "Canina");
+    official.paciente = { ...patient, especie: "Canina" };
+    official.medidas = { ...measures, ...hp, HP_revisao: stamp };
+    const view = await open();
+    // A aba Medidas tem muitos controles; busque cada ação dentro da sua região.
+    const actions = within(screen.getByRole("banner"));
+    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
+    const hpCard = within(screen.getByRole("region", { name: "Probabilidade de hipertensão pulmonar" }));
+    expect(hpCard.getByText("Probabilidade intermediária de hipertensão pulmonar")).toBeInTheDocument();
+    fireEvent.change(hpCard.getByLabelText("Observações da avaliação de HP (opcional)"), { target: { value: "QA observação HP\nSegunda linha." } });
+    fireEvent.click(actions.getByRole("button", { name: "Salvar rascunho" }));
+    await screen.findByText(/Rascunho salvo às/);
+    expect(lastSnapshot().measurementState.measurements).toMatchObject({ HP_revisao: stamp, HP_observacoes: "QA observação HP\nSegunda linha." });
+    expect(lastSnapshot().conteudo.diagnostico).toBe("Conclusão oficial QA.");
+    expect(privateWritesOnly()).toBe(true);
+    view.unmount(); const recovered = render(<EditarLaudoPage />);
+    const recovery = within(await screen.findByRole("region", { name: "Rascunho do ecocardiograma" }));
+    fireEvent.click(await recovery.findByRole("button", { name: "Retomar rascunho" }));
+    const recoveredActions = within(screen.getByRole("banner"));
+    await waitFor(() => expect(recoveredActions.getByRole("button", { name: "Atualizar laudo" })).toBeEnabled());
+    expect(JSON.parse(screen.getByTestId("measurements").textContent!)).toMatchObject({ HP_revisao: stamp, HP_observacoes: "QA observação HP\nSegunda linha." });
+    fireEvent.click(recoveredActions.getByRole("button", { name: "Atualizar laudo" }));
+    await waitFor(() => expect(updates()).toHaveLength(1));
+    expect(updates()[0][1].payload_laudo.diagnostico).toBe("Conclusão oficial QA.");
+    expect(updates()[0][1].payload_laudo.descricao).toContain('- HP_observacoes: "QA observação HP\\nSegunda linha."');
+    recovered.unmount();
   });
 
   it("recupera flags estruturadas e o ditado não transforma Finalizado em Rascunho", async () => {
