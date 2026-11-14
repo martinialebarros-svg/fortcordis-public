@@ -394,11 +394,17 @@ export default function NovoLaudoPage() {
   const [draftNavigationNotice, setDraftNavigationNotice] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
   const navigationInProgress = useRef(false);
+  const navigationFallback = useRef<number | null>(null);
   const navigationHandler = useRef<(href: string) => Promise<void>>(async () => {});
   const [submission, setSubmission] = useState<EchoEditorDraftSnapshot["submission"]>(undefined);
   const emissionInProgress = useRef(false);
   const voiceDraftIdRef = useRef<number | null>(null);
   const restoreGeneration = useRef(0);
+  useEffect(() => () => {
+    navigationInProgress.current = false;
+    if (navigationFallback.current !== null) window.clearTimeout(navigationFallback.current);
+    navigationFallback.current = null;
+  }, []);
   useEffect(() => {
     restoreGeneration.current += 1;
     return () => { restoreGeneration.current += 1; };
@@ -1230,22 +1236,66 @@ export default function NovoLaudoPage() {
   };
 
   const leaveEditor = async (href: string) => {
-    if (!ensureDraftOwner() || !contextReady || emissionInProgress.current || navigationInProgress.current) return;
+    const originUrl = window.location.href;
+    const destination = new URL(href, originUrl);
+    if (destination.origin !== window.location.origin || destination.href === originUrl) return;
+
+    const traceEnabled = process.env.NODE_ENV === "development"
+      || ["app.stage.fortcordis.com.br", "localhost", "127.0.0.1"].includes(window.location.hostname);
+    const trace = (step: string) => {
+      if (traceEnabled) console.info(`[laudo-rascunho:saida] ${step}`);
+    };
+    trace("inicio");
+    if (!ensureDraftOwner() || !contextReady || emissionInProgress.current || navigationInProgress.current) {
+      trace("guarda-bloqueou");
+      return;
+    }
     navigationInProgress.current = true;
     setLeaving(true);
     setDraftNavigationNotice(null);
-    try {
-      if (draftPromiseRef.current) await draftPromiseRef.current;
-      if (draftApplies && !submission) {
-        await editorDraft.flush();
-        if (editorDraft.pendingImages > 0 && !window.confirm("Há arquivos ainda não recebidos que precisarão ser reenviados ao retomar. Sair mesmo assim?")) return;
-      }
-      router.push(href);
-    } catch {
-      setDraftNavigationNotice("Não foi possível confirmar o rascunho antes de sair. Mantenha esta tela aberta e tente salvar novamente.");
-    } finally {
+    const stillAtEditor = () => navigationInProgress.current && window.location.href === originUrl && ensureDraftOwner();
+    const releaseNavigation = () => {
+      if (!navigationInProgress.current) return;
       navigationInProgress.current = false;
       setLeaving(false);
+    };
+    try {
+      if (draftPromiseRef.current) await draftPromiseRef.current;
+      if (!stillAtEditor()) return;
+      if (draftApplies && !submission) {
+        await editorDraft.flush();
+        trace("rascunho-confirmado");
+        if (!stillAtEditor()) return;
+        if (editorDraft.pendingImages > 0 && !window.confirm("Há arquivos ainda não recebidos que precisarão ser reenviados ao retomar. Sair mesmo assim?")) return;
+      }
+
+      navigationFallback.current = window.setTimeout(() => {
+        navigationFallback.current = null;
+        try {
+          if (stillAtEditor()) {
+            trace("navegacao-documento");
+            window.location.assign(destination.href);
+          }
+        } catch {
+          setDraftNavigationNotice("O rascunho foi preservado. Não foi possível abrir a próxima página. Tente sair novamente.");
+        } finally {
+          releaseNavigation();
+        }
+      }, 4_000);
+      trace("rota-solicitada");
+      try {
+        router.push(href);
+      } catch {
+        trace("roteador-falhou");
+        // A alternativa já está agendada para a URL de origem confirmada.
+      }
+    } catch {
+      trace("rascunho-nao-confirmado");
+      if (stillAtEditor()) {
+        setDraftNavigationNotice("Não foi possível confirmar o rascunho antes de sair. Mantenha esta tela aberta e tente salvar novamente.");
+      }
+    } finally {
+      if (navigationFallback.current === null) releaseNavigation();
     }
   };
   navigationHandler.current = leaveEditor;
@@ -1339,6 +1389,9 @@ export default function NovoLaudoPage() {
         </header>
 
         {!entradaPressao && !pressaoArterial.salvar_como_laudo_pressao && <EchoDraftStatus draft={editorDraft} />}
+        {leaving && <p role="status" className="my-3 rounded-lg border bg-white px-4 py-3 text-sm text-teal-900">
+          Saindo do editor. Aguarde a confirmação do rascunho e a abertura da próxima página.
+        </p>}
         {contextReady && draftApplies && !draftUserId && <div role="alert" className="my-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           Não foi possível identificar o usuário do rascunho. Reabra o sistema na conta correta antes de iniciar o ditado ou emitir.
         </div>}
