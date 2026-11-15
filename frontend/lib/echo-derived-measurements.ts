@@ -4,6 +4,7 @@ import { ECHO_REFERENCE_METHOD_VALUES } from "./echo-reference-policy";
 import { isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { deriveOutflowGradients, ECHO_OUTFLOW_KEYS, isOutflowMetadataKey } from "./echo-outflow";
 import { FELINE_DIASTOLIC_KEYS } from "./echo-feline-diastolic-reference";
+import { normalizePulmonaryStoredValue } from "./echo-pulmonary-probability";
 
 const DIASTOLIC_KEYS = new Set<string>(FELINE_DIASTOLIC_KEYS);
 
@@ -98,6 +99,7 @@ function normalizeStoredMeasurement(
   key: string,
   value: unknown
 ): string | null {
+  if (key.startsWith("HP_")) return normalizePulmonaryStoredValue(key, value);
   const text = String(value ?? "").trim();
   // Retain an explicit clearing/unresolved canonical entry in the read model.
   // Dropping it would let a historical alias become current on presentation.
@@ -174,7 +176,17 @@ export function parseStoredEchoMeasurements(
     const linePattern = /^[ \t]*-[ \t]*([A-Za-z0-9_]+):[ \t]*(.*?)[ \t]*$/gm;
     let match: RegExpExecArray | null;
     while ((match = linePattern.exec(section)) !== null) {
-      const normalized = normalizeStoredMeasurement(match[1], match[2]);
+      let value: unknown = match[2];
+      if (match[1].startsWith("HP_")) {
+        // The structured description JSON-encodes HP strings so observations
+        // and review contexts stay on one line. Decode only this fallback;
+        // authoritative dictionaries already contain their actual values.
+        try {
+          const decoded: unknown = JSON.parse(match[2]);
+          if (typeof decoded === "string" || typeof decoded === "number") value = decoded;
+        } catch { /* Older descriptions may contain plain HP values. */ }
+      }
+      const normalized = normalizeStoredMeasurement(match[1], value);
       if (normalized !== null) parsed[match[1]] = normalized;
     }
   }
