@@ -45,6 +45,9 @@ from app.utils.echo_diastolic import (
 from app.utils.echo_diastolic_aliases import (
     ECHO_DIASTOLIC_CANONICAL_KEYS, normalize_echo_diastolic_aliases,
 )
+from app.utils.echo_pulmonary_probability import (
+    HP_REFERENCE, HP_RPAD_REFERENCE, HP_SITE_LABELS, evaluate_pulmonary_probability,
+)
 
 
 # Cores do tema - preto e cinza com fontes brancas (teste)
@@ -1100,6 +1103,44 @@ def criar_secao_qualitativa(qualitativa: Dict[str, str], assinatura: Optional[Li
     return elements
 
 
+def criar_secao_probabilidade_hp(dados_pdf: Dict[str, Any]) -> List:
+    """Render only an opted-in, server-calculated assessment, never a client grade."""
+    medidas = dados_pdf.get("medidas") or {}
+    avaliacao = dados_pdf.get("_avaliacao_hp") or evaluate_pulmonary_probability(
+        medidas, (dados_pdf.get("paciente") or {}).get("especie"),
+    )
+    if not avaliacao["active"]:
+        return []
+    styles = create_pdf_styles()
+    elementos = [criar_titulo_secao("PROBABILIDADE DE HIPERTENSÃO PULMONAR"), Spacer(1, 2 * mm)]
+    elementos.append(Paragraph(_esc(avaliacao["summary"]), styles["Normal"]))
+    for texto in avaliacao["evidence"]:
+        elementos.append(Paragraph(_esc(texto), styles["Normal"]))
+    if avaliacao["active"]:
+        for site, label in HP_SITE_LABELS.items():
+            estado = "com sinais" if site in avaliacao["positive_sites"] else "sem sinais" if site in avaliacao["assessed_sites"] else "não avaliado"
+            elementos.append(Paragraph(_esc(f"{label}: {estado}."), styles["ReferenciaTexto"]))
+        metrics = avaliacao["metrics"]
+        suporte = []
+        for key, label, unit in (("ap_ao", "AP/Ao", ""), ("rpad", "RPAD", "%"), ("at_et", "TA/TE", ""), ("pr_early", "IP no início da diástole", " m/s")):
+            if metrics[key] is not None:
+                suporte.append(f"{label}: {metrics[key]:.2f}{unit}")
+        if suporte:
+            rotulo = "Métricas de suporte: " if avaliacao["applicable"] else "Métricas descritivas: "
+            elementos.append(Paragraph(_esc(rotulo + "; ".join(suporte) + "."), styles["ReferenciaTexto"]))
+    for texto in [*avaliacao["missing"], *avaliacao["notes"]]:
+        elementos.append(Paragraph(_esc(texto), styles["ReferenciaTexto"]))
+    if not avaliacao["psap_usable"]:
+        elementos.append(Paragraph("PSAP não apresentada: qualidade da TRV e ausência de obstrução da via de saída do VD exigem revisão vigente.", styles["ReferenciaTexto"]))
+    if str(medidas.get("HP_TRV") or "").strip() == "nao_mensuravel":
+        elementos.append(Paragraph("Velocidade e gradiente tricúspides históricos não apresentados: sinal declarado não mensurável; valores de origem preservados no registro.", styles["ReferenciaTexto"]))
+    observacoes = str(medidas.get("HP_observacoes") or "").strip()
+    if observacoes:
+        elementos.append(Paragraph(_esc("Observações: " + observacoes).replace("\n", "<br/>"), styles["Normal"]))
+    elementos.append(Spacer(1, 3 * mm))
+    return elementos
+
+
 def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
     """Relaciona estudos primários pertinentes, sem atribuir faixas legadas a eles."""
     paciente = dados_pdf.get("paciente") or {}
@@ -1115,7 +1156,9 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
     tem_limiar_ae_ao_canino = canine_ae_ao_clinical_limit_applies(dados_pdf)
     consultas_diastolicas = diastolic_references(medidas, paciente.get("especie"))
     bibliografia_diastolica = [ref["bibliography"] for ref in consultas_diastolicas.values() if ref["bibliography"]]
-    if not referencia and not tem_fluxo_saida and not tem_limiar_ae_ao_canino and not bibliografia_diastolica:
+    avaliacao_hp = dados_pdf.get("_avaliacao_hp") or evaluate_pulmonary_probability(medidas, paciente.get("especie"))
+    tem_avaliacao_hp = avaliacao_hp["active"] and avaliacao_hp["applicable"]
+    if not referencia and not tem_fluxo_saida and not tem_limiar_ae_ao_canino and not bibliografia_diastolica and not tem_avaliacao_hp:
         return []
     especie = normalizar_especie_referencia(paciente.get("especie") or "")
     modo_m = str(medidas.get("VE_tecnica_relatorio") or "").lower() != "2d"
@@ -1260,6 +1303,10 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
         )
 
     estudos.extend(bibliografia_diastolica)
+    if tem_avaliacao_hp:
+        estudos.append(HP_REFERENCE)
+        if avaliacao_hp["metrics"]["rpad"] is not None:
+            estudos.append(HP_RPAD_REFERENCE)
     estudos = list(dict.fromkeys(estudos))
     if not estudos:
         return []
@@ -1746,6 +1793,11 @@ def gerar_pdf_laudo_eco(
         
         # 1. Cabeçalho: logo + título, depois dados do paciente
         dados_pdf = dict(dados)
+        # Review belongs to the raw saved context, before unit normalization.
+        # Neither caller-provided class nor caller-provided private state is trusted.
+        dados_pdf["_avaliacao_hp"] = evaluate_pulmonary_probability(
+            dados.get("medidas") or {}, (dados.get("paciente") or {}).get("especie"),
+        )
         dados_pdf["unidades_ambiguas"] = medidas_com_unidade_ambigua(dados.get("medidas", {}))
         dados_pdf["medidas"] = normalizar_medidas_para_pdf(dados.get("medidas", {}))
         # A direct renderer caller can bypass both DB-backed PDF loaders. Apply
@@ -1970,6 +2022,12 @@ def gerar_pdf_laudo_eco(
             (titulo, filtrar_parametros_preenchidos(parametros, medidas_pdf))
             for titulo, parametros in grupos_medidas
         ]
+        if not dados_pdf["_avaliacao_hp"]["psap_usable"]:
+            grupos_preenchidos = [(titulo, [p for p in parametros if p["chave"] != "PSAP"])
+                                 for titulo, parametros in grupos_preenchidos]
+        if dados_pdf["_avaliacao_hp"]["active"] and str(medidas_pdf.get("HP_TRV") or "").strip() == "nao_mensuravel":
+            grupos_preenchidos = [(titulo, [p for p in parametros if p["chave"] not in {"IT_Vmax", "IT_Grad"}])
+                                 for titulo, parametros in grupos_preenchidos]
         if not any(parametros for _, parametros in grupos_preenchidos):
             elements.append(Paragraph("Medidas não registradas.", create_pdf_styles()["Normal"]))
         for titulo, parametros in grupos_preenchidos:
@@ -2012,6 +2070,8 @@ def gerar_pdf_laudo_eco(
                     )
                 )
         
+        elements.extend(criar_secao_probabilidade_hp(dados_pdf))
+
         # 3. Análise Qualitativa
         qualitativa = dados_pdf.get('qualitativa', {})
         imagens = dados_pdf.get('imagens', [])
@@ -2044,8 +2104,8 @@ def gerar_pdf_laudo_eco(
 
         # 7. Imagens (se houver) - Layout conforme modelo de referência
         if imagens:
-            # A gap belongs to an image section, never to the end of a report:
-            # it can otherwise create a footer-only page at the frame boundary.
+            # A trailing spacer without images can overflow after a signature
+            # and create a completely blank final page.
             elements.append(Spacer(1, 5*mm))
             paciente_imagens = dados_pdf.get("paciente") or {}
             nome_imagens = _esc(paciente_imagens.get("nome") or "")
