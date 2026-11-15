@@ -118,25 +118,27 @@ import {
   X,
 } from "lucide-react";
 
-const AtendimentoAlertasCriticosCard = dynamic(() => import("./components/AtendimentoAlertasCriticosCard"));
-const AtendimentoBibliotecasSection = dynamic(() => import("./components/AtendimentoBibliotecasSection"));
-const AtendimentoCadastroComplementarSection = dynamic(() => import("./components/AtendimentoCadastroComplementarSection"));
-const AtendimentoConsultaOverviewSection = dynamic(() => import("./components/AtendimentoConsultaOverviewSection"));
-const AtendimentoConsultaEditorSection = dynamic(() => import("./components/AtendimentoConsultaEditorSection"));
+import AtendimentoSectionLoading from "./components/AtendimentoSectionLoading";
+
+const AtendimentoAlertasCriticosCard = dynamic(() => import("./components/AtendimentoAlertasCriticosCard"), { loading: AtendimentoSectionLoading });
+const AtendimentoBibliotecasSection = dynamic(() => import("./components/AtendimentoBibliotecasSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoCadastroComplementarSection = dynamic(() => import("./components/AtendimentoCadastroComplementarSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoConsultaOverviewSection = dynamic(() => import("./components/AtendimentoConsultaOverviewSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoConsultaEditorSection = dynamic(() => import("./components/AtendimentoConsultaEditorSection"), { loading: AtendimentoSectionLoading });
 const AtendimentoAssistenteIA = dynamic(() => import("./components/AtendimentoAssistenteIA"), { ssr: false });
 const AtendimentoWhatsApp = dynamic(() => import("./components/AtendimentoWhatsApp"), { ssr: false });
-const AtendimentoClinicalRadarAside = dynamic(() => import("./components/AtendimentoClinicalRadarAside"));
-const AtendimentoBackupRecovery = dynamic(() => import("./components/AtendimentoBackupRecovery"));
-const AtendimentoHistoricoEdicoes = dynamic(() => import("./components/AtendimentoHistoricoEdicoes"));
-const AtendimentoAdendosSection = dynamic(() => import("./components/AtendimentoAdendosSection"));
-const AtendimentoReceitasBar = dynamic(() => import("./components/AtendimentoReceitasBar"));
-const AtendimentoDocumentosSection = dynamic(() => import("./components/AtendimentoDocumentosSection"));
-const AtendimentoExamesSection = dynamic(() => import("./components/AtendimentoExamesSection"));
-const AtendimentoPrescricaoAside = dynamic(() => import("./components/AtendimentoPrescricaoAside"));
-const AtendimentoPrescricaoHistorySection = dynamic(() => import("./components/AtendimentoPrescricaoHistorySection"));
-const AtendimentoPrescricaoPreview = dynamic(() => import("./components/AtendimentoPrescricaoPreview"));
-const AtendimentoPrescricaoWorkspace = dynamic(() => import("./components/AtendimentoPrescricaoWorkspace"));
-const AtendimentoTriagemSection = dynamic(() => import("./components/AtendimentoTriagemSection"));
+const AtendimentoClinicalRadarAside = dynamic(() => import("./components/AtendimentoClinicalRadarAside"), { loading: AtendimentoSectionLoading });
+const AtendimentoBackupRecovery = dynamic(() => import("./components/AtendimentoBackupRecovery"), { loading: AtendimentoSectionLoading });
+const AtendimentoHistoricoEdicoes = dynamic(() => import("./components/AtendimentoHistoricoEdicoes"), { loading: AtendimentoSectionLoading });
+const AtendimentoAdendosSection = dynamic(() => import("./components/AtendimentoAdendosSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoReceitasBar = dynamic(() => import("./components/AtendimentoReceitasBar"), { loading: AtendimentoSectionLoading });
+const AtendimentoDocumentosSection = dynamic(() => import("./components/AtendimentoDocumentosSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoExamesSection = dynamic(() => import("./components/AtendimentoExamesSection"), { loading: AtendimentoSectionLoading });
+const AtendimentoPrescricaoAside = dynamic(() => import("./components/AtendimentoPrescricaoAside"), { loading: AtendimentoSectionLoading });
+const AtendimentoPrescricaoHistorySection = dynamic(() => import("./components/AtendimentoPrescricaoHistorySection"), { loading: AtendimentoSectionLoading });
+const AtendimentoPrescricaoPreview = dynamic(() => import("./components/AtendimentoPrescricaoPreview"), { loading: AtendimentoSectionLoading });
+const AtendimentoPrescricaoWorkspace = dynamic(() => import("./components/AtendimentoPrescricaoWorkspace"), { loading: AtendimentoSectionLoading });
+const AtendimentoTriagemSection = dynamic(() => import("./components/AtendimentoTriagemSection"), { loading: AtendimentoSectionLoading });
 const AttachmentPreviewModal = dynamic(() => import("./components/AttachmentPreviewModal"), { ssr: false });
 const PainelExamesModal = dynamic(() => import("./components/PainelExamesModal"), { ssr: false });
 const ConfirmDialog = dynamic(() => import("./components/ConfirmDialog"), { ssr: false });
@@ -1693,6 +1695,7 @@ export default function AtendimentoPage() {
   // podem deixar a resposta do clique mais antigo sobrescrever o prontuario
   // do clique mais recente.
   const abrirAtendimentoRequestIdRef = useRef(0);
+  const atendimentoContextoAplicadoRef = useRef(0);
   const assistentePendenteRef = useRef(false);
   const assistenteOcupadoRef = useRef(false);
   const atualizarPendenciasAssistente = useCallback((pending: boolean) => { assistentePendenteRef.current = pending; }, []);
@@ -3133,8 +3136,20 @@ export default function AtendimentoPage() {
     return () => document.removeEventListener("click", protegerNavegacao, true);
   }, [confirmarSaidaAssistente, router]);
 
+  const preservarBackupAntesDeTrocar = () => {
+    try {
+      gravarBackupLocalAtendimento(formRef.current);
+      return true;
+    } catch {
+      setErro("Nao foi possivel guardar a copia local das alteracoes. Salve o atendimento antes de trocar de registro.");
+      return false;
+    }
+  };
+
   const abrirAtendimento = async (id: number) => {
+    const aberturaAntesDaConfirmacao = abrirAtendimentoRequestIdRef.current;
     if (id !== selecionadoRef.current && !(await confirmarSaidaAssistente())) return;
+    if (aberturaAntesDaConfirmacao !== abrirAtendimentoRequestIdRef.current) return;
     if (
       !selecionado &&
       hasEncounterContent(formRef.current) &&
@@ -3147,12 +3162,18 @@ export default function AtendimentoPage() {
     ) {
       return;
     }
+    if (aberturaAntesDaConfirmacao !== abrirAtendimentoRequestIdRef.current) return;
+    if (!preservarBackupAntesDeTrocar()) return;
     const requestId = ++abrirAtendimentoRequestIdRef.current;
     setAbrindoAtendimentoId(id);
     try {
       const response = await api.get(`/atendimentos/${id}`);
       if (requestId !== abrirAtendimentoRequestIdRef.current) return;
       const d = response.data;
+      // Identidade e formulario precisam mudar juntos. O historico pode
+      // demorar e outra abertura/novo atendimento pode ter vencido a corrida.
+      if (d.paciente_id) await carregarHistoricoPaciente(d.paciente_id);
+      if (requestId !== abrirAtendimentoRequestIdRef.current) return;
       let hydrated = hydrateFormFromDetail(d);
       setAdendos(Array.isArray(d?.adendos) ? d.adendos : []);
       setReceitas(Array.isArray(d?.prescricoes) ? d.prescricoes : []);
@@ -3200,14 +3221,11 @@ export default function AtendimentoPage() {
       }
       setCopiasLocaisParaRevisar(copiasParaRevisar);
 
+      ++atendimentoContextoAplicadoRef.current;
       setSelecionado(id);
       clearDraftStorage();
       draftRestoreRef.current = true;
 
-      // Carregar historico do paciente
-      if (d.paciente_id) {
-        await carregarHistoricoPaciente(d.paciente_id);
-      }
       void carregarCadastroComplementar(d.paciente_id);
       hydratingFormRef.current = true;
       setForm(formParaAplicar);
@@ -3254,9 +3272,17 @@ export default function AtendimentoPage() {
   };
 
   const novoAtendimento = async (saidaJaConfirmada = false) => {
+    const aberturaAntesDaConfirmacao = abrirAtendimentoRequestIdRef.current;
     if (!saidaJaConfirmada && !(await confirmarSaidaAssistente())) return;
-    const atendimentoAnteriorId = selecionadoRef.current;
+    if (aberturaAntesDaConfirmacao !== abrirAtendimentoRequestIdRef.current) return;
+    if (!preservarBackupAntesDeTrocar()) return;
+    ++abrirAtendimentoRequestIdRef.current;
+    ++historicoPacienteRequestIdRef.current;
+    ++cadastroComplementarRequestIdRef.current;
+    setAbrindoAtendimentoId(null);
+    setCarregandoCadastroComplementar(false);
     const next = emptyForm();
+    ++atendimentoContextoAplicadoRef.current;
     setSelecionado(null);
     setWorkspacePainel("consulta");
     setPainelCasosAberto(false);
@@ -3292,7 +3318,8 @@ export default function AtendimentoPage() {
     setStatusCepTutor("");
     setAutosaveState("idle");
     setAutosaveAt("");
-    clearDraftStorage(atendimentoAnteriorId);
+    // Copia do registro anterior so pode ser removida por um save confirmado.
+    clearDraftStorage();
     draftRestoreRef.current = false;
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
@@ -3313,7 +3340,15 @@ export default function AtendimentoPage() {
       dados_clinicos?: string;
     } | null
   ) => {
+    const aberturaDeOrigem = abrirAtendimentoRequestIdRef.current;
+    const pacienteDeOrigem = formRef.current.paciente_id;
+    const atendimentoDeOrigem = selecionadoRef.current;
+    const origemAindaAtual = () =>
+      aberturaDeOrigem === abrirAtendimentoRequestIdRef.current &&
+      pacienteDeOrigem === formRef.current.paciente_id &&
+      atendimentoDeOrigem === selecionadoRef.current;
     if (!(await confirmarSaidaAssistente())) return;
+    if (!origemAindaAtual()) return;
     const atual = formRef.current;
     if (!atual.paciente_id) {
       await novoAtendimento(true);
@@ -3332,9 +3367,9 @@ export default function AtendimentoPage() {
       window.clearTimeout(autosaveTimerRef.current);
       autosaveTimerRef.current = null;
     }
-    if (selecionadoRef.current && autosaveStateRef.current === "dirty") {
+    if (selecionadoRef.current && ["dirty", "error"].includes(autosaveStateRef.current)) {
       const savedId = await saveAtendimento("manual");
-      if (!savedId) return;
+      if (!savedId || !origemAindaAtual()) return;
     }
     if (
       !selecionadoRef.current &&
@@ -3347,8 +3382,11 @@ export default function AtendimentoPage() {
     ) {
       return;
     }
+    if (!origemAindaAtual()) return;
 
-    const atendimentoAnteriorId = selecionadoRef.current;
+    if (!preservarBackupAntesDeTrocar()) return;
+    ++abrirAtendimentoRequestIdRef.current;
+    setAbrindoAtendimentoId(null);
     const itensCopiados = (prescricao?.itens || []).map(cloneHistoricalPrescriptionItem);
     const next: AtendimentoForm = {
       ...emptyForm(),
@@ -3368,6 +3406,7 @@ export default function AtendimentoPage() {
       prescricao_itens: itensCopiados.length ? itensCopiados : [emptyPrescriptionItem()],
     };
 
+    ++atendimentoContextoAplicadoRef.current;
     setSelecionado(null);
     hydratingFormRef.current = true;
     setForm(next);
@@ -3409,7 +3448,7 @@ export default function AtendimentoPage() {
     clearExamUploadDrafts();
     setAutosaveState("idle");
     setAutosaveAt("");
-    clearDraftStorage(atendimentoAnteriorId);
+    clearDraftStorage();
     draftRestoreRef.current = false;
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
@@ -3426,6 +3465,12 @@ export default function AtendimentoPage() {
 
   const herdarAtendimentoAnterior = async (atendimentoId: number) => {
     const atual = formRef.current;
+    const aberturaDeOrigem = abrirAtendimentoRequestIdRef.current;
+    const atendimentoDeOrigem = selecionadoRef.current;
+    const origemAindaAtual = () =>
+      aberturaDeOrigem === abrirAtendimentoRequestIdRef.current &&
+      atendimentoDeOrigem === selecionadoRef.current &&
+      atual.paciente_id === formRef.current.paciente_id;
     if (!atual.paciente_id) {
       setErro("Selecione um paciente antes de iniciar o atendimento.");
       return;
@@ -3447,10 +3492,16 @@ export default function AtendimentoPage() {
     ) {
       return;
     }
+    if (!origemAindaAtual()) return;
 
     try {
       const response = await api.get(`/atendimentos/${atendimentoId}`);
+      if (!origemAindaAtual()) return;
       const detalhe = response.data || {};
+      if (String(detalhe.paciente_id || "") !== atual.paciente_id) {
+        setErro("O atendimento anterior pertence a outro paciente. Nenhum dado foi copiado.");
+        return;
+      }
       const itensHistoricos: PrescricaoItem[] = detalhe.prescricao?.itens || [];
       const prescricaoHistorica: PrescricaoHistorica | null = detalhe.prescricao
         ? {
@@ -3477,6 +3528,7 @@ export default function AtendimentoPage() {
         dados_clinicos: detalhe.dados_clinicos || "",
       });
     } catch (e: any) {
+      if (!origemAindaAtual()) return;
       setErro(extractApiErrorMessageSync(e, "Erro ao carregar o atendimento anterior."));
     }
   };
@@ -3485,6 +3537,9 @@ export default function AtendimentoPage() {
 
   const selecionarPaciente = async (paciente: PacienteResumo) => {
     if (String(paciente.id) !== formRef.current.paciente_id && !(await confirmarSaidaAssistente())) return;
+    if (String(paciente.id) !== formRef.current.paciente_id) ++atendimentoContextoAplicadoRef.current;
+    ++abrirAtendimentoRequestIdRef.current;
+    setAbrindoAtendimentoId(null);
     setField("paciente_id", String(paciente.id));
     setField("especie", paciente.especie || "");
     setPacienteBusca(paciente.nome);
@@ -4680,6 +4735,14 @@ export default function AtendimentoPage() {
 
   const executarSaveAtendimento = async (mode: "manual" | "autosave" = "manual") => {
     let criandoAutomaticamente = false;
+    let atendimentoDoSave = selecionadoRef.current;
+    const pacienteDoSave = formRef.current.paciente_id;
+    const aberturaDoSave = abrirAtendimentoRequestIdRef.current;
+    const contextoAplicadoDoSave = atendimentoContextoAplicadoRef.current;
+    const contextoDoSaveAtual = () =>
+      contextoAplicadoDoSave === atendimentoContextoAplicadoRef.current &&
+      atendimentoDoSave === selecionadoRef.current &&
+      pacienteDoSave === formRef.current.paciente_id;
     try {
       const currentForm = formRef.current;
       const isAutosave = mode === "autosave";
@@ -4732,13 +4795,13 @@ export default function AtendimentoPage() {
       const examesEnviados = currentForm.exames;
       let response;
 
-      if (selecionadoRef.current) {
-        response = await api.put(`/atendimentos/${selecionadoRef.current}`, payload);
+      if (atendimentoDoSave) {
+        response = await api.put(`/atendimentos/${atendimentoDoSave}`, payload);
       } else {
         response = await api.post("/atendimentos", payload);
       }
       const detalheSalvo: Record<string, any> = response.data || {};
-      const atendimentoIdSalvo = detalheSalvo.id || selecionadoRef.current;
+      const atendimentoIdSalvo = detalheSalvo.id || atendimentoDoSave;
 
       // A receita complementar nao viaja no payload do atendimento; salva
       // aqui, pelo endpoint dela, e o resultado entra na hidratacao para o
@@ -4757,6 +4820,10 @@ export default function AtendimentoPage() {
         }
       }
 
+      // O servidor pode ter salvo o registro anterior, mas sua resposta nao
+      // pode hidratar outro paciente nem autorizar a continuacao de uma acao
+      // (como finalizar/imprimir) depois que o contexto da tela mudou.
+      if (!contextoDoSaveAtual()) return null;
       const hydrated = hydrateFormFromDetail(detalheSalvo, currentForm.prescricao_alvo_id);
       setAdendos(Array.isArray(detalheSalvo.adendos) ? detalheSalvo.adendos : []);
       setReceitas(Array.isArray(detalheSalvo.prescricoes) ? detalheSalvo.prescricoes : []);
@@ -4766,6 +4833,8 @@ export default function AtendimentoPage() {
 
       if (mode === "manual") {
         if (response.data?.id) {
+          atendimentoDoSave = response.data.id;
+          selecionadoRef.current = response.data.id;
           setSelecionado(response.data.id);
         }
         hydratingFormRef.current = true;
@@ -4788,8 +4857,10 @@ export default function AtendimentoPage() {
             gravarBackupLocalAtendimento(formRef.current);
           });
         }
+        if (aberturaDoSave !== abrirAtendimentoRequestIdRef.current) return null;
         setSucesso(selecionadoRef.current ? "Atendimento atualizado com sucesso." : "Atendimento criado com sucesso.");
         await carregarLista(paginaLista);
+        if (!contextoDoSaveAtual() || aberturaDoSave !== abrirAtendimentoRequestIdRef.current) return null;
         if (hydrated.paciente_id) {
           await carregarHistoricoPaciente(hydrated.paciente_id);
         }
@@ -4798,6 +4869,8 @@ export default function AtendimentoPage() {
         if (criandoAutomaticamente && response.data?.id) {
           // Primeiro POST automatico bem-sucedido: o atendimento passa a
           // existir no servidor, entao os saves seguintes viram PUT.
+          atendimentoDoSave = response.data.id;
+          selecionadoRef.current = response.data.id;
           setSelecionado(response.data.id);
           clearDraftStorage(response.data.id);
           draftRestoreRef.current = true;
@@ -4805,9 +4878,15 @@ export default function AtendimentoPage() {
         setAutosaveState("saved");
         setAutosaveAt(response.data?.updated_at || response.data?.created_at || new Date().toISOString());
       }
+      // Uma tentativa de abrir outro registro cancela a acao encadeada, mas
+      // nao invalida o save do formulario ainda exibido se a abertura falhar.
+      // Isto tambem preserva o id criado pelo primeiro POST, evitando duplicar
+      // esse atendimento em um proximo autosave.
+      if (!contextoDoSaveAtual() || aberturaDoSave !== abrirAtendimentoRequestIdRef.current) return null;
       setErro("");
       return response.data?.id || selecionadoRef.current || null;
     } catch (e: any) {
+      if (!contextoDoSaveAtual()) return null;
       // Nada foi aplicado: devolver os exames marcados para exclusao a lista,
       // para nao deixar exame invisivel que continua existindo no prontuario.
       setForm((current) =>
@@ -4840,11 +4919,17 @@ export default function AtendimentoPage() {
   const saveAtendimento = async (mode: "manual" | "autosave" = "manual"): Promise<number | null> => {
     const emVoo = salvamentoAtendimentoEmVooRef.current;
     if (emVoo) {
+      const aberturaAntesDaEspera = abrirAtendimentoRequestIdRef.current;
+      const pacienteAntesDaEspera = formRef.current.paciente_id;
       // Nao dispara um segundo PUT/POST concorrente: espera o save em voo
       // terminar (ignorando seu erro, se houver) e entao refaz com o estado
       // mais atual do form, garantindo que a edicao mais recente sempre
       // acabe persistida, sem nunca ter duas requisicoes simultaneas.
       await emVoo.catch(() => null);
+      if (
+        aberturaAntesDaEspera !== abrirAtendimentoRequestIdRef.current ||
+        pacienteAntesDaEspera !== formRef.current.paciente_id
+      ) return null;
       return saveAtendimento(mode);
     }
 
@@ -4878,15 +4963,21 @@ export default function AtendimentoPage() {
   }, []);
 
   const finalizarAtendimento = async (confirmarConclusaoPendencias: boolean = false) => {
+    const aberturaDaConclusao = abrirAtendimentoRequestIdRef.current;
+    const pacienteDaConclusao = formRef.current.paciente_id;
+    const contextoDaConclusaoAtual = () =>
+      aberturaDaConclusao === abrirAtendimentoRequestIdRef.current &&
+      pacienteDaConclusao === formRef.current.paciente_id;
     setFinalizando(true);
     try {
       const atendimentoId = await saveAtendimento("manual");
-      if (!atendimentoId) return;
+      if (!atendimentoId || !contextoDaConclusaoAtual()) return;
 
       const response = await api.post(`/atendimentos/${atendimentoId}/finalizar`, {
         tipo_horario: tipoHorarioFinalizacao,
         confirmar_conclusao_pendencias: confirmarConclusaoPendencias,
       });
+      if (!contextoDaConclusaoAtual() || selecionadoRef.current !== atendimentoId) return;
       const detalhe = response.data?.atendimento || {};
       const hydrated = hydrateFormFromDetail(detalhe, formRef.current.prescricao_alvo_id);
       setAdendos(Array.isArray(detalhe?.adendos) ? detalhe.adendos : []);
@@ -4916,12 +5007,15 @@ export default function AtendimentoPage() {
       }
 
       await carregarLista(paginaLista);
+      if (!contextoDaConclusaoAtual()) return;
       if (hydrated.paciente_id) {
         await carregarHistoricoPaciente(hydrated.paciente_id);
       }
+      if (!contextoDaConclusaoAtual()) return;
       setErro("");
       setSucesso(response.data?.mensagem || "Atendimento finalizado com sucesso.");
     } catch (e: any) {
+      if (!contextoDaConclusaoAtual()) return;
       const detalhe = e?.response?.data?.detail;
       const precisaConfirmar =
         !confirmarConclusaoPendencias &&
@@ -4937,7 +5031,7 @@ export default function AtendimentoPage() {
           descricao: String(detalhe.mensagem || "Concluir mesmo com pendencias?"),
           confirmLabel: "Concluir",
         });
-        if (confirmado) {
+        if (confirmado && contextoDaConclusaoAtual()) {
           await finalizarAtendimento(true);
         }
         return;

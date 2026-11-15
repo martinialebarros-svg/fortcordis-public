@@ -133,6 +133,7 @@ describe("AtendimentoAssistenteIA", () => {
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
     await preparar();
     fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir nova revisão" }));
     await screen.findByLabelText("Anamnese");
     batch = null;
     fireEvent.click(screen.getByRole("button", { name: "Consultar progresso" }));

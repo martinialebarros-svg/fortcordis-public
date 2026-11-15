@@ -3768,16 +3768,26 @@ def atualizar_atendimento(
     if "status" in data and data["status"] is not None:
         status_destino = _normalizar_status_atendimento(data["status"])
 
-    diagnostico_destino = (
-        _normalizar_diagnostico(payload.diagnostico)
-        if payload.diagnostico is not None
-        else {
-            "diagnostico_principal": atendimento.diagnostico_principal or "",
-            "diagnostico_secundario": atendimento.diagnostico_secundario or "",
-            "diagnostico_diferencial": atendimento.diagnostico_diferencial or "",
-            "prognostico": atendimento.prognostico,
+    alteracoes_diagnostico = {}
+    if payload.diagnostico is not None:
+        diagnostico_normalizado = _normalizar_diagnostico(payload.diagnostico)
+        campos_diagnostico = (
+            {"diagnostico_principal"}
+            if isinstance(payload.diagnostico, str)
+            else payload.diagnostico.model_fields_set
+        )
+        alteracoes_diagnostico = {
+            campo: diagnostico_normalizado[campo] for campo in campos_diagnostico
         }
-    )
+    # Validar o estado que sera salvo: campos omitidos em um bloco parcial
+    # preservam os valores existentes, inclusive na primeira conclusao.
+    diagnostico_destino = {
+        "diagnostico_principal": atendimento.diagnostico_principal,
+        "diagnostico_secundario": atendimento.diagnostico_secundario,
+        "diagnostico_diferencial": atendimento.diagnostico_diferencial,
+        "prognostico": atendimento.prognostico,
+        **alteracoes_diagnostico,
+    }
     pendencias_conclusao = _validar_primeira_conclusao_atendimento(
         status_atual=status_atual,
         status_destino=status_destino,
@@ -3862,18 +3872,9 @@ def atualizar_atendimento(
         atendimento.data_atendimento = _parse_datetime(data["data_atendimento"]) or atendimento.data_atendimento
 
     # Triagem
-    if payload.triagem:
-        triagem = payload.triagem
-        atendimento.peso = triagem.peso
-        atendimento.temperatura = triagem.temperatura
-        atendimento.frequencia_cardiaca = triagem.frequencia_cardiaca
-        atendimento.frequencia_respiratoria = triagem.frequencia_respiratoria
-        atendimento.pressao_arterial = triagem.pressao_arterial
-        atendimento.saturacao_oxigenio = triagem.saturacao_oxigenio
-        atendimento.escore_condicion_corpo = triagem.escore_condicion_corpo
-        atendimento.mucosas = triagem.mucosas
-        atendimento.hidratacao = triagem.hidratacao
-        atendimento.triagem_observacoes = triagem.triagem_observacoes
+    if payload.triagem is not None:
+        for campo, valor in payload.triagem.model_dump(exclude_unset=True).items():
+            setattr(atendimento, campo, valor)
 
     if "triagem_concluida" in data:
         atendimento.triagem_concluida = data["triagem_concluida"]
@@ -3882,13 +3883,9 @@ def atualizar_atendimento(
     if _status_atendimento_concluido(status_destino):
         atendimento.consulta_concluida = 1
 
-    # DiagnÃ³sticos
-    if payload.diagnostico is not None:
-        diag = diagnostico_destino
-        atendimento.diagnostico_principal = diag["diagnostico_principal"] or ""
-        atendimento.diagnostico_secundario = diag["diagnostico_secundario"] or ""
-        atendimento.diagnostico_diferencial = diag["diagnostico_diferencial"] or ""
-        atendimento.prognostico = diag["prognostico"]
+    # Diagnosticos: null/vazio explicitos limpam somente o campo informado.
+    for campo, valor in alteracoes_diagnostico.items():
+        setattr(atendimento, campo, valor)
 
     for field in [
         "queixa_principal",

@@ -244,7 +244,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
     if (!podeUsarIA || ocupada || (!texto.trim() && !arquivos.length)) return;
     const controller = new AbortController();
     request.current = controller;
-    setBusy("analisar"); setErro(""); limparAnalise();
+    setBusy("analisar"); setErro("");
     const payload = new FormData();
     payload.append("transcricao", texto);
     payload.append("consentimento", "true");
@@ -257,9 +257,14 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
       if (!alive.current || controller.signal.aborted) return;
       const { data } = await api.post<AssistenteIAResultado>(`/atendimentos/${atendimentoId}/assistente/analisar`, payload, { signal: controller.signal, timeout: 300000 });
       if (!alive.current || controller.signal.aborted) return;
+      const novasEdicoes = Object.fromEntries(data.campos.map((campo, index) => [index, campo.texto]));
+      const novosAchados = Object.fromEntries(data.achados_exames.map((achado, index) => [index, textoAchadoParaRevisao(data, achado)]));
+      // Keep the prior review through failed saves, failed requests and cancellation.
+      // Only a completed replacement can reset its edits and approvals.
+      limparAnalise();
       setResultado(data);
-      setEdicoes(Object.fromEntries(data.campos.map((campo, index) => [index, campo.texto])));
-      setAchadosEditados(Object.fromEntries(data.achados_exames.map((achado, index) => [index, textoAchadoParaRevisao(data, achado)])));
+      setEdicoes(novasEdicoes);
+      setAchadosEditados(novosAchados);
     } catch (error) {
       if (alive.current && !controller.signal.aborted) setErro(extractApiErrorMessageSync(error, "A análise falhou. Seus arquivos e a transcrição permanecem disponíveis para tentar novamente."));
     } finally { if (alive.current && request.current === controller) { setBusy(null); request.current = null; } }
@@ -315,12 +320,15 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         }
       }}
       onReview={(lote) => {
-        if (resultado && (resultadoLoteId !== lote.id || JSON.stringify(resultado) !== JSON.stringify(lote.resultado))) setLoteParaRevisar(lote);
+        const mesmaRevisao = resultadoLoteId === lote.id && resultado && JSON.stringify(resultado) === JSON.stringify(lote.resultado);
+        if (mesmaRevisao) return;
+        const substituirTranscricao = Boolean(texto.trim()) && texto !== (lote.transcricao || "");
+        if (resultado || substituirTranscricao) setLoteParaRevisar(lote);
         else abrirRevisaoLote(lote);
       }}
     /> : null}
     {loteParaRevisar ? <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
-      <p>Abrir a análise do conjunto substituirá as sugestões e edições pendentes desta revisão. Confira os trechos que deseja incluir antes de continuar.</p>
+      <p>Abrir a análise do conjunto substituirá a transcrição atual e as sugestões e edições pendentes desta revisão. Confira os trechos que deseja preservar antes de continuar.</p>
       <div className="mt-2 flex gap-2"><button type="button" className={buttonClass} onClick={() => abrirRevisaoLote(loteParaRevisar)}>Abrir nova revisão</button><button type="button" className={buttonClass} onClick={() => setLoteParaRevisar(null)}>Manter revisão atual</button></div>
     </div> : null}
 
@@ -404,8 +412,8 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         <label htmlFor={`campo-ia-${atendimentoId}-${index}`} className="text-sm font-semibold">{ASSISTENTE_CAMPO_LABELS[campo.campo] || campo.campo}</label>
         <p className="mt-1 text-xs text-slate-500">Fonte: {campo.fonte}</p>
         <blockquote className="my-2 border-l-2 border-teal-300 pl-3 text-sm text-slate-600">{campo.evidencia}</blockquote>
-        <textarea id={`campo-ia-${atendimentoId}-${index}`} rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm" value={edicoes[index] ?? campo.texto} disabled={aplicados[index] || resultado.bloqueado_integracao} onChange={(event) => { setEdicoes((prev) => ({ ...prev, [index]: event.target.value })); setRevisados((prev) => ({ ...prev, [index]: false })); }} />
-        <label className="mt-2 flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" checked={Boolean(revisados[index])} disabled={aplicados[index] || !podeIncorporarCampo(resultado, campo)} onChange={(event) => setRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este trecho com a fonte e aprovo sua inclusão.</label>
+        <textarea id={`campo-ia-${atendimentoId}-${index}`} rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm" value={edicoes[index] ?? campo.texto} disabled={busy === "analisar" || aplicados[index] || resultado.bloqueado_integracao} onChange={(event) => { setEdicoes((prev) => ({ ...prev, [index]: event.target.value })); setRevisados((prev) => ({ ...prev, [index]: false })); }} />
+        <label className="mt-2 flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" checked={Boolean(revisados[index])} disabled={busy === "analisar" || aplicados[index] || !podeIncorporarCampo(resultado, campo)} onChange={(event) => setRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este trecho com a fonte e aprovo sua inclusão.</label>
         <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || Boolean(aplicados[index]) || !revisados[index] || !edicoes[index]?.trim() || !podeIncorporarCampo(resultado, campo)} onClick={() => incorporarResultado("campo", index)}>{aplicados[index] ? "Adicionado ao atendimento" : "Adicionar ao atendimento"}</button>
       </article>)}</div> : null}
       {resultado.achados_exames.length ? <div className="space-y-3"><h5 className="font-medium">Dados extraídos dos exames — conferir no original</h5>{resultado.achados_exames.map((achado, index) => <article key={index} className="rounded-xl border border-slate-200 p-4 text-sm">
@@ -417,8 +425,8 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         {achado.alertas.map((alerta, i) => <p key={i} className="mt-1 text-amber-800">{alerta}</p>)}
         {podeIncorporarAchado(resultado, achado) ? <div className="mt-3 border-t border-slate-100 pt-3">
           <label className="text-sm font-medium" htmlFor={`achado-ia-${atendimentoId}-${index}`}>Texto para os dados clínicos</label>
-          <textarea id={`achado-ia-${atendimentoId}-${index}`} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 p-2" value={achadosEditados[index] ?? ""} disabled={achadosAplicados[index]} onChange={(event) => { setAchadosEditados((prev) => ({ ...prev, [index]: event.target.value })); setAchadosRevisados((prev) => ({ ...prev, [index]: false })); }} />
-          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo paciente, data, valor e unidade.</label>
+          <textarea id={`achado-ia-${atendimentoId}-${index}`} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 p-2" value={achadosEditados[index] ?? ""} disabled={busy === "analisar" || achadosAplicados[index]} onChange={(event) => { setAchadosEditados((prev) => ({ ...prev, [index]: event.target.value })); setAchadosRevisados((prev) => ({ ...prev, [index]: false })); }} />
+          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={busy === "analisar" || achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo paciente, data, valor e unidade.</label>
           <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || achadosAplicados[index] || !achadosRevisados[index] || !achadosEditados[index]?.trim()} onClick={() => incorporarResultado("achado", index)}>{achadosAplicados[index] ? "Achado adicionado" : "Adicionar achado aos dados clínicos"}</button>
         </div> : <p className="mt-2 text-xs text-amber-800">Confira ou complemente a fonte antes de usar este achado no prontuário.</p>}
       </article>)}</div> : null}
