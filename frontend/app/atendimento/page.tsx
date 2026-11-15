@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "../layout-dashboard";
 import { useRoutePerformanceReady } from "@/lib/use-route-performance-ready";
 import api from "@/lib/axios";
+import type { AssistenteCampoRevisado } from "@/lib/atendimento-assistente-ia";
 import { buildAtendimentoDocumentRevision } from "@/lib/atendimento-whatsapp";
 import { validarPdfDocumento, iniciarDownloadDocumento, reconciliarDocumentoSalvo, documentoPersistido as exigirDocumentoPersistido } from "@/lib/atendimento-documentos";
 import { assessAtendimentoBackup, atendimentoBackupDifferences, writePendingAtendimentoBackup, type AtendimentoBackup } from "@/lib/atendimento-draft-recovery";
@@ -80,6 +81,7 @@ import {
   insertSnippetIntoText,
   type ClinicalFieldConfig,
   type ClinicalFieldKey,
+  type ClinicalPendingField,
   type ClinicalPhraseRecord,
 } from "@/lib/atendimento-clinical-notes";
 import { buildPrescriptionSupport, suggestMedicationPresentation } from "@/lib/clinical-medication";
@@ -1727,6 +1729,8 @@ export default function AtendimentoPage() {
   // sincrono: e verdadeiro imediatamente, sem esperar o proximo render.
   const documentoClinicoEmVooRef = useRef(false);
   const clinicalTextareaRefs = useRef<Partial<Record<ClinicalFieldKey, HTMLTextAreaElement | null>>>({});
+  const prognosticoRef = useRef<HTMLSelectElement>(null);
+  const focoPendenciaRef = useRef<{ campo: ClinicalPendingField; contexto: number } | null>(null);
   const attachmentImagePanRef = useRef({
     pointerId: null as number | null,
     startX: 0,
@@ -2195,19 +2199,28 @@ export default function AtendimentoPage() {
     clinicalTextareaRefs.current[field] = node;
   };
 
-  const adicionarCampoRevisadoIA = (field: ClinicalFieldKey, texto: string) => {
-    const trecho = texto.trim();
-    if (!trecho) return;
+  const contextoIncorporacaoIA = atendimentoContextoAplicadoRef.current;
+  const adicionarCamposRevisadosIA = (itens: AssistenteCampoRevisado[]): boolean => {
+    const pacienteId = form.paciente_id;
+    if (
+      !selecionado || selecionadoRef.current !== selecionado ||
+      formRef.current.paciente_id !== pacienteId ||
+      atendimentoContextoAplicadoRef.current !== contextoIncorporacaoIA
+    ) return false;
     setForm((prev) => {
-      const anexar = (atual: string) => [atual.trim(), trecho].filter(Boolean).join("\n\n");
-      if (field === "diagnostico_principal" || field === "diagnostico_secundario" || field === "diagnostico_diferencial") {
-        return { ...prev, diagnostico: { ...prev.diagnostico, [field]: anexar(prev.diagnostico[field]) } };
+      if (prev.paciente_id !== pacienteId) return prev;
+      const next = { ...prev, diagnostico: { ...prev.diagnostico } };
+      for (const { campo, texto } of itens) {
+        const anexar = (atual: string) => atual.trim() ? `${atual}\n\n${texto}` : texto;
+        if (campo === "diagnostico_principal" || campo === "diagnostico_secundario" || campo === "diagnostico_diferencial") {
+          next.diagnostico[campo] = anexar(next.diagnostico[campo]);
+        } else {
+          next[campo] = anexar(next[campo]);
+        }
       }
-      if (field === "queixa_principal" || field === "anamnese" || field === "exame_fisico" || field === "dados_clinicos" || field === "plano_terapeutico" || field === "retorno_recomendado" || field === "motivo_retorno" || field === "observacoes") {
-        return { ...prev, [field]: anexar(prev[field]) };
-      }
-      return prev;
+      return next;
     });
+    return true;
   };
 
   const injectClinicalSnippet = (field: ClinicalFieldKey, snippet: string) => {
@@ -6841,17 +6854,39 @@ export default function AtendimentoPage() {
     }
   }, [consultaCampoAtivo, consultaEditorCamposVisiveis]);
 
-  useEffect(() => {
-    if (!isConsultaWorkspace || !consultaCampoAtivoConfig || consultaVerTodosCampos) return;
-    if (typeof window === "undefined") return;
-    window.requestAnimationFrame(() => {
-      const target = clinicalTextareaRefs.current[consultaCampoAtivoConfig.key];
-      if (!target) return;
-      target.focus();
-      const cursor = target.value.length;
-      target.setSelectionRange(cursor, cursor);
-    });
-  }, [isConsultaWorkspace, consultaCampoAtivoConfig, consultaVerTodosCampos]);
+  const focarControleConsulta = useCallback((campo: ClinicalPendingField, rolar: boolean) => {
+    const controle = campo === "prognostico" ? prognosticoRef.current : clinicalTextareaRefs.current[campo];
+    if (!controle?.isConnected) return false;
+    controle.focus({ preventScroll: rolar });
+    if (rolar) controle.scrollIntoView?.({ block: "center" });
+    if (controle instanceof HTMLTextAreaElement) {
+      const cursor = controle.value.length;
+      controle.setSelectionRange(cursor, cursor);
+    }
+    return true;
+  }, []);
+
+  const focarCampoConsulta = useCallback((campoAtivo: ClinicalFieldKey | undefined, verTodos: boolean) => {
+    const pendencia = focoPendenciaRef.current;
+    focoPendenciaRef.current = null;
+    if (pendencia?.contexto === atendimentoContextoAplicadoRef.current && focarControleConsulta(pendencia.campo, true)) {
+      return;
+    }
+    if (campoAtivo && !verTodos) focarControleConsulta(campoAtivo, false);
+  }, [focarControleConsulta]);
+
+  const irParaPendenciaClinica = (campo: ClinicalPendingField) => {
+    if (campo !== "prognostico") {
+      const etapa = CONSULTA_EDITOR_ETAPAS.find((item) => item.campos.includes(campo));
+      if (!etapa) return;
+      setConsultaEditorEtapa(etapa.key);
+      setConsultaCampoAtivo(campo);
+    }
+    focoPendenciaRef.current = isConsultaWorkspace && focarControleConsulta(campo, true)
+      ? null
+      : { campo, contexto: atendimentoContextoAplicadoRef.current };
+    setWorkspacePainel("consulta");
+  };
 
   useEffect(() => {
     if (!isConsultaWorkspace || consultaVerTodosCampos) return;
@@ -7915,7 +7950,10 @@ export default function AtendimentoPage() {
               <button
                 key={item.key}
                 type="button"
-                onClick={() => setWorkspacePainel(item.key)}
+                onClick={() => {
+                  focoPendenciaRef.current = null;
+                  setWorkspacePainel(item.key);
+                }}
                 role="tab"
                 aria-selected={workspacePainel === item.key}
                 className={`fc-care-tab ${workspacePainel === item.key ? "fc-care-tab-active" : ""}`}
@@ -8278,9 +8316,7 @@ export default function AtendimentoPage() {
                 patientLabel={pacienteNomeExibicao || "Paciente não selecionado"}
                 onPendingChange={atualizarPendenciasAssistente}
                 onBusyChange={atualizarOcupacaoAssistente}
-                onApplyField={(campo, texto) => {
-                  if (selecionadoRef.current === selecionado && formRef.current.paciente_id === form.paciente_id) adicionarCampoRevisadoIA(campo, texto);
-                }}
+                onApplyFields={adicionarCamposRevisadosIA}
                 onEnsureSaved={async () => {
                   const pacienteId = form.paciente_id;
                   if (!selecionado || selecionadoRef.current !== selecionado) return false;
@@ -8406,6 +8442,7 @@ export default function AtendimentoPage() {
                     consultaEtapasCompletas={consultaEtapasCompletas}
                     consultaVerTodosCampos={consultaVerTodosCampos}
                     dadosClinicosOrigem={dadosClinicosOrigem}
+                    focarCampoConsulta={focarCampoConsulta}
                     form={form}
                     formatDate={formatDate}
                     getClinicalFieldValue={getClinicalFieldValue}
@@ -8413,6 +8450,8 @@ export default function AtendimentoPage() {
                     goToConsultaCampoProximo={goToConsultaCampoProximo}
                     handleConsultaTextareaKeyDown={handleConsultaTextareaKeyDown}
                     injectClinicalSnippet={injectClinicalSnippet}
+                    irParaPendenciaClinica={irParaPendenciaClinica}
+                    prognosticoRef={prognosticoRef}
                     PROGNOSTICO={PROGNOSTICO}
                     registerClinicalTextarea={registerClinicalTextarea}
                     salvarFraseRapida={salvarFraseRapida}
@@ -8707,6 +8746,7 @@ export default function AtendimentoPage() {
                       getGravidadeClass={getGravidadeClass}
                       herdarAtendimentoAnterior={herdarAtendimentoAnterior}
                       historicoPaciente={historicoPaciente}
+                      irParaPendenciaClinica={irParaPendenciaClinica}
                       pacienteNomeExibicao={pacienteNomeExibicao}
                       preenchimentoConsultaLabel={preenchimentoConsultaLabel}
                       selecionado={selecionado}

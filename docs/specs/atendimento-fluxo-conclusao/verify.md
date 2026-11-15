@@ -1,5 +1,18 @@
 # Verificação
 
+## Atalhos do atendimento — 15/11/2026
+
+| Critério | Evidência local com dados fictícios |
+| --- | --- |
+| Usar a gravação do atendimento na análise conjunta | Testes do lote e do assistente conferem o mesmo arquivo original ao lado dos PDFs. Exercitam consentimento, validação, retirada após descarte, isolamento da seleção por atendimento e tentativa de envio interrompida. Arquivos distintos de mesmos metadados permanecem na seleção. |
+| Incorporar todos os itens aprovados | O teste combina trecho e achado para o mesmo campo e verifica uma única consulta ao conjunto. O texto inclui a origem do achado, as aprovações continuam individuais e ficam fora itens já adicionados, editados após aprovação, sem fonte ou com evidência insuficiente. Revisão revogada ou contexto diferente impede aplicação. |
+| Manter o conteúdo existente | O callback real da página preserva o texto anterior, acrescenta todos os trechos do mesmo campo em ordem e preserva o prognóstico. Uma troca de paciente ou de contexto invalida o callback anterior. |
+| Ir diretamente à pendência | Testes usam o radar, o editor e os callbacks da página. Confirmam navegação de Documentos para Consulta mesmo com editor carregando, foco na etapa correta, preservação da revisão consolidada e foco no prognóstico com outras pendências em aberto. |
+
+A checagem focal final passou em 179 testes, em 21 arquivos. A compilação de produção do frontend, incluindo lint e verificação de tipos, passou. A revisão de código independente conferiu elegibilidade, identidade dos arquivos e foco do editor. A validação desta rodada cobre a implementação local. Homologação instalada e publicação são etapas separadas.
+
+A primeira execução geral teve oito falhas em três arquivos de Laudos. Os mesmos arquivos passaram isoladamente na base pública exata, com 75 testes aprovados. A execução completa final, com quatro workers após a compilação, passou nos 2.726 testes Vitest e 23 testes Node, sem alterações em Laudos ou na configuração de testes. O guardrail SDD e a inspeção do diff passaram.
+
 ## Ambiente observado em 15/11/2026
 
 - Produção `91222f44` e Stage `43b14787` conferidos no servidor em 15/11/2026, com saúde e prontidão HTTP 200 e acesso anônimo ao assistente HTTP 401.
