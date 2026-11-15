@@ -24,5 +24,7 @@
 
 - Instalar e homologar somente as correções descritas acima, promover pelo PR protegido `stage -> main` e restaurar integralmente os trabalhos paralelos de Stage.
 - Conferir fila, liberações dos responsáveis, SHAs, saúde, configuração, arquivos de runtime e lotes antes de cada instalação. Preservar IA desligada em Stage e a configuração atual de produção.
-- O snapshot isolado é produção `91222f4437c2c5470264d6f95691028503477231` com os 13 arquivos desta entrega e os quatro documentos históricos `public-stage-vps-parity`, preservados para manter a rastreabilidade SDD. Esses documentos não incluem os trabalhos funcionais de Stage na promoção nem declaram encerradas suas pendências históricas.
+- O snapshot isolado é produção `91222f4437c2c5470264d6f95691028503477231` com os 14 arquivos desta entrega e os quatro documentos históricos `public-stage-vps-parity`, preservados para manter a rastreabilidade SDD. Esses documentos não incluem os trabalhos funcionais de Stage na promoção nem declaram encerradas suas pendências históricas.
 - Após a promoção, restaurar a árvore de Stage `43b14787e48f8152b8b3656d827127284f8798c0` acrescida destas correções e do registro documental das verificações; comprovar igualdade de todos os arquivos paralelos.
+
+- A regressão de recuperação em memória deve aguardar a criação assíncrona do link do original e conferir o endereço e o mesmo arquivo recuperado, além de preservar texto, aprovações e a ausência de nova incorporação automática.
