@@ -91,7 +91,6 @@ const menuGroups: Array<{ label: string; items: MenuItem[] }> = [
   {
     label: "Gestão",
     items: [
-      { href: "/gestao", label: "Gestão", icon: BarChart3, adminOnly: true },
       { href: "/logistica", label: "Logística", icon: MapPin },
       { href: "/financeiro", label: "Financeiro", icon: DollarSign },
       { href: "/financeiro/frota", label: "Custos Frota", icon: Car },

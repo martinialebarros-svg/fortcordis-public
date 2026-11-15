@@ -54,7 +54,7 @@ async function prepararRevisao() {
   fireEvent.click(checks[0]); fireEvent.click(checks[1]);
   fireEvent.click(screen.getAllByRole("button", { name: "Adicionar ao atendimento" })[0]);
   expect(view.onApplyField).toHaveBeenCalledTimes(1);
-  return view;
+  return { ...view, file };
 }
 
 describe("rascunho de IA em memória após navegação", () => {
@@ -64,7 +64,10 @@ describe("rascunho de IA em memória após navegação", () => {
     await aguardarIdentidade();
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe(transcript);
     expect(screen.getByText("exame-sintetico.pdf")).toBeTruthy();
-    expect(screen.getByRole("link", { name: "Ver original" })).toBeTruthy();
+    // Identity readiness restores the file before the child effect creates its URL.
+    const originalLink = await screen.findByRole("link", { name: "Ver original" });
+    expect(originalLink).toHaveAttribute("href", "blob:exame-memory");
+    expect(URL.createObjectURL).toHaveBeenLastCalledWith(original.file);
     expect((screen.getByLabelText("Anamnese") as HTMLTextAreaElement).value).toBe("Tutor nega desmaios; tosse confirmada na revisão.");
     expect((screen.getByRole("button", { name: "Adicionado ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
     const checks = screen.getAllByLabelText(/Conferi este trecho com a fonte/);
