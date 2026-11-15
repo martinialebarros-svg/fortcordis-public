@@ -606,8 +606,7 @@ def _process_structure(
     session_id: str,
     current_measurements: dict[str, str] | None = None,
 ) -> None:
-    raw_measurements = current_measurements or {}
-    current_measurements = clinically_safe_echo_measurements(raw_measurements)
+    current_measurements = clinically_safe_echo_measurements(current_measurements or {})
     db = SessionLocal()
     started = _utcnow()
     processing_step = "structuring_load"
@@ -691,9 +690,7 @@ def _process_structure(
                 transcript=minimized_transcript,
                 phrase_preferences=phrase_preferences,
                 safety_user_id=session.user_id,
-                # The provider sanitizes numeric prompt values separately from
-                # review validation, which needs the complete raw length cohort.
-                current_measurements=raw_measurements,
+                current_measurements=current_measurements,
                 exam_context=exam_context,
                 reference_context=reference_context,
             )
@@ -703,7 +700,6 @@ def _process_structure(
             transcript.edited_text,
             species=patient.especie if patient else None,
             current_measurements=current_measurements,
-            pulmonary_measurements=raw_measurements,
             exam_context=exam_context,
             reference_context=reference_context,
         )

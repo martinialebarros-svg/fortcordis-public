@@ -15,6 +15,7 @@ it("oferece revisão em outra aba sem iniciar trabalho nem exigir alteração da
     clinicalSummary={{ completeness: 42, pending: [] }}
     historicoPaciente={{ atendimentos: [] }}
     herdarAtendimentoAnterior={herdarAtendimentoAnterior}
+    irParaPendenciaClinica={vi.fn()}
     selecionado={91}
   />);
   const link = screen.getByRole("link", { name: /Revisar duplicidade do paciente/ });

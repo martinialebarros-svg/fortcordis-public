@@ -53,12 +53,6 @@ from app.services.laudo_pdf_jobs import (
 from app.services.laudo_pdf_service import compute_laudo_pdf_cache_key, render_laudo_pdf
 from app.schemas.echo_editor_update import EchoEditorUpdate
 from app.services.echo_editor_source import load_echo_editor_source
-from app.schemas.laudo_comparacao import LaudoComparacaoAnteriorResponse
-from app.services.laudo_comparacao_service import (
-    LaudoComparacaoNaoEncontrada,
-    LaudoComparacaoPacienteAusente,
-    comparar_laudo_anterior,
-)
 from app.services.laudo_ordem_servico_service import (
     buscar_ordem_laudo, buscar_ordem_por_chave, chave_upload_ordem, criar_ordem_laudo,
     exigir_criacao_ordem, hash_upload_ordem, mesma_data, pode_acessar_ordens, resumo_ordem, validar_preco_ordem,
@@ -85,7 +79,6 @@ from app.utils.ecocardiograma_medidas import (
 )
 from app.utils.ecocardiograma_qualitativa import extrair_qualitativa_ecocardiograma_da_descricao
 from app.utils.echo_diastolic_aliases import ECHO_DIASTOLIC_CANONICAL_KEYS
-from app.utils.echo_pulmonary_probability import HP_MEASUREMENT_KEYS, encode_pulmonary_measurement
 from app.utils.paciente_idade import referencia_documento, idade_do_paciente, dados_idade_paciente, alteracoes_idade
 from app.utils.paciente_helpers import (
     data_civil_referencia,
@@ -1193,9 +1186,6 @@ def _montar_descricao_ecocardiograma(
 
     descricao_parts = ["## Medidas Ecocardiograficas\n"]
     for key, value in medidas.items():
-        if key in HP_MEASUREMENT_KEYS:
-            descricao_parts.append(f"- {key}: {encode_pulmonary_measurement(value)}")
-            continue
         if value or key in ECHO_DIASTOLIC_CANONICAL_KEYS:
             # Keep explicit clears alongside historical aliases when creating a
             # report; None denotes a blank, never a fabricated numeric value.
@@ -2960,22 +2950,6 @@ def atualizar_laudo_ultrassonografia_abdominal(
         "paciente_id": laudo.paciente_id,
         "tipo": laudo.tipo,
     }
-
-
-@router.get("/laudos/{laudo_id}/comparacao-anterior", response_model=LaudoComparacaoAnteriorResponse)
-def obter_comparacao_laudo_anterior(
-    laudo_id: int,
-    anterior_id: Optional[int] = None,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Consulta interna protegida pela mesma permissão de visualização do laudo."""
-    try:
-        return comparar_laudo_anterior(db, laudo_id, anterior_id=anterior_id)
-    except LaudoComparacaoNaoEncontrada:
-        raise HTTPException(status_code=404, detail="Comparação não encontrada") from None
-    except LaudoComparacaoPacienteAusente:
-        raise HTTPException(status_code=422, detail="Paciente do laudo indisponível") from None
 
 
 @router.get("/laudos/{laudo_id}")

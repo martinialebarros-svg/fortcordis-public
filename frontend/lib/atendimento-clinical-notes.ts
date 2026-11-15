@@ -61,10 +61,17 @@ export interface ClinicalCoberturaMinima {
   pendencias: string[];
 }
 
+export type ClinicalPendingField = ClinicalFieldKey | "prognostico";
+
+export interface ClinicalPendingItem {
+  field: ClinicalPendingField;
+  label: string;
+}
+
 export interface ClinicalQuickSummary {
   headline: string;
   highlights: Array<{ label: string; text: string }>;
-  pending: string[];
+  pending: ClinicalPendingItem[];
   completeness: number;
   coberturaMinima: ClinicalCoberturaMinima;
 }
@@ -93,6 +100,16 @@ const CLINICAL_FIELD_ORDER: ClinicalFieldKey[] = [
   "retorno_recomendado",
   "motivo_retorno",
   "observacoes",
+];
+
+const CLINICAL_PENDING_ITEMS: ClinicalPendingItem[] = [
+  { field: "queixa_principal", label: "Registrar a queixa principal." },
+  { field: "anamnese", label: "Completar a anamnese dirigida." },
+  { field: "exame_fisico", label: "Descrever o exame fisico." },
+  { field: "diagnostico_principal", label: "Definir o diagnostico principal." },
+  { field: "plano_terapeutico", label: "Fechar o plano terapeutico." },
+  { field: "retorno_recomendado", label: "Orientar o retorno." },
+  { field: "prognostico", label: "Selecionar o prognostico." },
 ];
 
 export const CLINICAL_FIELD_CONFIGS: ClinicalFieldConfig[] = [
@@ -413,14 +430,9 @@ export function buildClinicalQuickSummary(
     summarizeClinicalText(values.anamnese, 180) ||
     "Resumo automatico sera montado conforme o atendimento for preenchido.";
 
-  const pending: string[] = [];
-  if (!cleanWhitespace(values.queixa_principal)) pending.push("Registrar a queixa principal.");
-  if (!cleanWhitespace(values.anamnese)) pending.push("Completar a anamnese dirigida.");
-  if (!cleanWhitespace(values.exame_fisico)) pending.push("Descrever o exame fisico.");
-  if (!cleanWhitespace(values.diagnostico_principal)) pending.push("Definir o diagnostico principal.");
-  if (!cleanWhitespace(values.plano_terapeutico)) pending.push("Fechar o plano terapeutico.");
-  if (!cleanWhitespace(values.retorno_recomendado)) pending.push("Orientar o retorno.");
-  if (!String(prognostico || "").trim()) pending.push("Selecionar o prognostico.");
+  const pending = CLINICAL_PENDING_ITEMS.filter(({ field }) =>
+    field === "prognostico" ? !String(prognostico || "").trim() : !cleanWhitespace(values[field])
+  );
 
   const preenchidos = CLINICAL_FIELD_ORDER.filter((key) => cleanWhitespace(values[key])).length;
   const completeness = Math.round((preenchidos / CLINICAL_FIELD_ORDER.length) * 100);
@@ -429,7 +441,7 @@ export function buildClinicalQuickSummary(
   return {
     headline,
     highlights,
-    pending: pending.slice(0, 4),
+    pending,
     completeness,
     coberturaMinima,
   };

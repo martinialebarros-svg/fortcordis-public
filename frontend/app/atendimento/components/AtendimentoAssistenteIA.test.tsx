@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import AtendimentoAssistenteIA from "./AtendimentoAssistenteIA";
 import api from "@/lib/axios";
@@ -30,13 +30,13 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 async function preparar(props: Partial<React.ComponentProps<typeof AtendimentoAssistenteIA>> = {}) {
-  const onApplyField = vi.fn();
-  const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente Teste" onApplyField={onApplyField} {...props} />);
+  const onApplyFields = vi.fn(() => true);
+  const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente Teste" onApplyFields={onApplyFields} {...props} />);
   view.container.querySelector("details")?.setAttribute("open", "");
   await waitFor(() => expect(screen.queryByText("Verificando disponibilidade…")).toBeNull());
   fireEvent.click(screen.getByLabelText(/Confirmei a autorização do tutor/));
   fireEvent.change(screen.getByLabelText("Transcrição para revisão"), { target: { value: "tosse há dois dias" } });
-  return { ...view, onApplyField };
+  return { ...view, onApplyFields };
 }
 
 describe("AtendimentoAssistenteIA", () => {
@@ -46,20 +46,20 @@ describe("AtendimentoAssistenteIA", () => {
       arquivos: [], resultado, transcricao: "tosse há dois dias",
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     // Status readiness precedes the independent request that restores the batch.
     const abrirRevisao = await screen.findByRole("button", { name: "Abrir revisão do conjunto" });
     expect(screen.queryByRole("button", { name: "Adicionar ao atendimento" })).toBeNull();
     fireEvent.click(abrirRevisao);
     const adicionar = await screen.findByRole("button", { name: "Adicionar ao atendimento" });
     expect((adicionar as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
     fireEvent.click(adicionar);
-    await waitFor(() => expect(onApplyField).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onApplyFields).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole("button", { name: "Abrir revisão do conjunto" }));
     expect((screen.getByRole("button", { name: "Adicionado ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).toHaveBeenCalledTimes(1);
+    expect(onApplyFields).toHaveBeenCalledTimes(1);
   });
 
   it("permite confirmar consentimento após recuperar envio incompleto", async () => {
@@ -68,7 +68,7 @@ describe("AtendimentoAssistenteIA", () => {
       arquivos: [], resultado: null, transcricao: null,
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
-    const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Teste" onApplyField={vi.fn()} />);
+    const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Teste" onApplyFields={vi.fn(() => true)} />);
     view.container.querySelector("details")?.setAttribute("open", "");
     await screen.findByText("Enviando fontes do conjunto");
     const consent = screen.getByLabelText(/Confirmei a autorização do tutor/) as HTMLInputElement;
@@ -84,7 +84,7 @@ describe("AtendimentoAssistenteIA", () => {
       arquivos: [], resultado: structuredClone(resultado), transcricao: "tosse há dois dias",
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? structuredClone(batch) : status }));
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
     fireEvent.change(await screen.findByLabelText("Anamnese"), { target: { value: "Edição veterinária a preservar." } });
     fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
@@ -104,7 +104,7 @@ describe("AtendimentoAssistenteIA", () => {
     expect((screen.getByLabelText(/Conferi este trecho/) as HTMLInputElement).checked).toBe(false);
     expect((screen.getByRole("button", { name: "Adicionar ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByText(/Esta revisão está desatualizada/)).toBeNull();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -114,17 +114,17 @@ describe("AtendimentoAssistenteIA", () => {
       arquivos: [], resultado: structuredClone(resultado), transcricao: "tosse há dois dias",
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? structuredClone(batch) : status }));
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
     fireEvent.change(await screen.findByLabelText("Anamnese"), { target: { value: "Texto que deve ser preservado." } });
     fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
     if (cenario === "ausente") batch = null;
     else if (cenario === "revogado") batch = { ...(batch as object), resultado: { ...resultado, bloqueado_integracao: true } };
     else vi.mocked(api.get).mockRejectedValueOnce(new Error("Consulta indisponível"));
-    fireEvent.click(screen.getByRole("button", { name: "Adicionar ao atendimento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Incorporar itens revisados (1)" }));
     await screen.findByText(/Esta revisão está desatualizada/);
     expect((screen.getByLabelText("Anamnese") as HTMLTextAreaElement).value).toBe("Texto que deve ser preservado.");
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -152,53 +152,53 @@ describe("AtendimentoAssistenteIA", () => {
   });
 
   it("exige atendimento salvo", () => {
-    render(<AtendimentoAssistenteIA atendimentoId={null} pacienteId={1} patientLabel="Teste" onApplyField={vi.fn()} />);
+    render(<AtendimentoAssistenteIA atendimentoId={null} pacienteId={1} patientLabel="Teste" onApplyFields={vi.fn(() => true)} />);
     expect(screen.getByText(/Salve o atendimento e confirme o paciente/)).toBeTruthy();
     expect(api.get).not.toHaveBeenCalled();
   });
   it("só incorpora um campo após aprovação explícita e evita clique duplicado", async () => {
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
     const adicionar = await screen.findByRole("button", { name: "Adicionar ao atendimento" });
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect((adicionar as HTMLButtonElement).disabled).toBe(true);
     fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
     fireEvent.click(adicionar);
-    expect(onApplyField).toHaveBeenCalledWith("anamnese", "Tutor relata tosse há dois dias.");
+    expect(onApplyFields).toHaveBeenCalledWith([{ campo: "anamnese", texto: "Tutor relata tosse há dois dias." }]);
     expect((screen.getByRole("button", { name: "Adicionado ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).toHaveBeenCalledTimes(1);
+    expect(onApplyFields).toHaveBeenCalledTimes(1);
     expect(screen.getByText("Plano e condutas para sua avaliação")).toBeTruthy();
   });
   it("invalida aprovação após edição do campo", async () => {
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
     await screen.findByRole("button", { name: "Adicionar ao atendimento" });
     fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
     fireEvent.change(screen.getByLabelText("Anamnese"), { target: { value: "Texto revisado pelo veterinário." } });
     expect((screen.getByRole("button", { name: "Adicionar ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
   it("bloqueia incorporação quando a identidade da fonte não confere", async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { ...resultado, bloqueado_integracao: true } });
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
     const adicionar = await screen.findByRole("button", { name: "Adicionar ao atendimento" });
     expect((adicionar as HTMLButtonElement).disabled).toBe(true);
     expect((screen.getByLabelText(/Conferi este trecho/) as HTMLInputElement).disabled).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
   it("descarta resultado obsoleto ao trocar o atendimento", async () => {
     let resolve!: (value: unknown) => void;
     vi.mocked(api.post).mockImplementation(() => new Promise((res) => { resolve = res; }));
-    const { rerender, container, onApplyField } = await preparar();
+    const { rerender, container, onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
     await waitFor(() => expect(api.post).toHaveBeenCalled());
-    rerender(<AtendimentoAssistenteIA atendimentoId={2} pacienteId={2} patientLabel="Outro paciente" onApplyField={onApplyField} />);
+    rerender(<AtendimentoAssistenteIA atendimentoId={2} pacienteId={2} patientLabel="Outro paciente" onApplyFields={onApplyFields} />);
     container.querySelector("details")?.setAttribute("open", "");
     await act(async () => resolve({ data: resultado }));
     expect(screen.queryByText("Tutor relata tosse há dois dias.")).toBeNull();
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("");
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
   it("não consulta IA quando salvar o contexto falha", async () => {
     const onEnsureSaved = vi.fn().mockResolvedValue(false);
@@ -210,7 +210,7 @@ describe("AtendimentoAssistenteIA", () => {
   });
   it("conserva a transcrição após timeout e só tenta novamente por ação explícita", async () => {
     vi.mocked(api.post).mockRejectedValueOnce({ response: { status: 504, data: { detail: "A IA excedeu o tempo de resposta." } } });
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     const analisar = screen.getByRole("button", { name: "Organizar e sugerir para revisão" });
     fireEvent.click(analisar);
     await screen.findByText("A IA excedeu o tempo de resposta.");
@@ -220,7 +220,7 @@ describe("AtendimentoAssistenteIA", () => {
     await screen.findByRole("button", { name: "Adicionar ao atendimento" });
     expect(api.post).toHaveBeenCalledTimes(2);
     expect((vi.mocked(api.post).mock.calls[1][1] as FormData).get("transcricao")).toBe("tosse há dois dias");
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("mantém áudio acessível quando a transcrição falha", async () => {
@@ -251,7 +251,7 @@ describe("AtendimentoAssistenteIA", () => {
     const audioState = vi.mocked(useAtendimentoAudio).getMockImplementation()!(1, 7, 1);
     vi.mocked(useAtendimentoAudio).mockReturnValue({ ...audioState, audio: new File(["primeiro"], "primeiro.webm") });
     vi.mocked(api.post).mockResolvedValue({ data: { texto: "Primeiro trecho", modelo: "gpt-transcribe", avisos: [] } });
-    const { rerender, onApplyField } = await preparar();
+    const { rerender, onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Transcrever áudio" }));
     const concluido = await screen.findByRole("button", { name: "Áudio transcrito" });
     expect((concluido as HTMLButtonElement).disabled).toBe(true);
@@ -259,7 +259,7 @@ describe("AtendimentoAssistenteIA", () => {
     fireEvent.change(screen.getByLabelText("Transcrição para revisão"), { target: { value: "Primeiro trecho revisado" } });
     vi.mocked(useAtendimentoAudio).mockReturnValue({ ...audioState, audio: new File(["segundo"], "segundo.webm") });
     vi.mocked(api.post).mockResolvedValue({ data: { texto: "Segundo trecho", modelo: "gpt-transcribe", avisos: [] } });
-    rerender(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente Teste" onApplyField={onApplyField} />);
+    rerender(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente Teste" onApplyFields={onApplyFields} />);
     fireEvent.click(screen.getByRole("button", { name: "Transcrever áudio" }));
     await screen.findByRole("button", { name: "Áudio transcrito" });
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("Primeiro trecho revisado\n\nSegundo trecho");
@@ -270,15 +270,80 @@ describe("AtendimentoAssistenteIA", () => {
       fontes: [{ arquivo: "01_exame.pdf", paciente_nome: "Paciente Teste", especie: "canino", data_exame: "2026-10-25", identidade: "compativel", motivo: "Identificação compatível" }],
       achados_exames: [{ arquivo: "01_exame.pdf", pagina: 2, descricao: "Creatinina", evidencia: "Creatinina 1,2 mg/dL", valor: "1,2", unidade: "mg/dL", referencia: "0,5–1,5 mg/dL", confianca: "alta", alertas: [] }],
     } });
-    const { onApplyField } = await preparar();
+    const { onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
     const adicionar = await screen.findByRole("button", { name: "Adicionar achado aos dados clínicos" });
     expect((adicionar as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText("Creatinina 1,2 mg/dL")).toBeTruthy();
     fireEvent.click(screen.getByLabelText(/Conferi este achado no exame original/));
     fireEvent.click(adicionar);
-    expect(onApplyField).toHaveBeenCalledWith("dados_clinicos", expect.stringContaining("01_exame.pdf, página 2, exame de 2026-10-25"));
-    expect(onApplyField).toHaveBeenCalledWith("dados_clinicos", expect.stringContaining("1,2 mg/dL"));
+    expect(onApplyFields).toHaveBeenCalledWith([{ campo: "dados_clinicos", texto: expect.stringContaining("01_exame.pdf, página 2, exame de 2026-10-25") }]);
+    expect(onApplyFields).toHaveBeenCalledWith([{ campo: "dados_clinicos", texto: expect.stringContaining("1,2 mg/dL") }]);
+  });
+
+  it("incorpora os itens aprovados em uma ação, com uma só conferência do lote", async () => {
+    const achado = {
+      arquivo: "ficticio.pdf", pagina: 2, descricao: "Creatinina",
+      evidencia: "Creatinina 1,2 mg/dL", valor: "1,2", unidade: "mg/dL",
+      referencia: null, confianca: "alta" as const, alertas: [],
+    };
+    const batch = {
+      id: "lote-incorporacao", atendimento_id: 1, paciente_id: 1, status: "completed", erro: null,
+      arquivos: [], transcricao: "tosse há dois dias",
+      resultado: {
+        ...resultado,
+        campos: [
+          resultado.campos[0],
+          { campo: "dados_clinicos", texto: "Trecho clínico conferido.", fonte: "transcricao", evidencia: "trecho" },
+          { campo: "observacoes", texto: "Ainda em revisão.", fonte: "transcricao", evidencia: "observação" },
+          { campo: "queixa_principal", texto: "Texto sem fonte confiável.", fonte: "", evidencia: "" },
+          { campo: "exame_fisico", texto: "Texto que será revisto.", fonte: "transcricao", evidencia: "trecho" },
+        ],
+        fontes: [{ arquivo: "ficticio.pdf", paciente_nome: "Paciente Teste", especie: "canino", data_exame: "2026-11-01", identidade: "compativel", motivo: "" }],
+        achados_exames: [achado, { ...achado, descricao: "Achado incerto", confianca: "baixa" }],
+      },
+    };
+    vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? structuredClone(batch) : status }));
+    const { onApplyFields } = await preparar();
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
+    const card = (label: string) => within(screen.getByLabelText(label).closest("article")!);
+    const aprovarTrecho = (label: string) => fireEvent.click(card(label).getByLabelText(/Conferi este trecho/));
+
+    aprovarTrecho("Anamnese");
+    fireEvent.click(card("Anamnese").getByRole("button", { name: "Adicionar ao atendimento" }));
+    await waitFor(() => expect(onApplyFields).toHaveBeenCalledTimes(1));
+    expect((card("Queixa principal").getByLabelText(/Conferi este trecho/) as HTMLInputElement).disabled).toBe(true);
+    aprovarTrecho("Dados clínicos");
+    aprovarTrecho("Exame físico");
+    fireEvent.change(screen.getByLabelText("Exame físico"), { target: { value: "Edição que precisa de nova aprovação." } });
+    fireEvent.click(screen.getByLabelText(/Conferi este achado/));
+
+    vi.mocked(api.get).mockClear();
+    onApplyFields.mockClear();
+    const incorporar = screen.getByRole("button", { name: "Incorporar itens revisados (2)" });
+    fireEvent.click(incorporar);
+    fireEvent.click(incorporar);
+    await waitFor(() => expect(onApplyFields).toHaveBeenCalledTimes(1));
+    expect(onApplyFields).toHaveBeenCalledWith([
+      { campo: "dados_clinicos", texto: "Trecho clínico conferido." },
+      { campo: "dados_clinicos", texto: expect.stringContaining("ficticio.pdf, página 2, exame de 2026-11-01") },
+    ]);
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(api.get).toHaveBeenCalledWith("/atendimentos/1/assistente/lotes/lote-incorporacao", expect.anything());
+    expect(api.post).not.toHaveBeenCalled();
+    expect((screen.getByRole("button", { name: "Incorporar itens revisados (0)" }) as HTMLButtonElement).disabled).toBe(true);
+    expect((card("Observações").getByLabelText(/Conferi este trecho/) as HTMLInputElement).checked).toBe(false);
+  });
+
+  it("mantém as aprovações disponíveis quando o formulário rejeita a inclusão", async () => {
+    const onApplyFields = vi.fn(() => false);
+    await preparar({ onApplyFields });
+    fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
+    fireEvent.click(await screen.findByLabelText(/Conferi este trecho/));
+    fireEvent.click(screen.getByRole("button", { name: "Incorporar itens revisados (1)" }));
+    expect(await screen.findByText(/Volte ao atendimento de origem/)).toBeTruthy();
+    expect((screen.getByRole("button", { name: "Incorporar itens revisados (1)" }) as HTMLButtonElement).disabled).toBe(false);
+    expect(screen.queryByRole("button", { name: "Adicionado ao atendimento" })).toBeNull();
   });
   it("avisa o integrador quando há fontes pendentes", async () => {
     const onPendingChange = vi.fn();

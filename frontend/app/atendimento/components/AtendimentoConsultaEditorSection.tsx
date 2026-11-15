@@ -1,10 +1,18 @@
 "use client";
 
 import { CheckCircle2, ChevronLeft, ChevronRight, ListChecks, Stethoscope } from "lucide-react";
+import { useEffect, type Ref } from "react";
+import type { ClinicalFieldKey, ClinicalPendingField, ClinicalQuickSummary } from "@/lib/atendimento-clinical-notes";
+import AtendimentoPendenciasClinicas from "./AtendimentoPendenciasClinicas";
 import ClinicalFieldCard from "./ClinicalFieldCard";
 import type { LooseAtendimentoComponentProps } from "./component-props";
 
-type AtendimentoConsultaEditorSectionProps = LooseAtendimentoComponentProps;
+type AtendimentoConsultaEditorSectionProps = LooseAtendimentoComponentProps & {
+  clinicalSummary: ClinicalQuickSummary;
+  focarCampoConsulta: (field: ClinicalFieldKey | undefined, verTodos: boolean) => void;
+  irParaPendenciaClinica: (field: ClinicalPendingField) => void;
+  prognosticoRef: Ref<HTMLSelectElement>;
+};
 
 export default function AtendimentoConsultaEditorSection(props: AtendimentoConsultaEditorSectionProps) {
   const {
@@ -19,6 +27,7 @@ export default function AtendimentoConsultaEditorSection(props: AtendimentoConsu
     consultaEtapasCompletas,
     consultaVerTodosCampos,
     dadosClinicosOrigem,
+    focarCampoConsulta,
     form,
     formatDate,
     getClinicalFieldValue,
@@ -26,6 +35,8 @@ export default function AtendimentoConsultaEditorSection(props: AtendimentoConsu
     goToConsultaCampoProximo,
     handleConsultaTextareaKeyDown,
     injectClinicalSnippet,
+    irParaPendenciaClinica,
+    prognosticoRef,
     PROGNOSTICO,
     registerClinicalTextarea,
     salvarFraseRapida,
@@ -36,6 +47,12 @@ export default function AtendimentoConsultaEditorSection(props: AtendimentoConsu
     setConsultaVerTodosCampos,
     setField,
   } = props;
+
+  const campoAtivo = consultaCampoAtivoConfig?.key;
+  // A área é carregada sob demanda. Só tente focar depois que os controles estiverem montados.
+  useEffect(() => {
+    focarCampoConsulta(campoAtivo, consultaVerTodosCampos);
+  }, [campoAtivo, consultaVerTodosCampos, focarCampoConsulta]);
 
   return (
     <section className="rounded-[26px] border border-slate-200 bg-white p-5 shadow-sm">
@@ -100,8 +117,10 @@ export default function AtendimentoConsultaEditorSection(props: AtendimentoConsu
             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Fechamento clinico</p>
             <div className="mt-4 space-y-4">
               <div>
-                <label className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Prognostico</label>
+                <label htmlFor="atendimento-prognostico" className="mb-1 block text-xs font-medium uppercase tracking-[0.2em] text-slate-500">Prognostico</label>
                 <select
+                  id="atendimento-prognostico"
+                  ref={prognosticoRef}
                   value={form.diagnostico.prognostico}
                   onChange={(e) => setField("diagnostico", { ...form.diagnostico, prognostico: e.target.value })}
                   className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900"
@@ -131,11 +150,7 @@ export default function AtendimentoConsultaEditorSection(props: AtendimentoConsu
               {clinicalSummary.pending.length > 0 ? (
                 <div className="rounded-[20px] border border-amber-200 bg-amber-50 px-4 py-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-700">Pendencias</p>
-                  <div className="mt-3 space-y-2 text-sm text-amber-900">
-                    {clinicalSummary.pending.map((item: string) => (
-                      <p key={item}>{item}</p>
-                    ))}
-                  </div>
+                  <AtendimentoPendenciasClinicas items={clinicalSummary.pending} onNavigate={irParaPendenciaClinica} />
                 </div>
               ) : (
                 <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">

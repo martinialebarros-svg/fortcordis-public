@@ -33,16 +33,16 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 async function preparar(props: Partial<React.ComponentProps<typeof AtendimentoAssistenteIA>> = {}) {
-  const onApplyField = vi.fn();
-  const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente fictício" onApplyField={onApplyField} {...props} />);
+  const onApplyFields = vi.fn(() => true);
+  const view = render(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={1} patientLabel="Paciente fictício" onApplyFields={onApplyFields} {...props} />);
   view.container.querySelector("details")?.setAttribute("open", "");
   const abrir = await screen.findByRole("button", { name: "Abrir revisão do conjunto" });
-  return { abrir, onApplyField };
+  return { abrir, onApplyFields };
 }
 
 describe("substituição explícita da revisão do conjunto", () => {
   it.each([false, true])("preserva transcrição existente até confirmar a substituição (editada após abrir: %s)", async (abertaAntes) => {
-    const { abrir, onApplyField } = await preparar();
+    const { abrir, onApplyFields } = await preparar();
     if (abertaAntes) {
       fireEvent.click(abrir);
       await screen.findByLabelText("Anamnese");
@@ -60,11 +60,11 @@ describe("substituição explícita da revisão do conjunto", () => {
     await screen.findByLabelText("Anamnese");
     expect(transcricao.value).toBe(batch.transcricao);
     expect(api.post).not.toHaveBeenCalled();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("abre diretamente quando não há transcrição anterior e preserva a mesma revisão ao reabrir", async () => {
-    const { abrir, onApplyField } = await preparar();
+    const { abrir, onApplyFields } = await preparar();
     fireEvent.click(abrir);
     const anamnese = await screen.findByLabelText("Anamnese") as HTMLTextAreaElement;
     fireEvent.change(anamnese, { target: { value: "Sugestão revisada manualmente." } });
@@ -73,7 +73,7 @@ describe("substituição explícita da revisão do conjunto", () => {
     expect(screen.queryByRole("button", { name: "Abrir nova revisão" })).toBeNull();
     expect(anamnese.value).toBe("Sugestão revisada manualmente.");
     expect((screen.getByLabelText(/Conferi este trecho/) as HTMLInputElement).checked).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("não exige confirmação quando a transcrição existente é idêntica à do conjunto", async () => {
@@ -86,12 +86,12 @@ describe("substituição explícita da revisão do conjunto", () => {
 });
 
 async function prepararNovaAnalise(props: Partial<React.ComponentProps<typeof AtendimentoAssistenteIA>> = {}) {
-  const { abrir, onApplyField } = await preparar(props);
+  const { abrir, onApplyFields } = await preparar(props);
   fireEvent.click(abrir);
   fireEvent.change(await screen.findByLabelText("Anamnese"), { target: { value: "Edição veterinária que precisa permanecer." } });
   fireEvent.click(screen.getByLabelText(/Conferi este trecho/));
   fireEvent.click(screen.getByLabelText(/Confirmei a autorização do tutor/));
-  return { onApplyField, analisar: screen.getByRole("button", { name: "Organizar e sugerir para revisão" }) };
+  return { onApplyFields, analisar: screen.getByRole("button", { name: "Organizar e sugerir para revisão" }) };
 }
 
 function conferirRevisaoPreservada() {
@@ -101,34 +101,34 @@ function conferirRevisaoPreservada() {
 
 describe("preservação da revisão durante nova análise", () => {
   it("mantém a revisão anterior quando salvar o contexto falha", async () => {
-    const { analisar, onApplyField } = await prepararNovaAnalise({ onEnsureSaved: vi.fn().mockResolvedValue(false) });
+    const { analisar, onApplyFields } = await prepararNovaAnalise({ onEnsureSaved: vi.fn().mockResolvedValue(false) });
     fireEvent.click(analisar);
     await screen.findByText(/Salve o atendimento e confirme o paciente antes de analisar/);
     conferirRevisaoPreservada();
     expect(api.post).not.toHaveBeenCalled();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("mantém a revisão anterior quando a nova análise falha na API", async () => {
-    const { analisar, onApplyField } = await prepararNovaAnalise();
+    const { analisar, onApplyFields } = await prepararNovaAnalise();
     vi.mocked(api.post).mockRejectedValueOnce({ response: { status: 504, data: { detail: "Falha simulada da análise." } } });
     fireEvent.click(analisar);
     await screen.findByText("Falha simulada da análise.");
     conferirRevisaoPreservada();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("preserva a revisão quando a resposta não pode preparar os novos campos e achados", async () => {
-    const { analisar, onApplyField } = await prepararNovaAnalise();
+    const { analisar, onApplyFields } = await prepararNovaAnalise();
     vi.mocked(api.post).mockResolvedValueOnce({ data: { campos: [] } });
     fireEvent.click(analisar);
     await screen.findByRole("alert");
     conferirRevisaoPreservada();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("preserva enquanto aguarda e ao cancelar, ignorando resposta tardia", async () => {
-    const { analisar, onApplyField } = await prepararNovaAnalise();
+    const { analisar, onApplyFields } = await prepararNovaAnalise();
     let resolver!: (value: unknown) => void;
     vi.mocked(api.post).mockImplementationOnce(() => new Promise((resolve) => { resolver = resolve; }));
     fireEvent.click(analisar);
@@ -142,22 +142,22 @@ describe("preservação da revisão durante nova análise", () => {
     expect((screen.getByLabelText("Anamnese") as HTMLTextAreaElement).disabled).toBe(false);
     await act(async () => resolver({ data: { ...resultado, campos: [{ ...resultado.campos[0], texto: "Resposta tardia fictícia." }] } }));
     conferirRevisaoPreservada();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 
   it("só substitui no sucesso e exige nova aprovação para o conteúdo novo", async () => {
-    const { analisar, onApplyField } = await prepararNovaAnalise();
+    const { analisar, onApplyFields } = await prepararNovaAnalise();
     vi.mocked(api.post).mockResolvedValueOnce({ data: { ...resultado, campos: [{ ...resultado.campos[0], texto: "Nova sugestão fictícia." }] } });
     fireEvent.click(analisar);
     await waitFor(() => expect((screen.getByLabelText("Anamnese") as HTMLTextAreaElement).value).toBe("Nova sugestão fictícia."));
     const aprovar = screen.getByLabelText(/Conferi este trecho/) as HTMLInputElement;
     expect(aprovar.checked).toBe(false);
     expect((screen.getByRole("button", { name: "Adicionar ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     fireEvent.click(aprovar);
     fireEvent.click(screen.getByRole("button", { name: "Adicionar ao atendimento" }));
-    expect(onApplyField).toHaveBeenCalledWith("anamnese", "Nova sugestão fictícia.");
-    expect(onApplyField).toHaveBeenCalledTimes(1);
+    expect(onApplyFields).toHaveBeenCalledWith([{ campo: "anamnese", texto: "Nova sugestão fictícia." }]);
+    expect(onApplyFields).toHaveBeenCalledTimes(1);
   });
 
   it("preserva achado editado e aprovado na falha e exige nova aprovação quando o achado muda", async () => {
@@ -170,7 +170,7 @@ describe("preservação da revisão durante nova análise", () => {
     vi.mocked(api.get).mockImplementation(async (url, config) => String(url).includes("/lotes/")
       ? { data: { ...batch, resultado: resultadoComAchado } }
       : consultarOriginal(url, config));
-    const { analisar, onApplyField } = await prepararNovaAnalise();
+    const { analisar, onApplyFields } = await prepararNovaAnalise();
     fireEvent.change(screen.getByLabelText("Texto para os dados clínicos"), { target: { value: "Achado fictício conferido e editado pelo veterinário." } });
     fireEvent.click(screen.getByLabelText(/Conferi este achado no exame original/));
     vi.mocked(api.post).mockRejectedValueOnce({ response: { status: 504, data: { detail: "Falha simulada ao reanalisar exame." } } });
@@ -178,7 +178,7 @@ describe("preservação da revisão durante nova análise", () => {
     await screen.findByText("Falha simulada ao reanalisar exame.");
     expect((screen.getByLabelText("Texto para os dados clínicos") as HTMLTextAreaElement).value).toBe("Achado fictício conferido e editado pelo veterinário.");
     expect((screen.getByLabelText(/Conferi este achado no exame original/) as HTMLInputElement).checked).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
 
     vi.mocked(api.post).mockResolvedValueOnce({ data: {
       ...resultadoComAchado,
@@ -188,6 +188,6 @@ describe("preservação da revisão durante nova análise", () => {
     await waitFor(() => expect((screen.getByLabelText("Texto para os dados clínicos") as HTMLTextAreaElement).value).toContain("2,4 unidades"));
     expect((screen.getByLabelText(/Conferi este achado no exame original/) as HTMLInputElement).checked).toBe(false);
     expect((screen.getByRole("button", { name: "Adicionar achado aos dados clínicos" }) as HTMLButtonElement).disabled).toBe(true);
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
   });
 });

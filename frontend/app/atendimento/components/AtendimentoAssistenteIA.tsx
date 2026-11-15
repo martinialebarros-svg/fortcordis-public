@@ -7,10 +7,9 @@ import AtendimentoAssistenteLote from "./AtendimentoAssistenteLote";
 import AtendimentoTranscricaoRevisao from "./AtendimentoTranscricaoRevisao";
 import type { AssistenteLote } from "@/lib/atendimento-assistente-lote";
 import { extractApiErrorMessageSync } from "@/lib/api-error";
-import type { ClinicalFieldKey } from "@/lib/atendimento-clinical-notes";
 import {
   ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_CAMPO_LABELS, ASSISTENTE_FILE_ACCEPT,
-  podeIncorporarAchado, podeIncorporarCampo, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarArquivosAssistente, validarAudioParaTranscricao, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
+  podeIncorporarAchado, podeIncorporarCampo, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarArquivosAssistente, validarAudioParaTranscricao, type AssistenteCampoRevisado, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
 } from "@/lib/atendimento-assistente-ia";
 import { useAtendimentoAudio } from "@/lib/use-atendimento-audio";
 import { guardarRevisaoAssistenteMemoria, lerRascunhoAssistenteMemoria, type AssistenteMemoryReview } from "@/lib/atendimento-assistente-memory";
@@ -19,7 +18,7 @@ interface AtendimentoAssistenteIAProps {
   atendimentoId: number | null;
   patientLabel: string;
   pacienteId: number;
-  onApplyField: (campo: ClinicalFieldKey, texto: string) => void;
+  onApplyFields: (itens: AssistenteCampoRevisado[]) => boolean;
   onAttachFiles?: (files: File[]) => Promise<void>;
   onEnsureSaved?: () => Promise<boolean>;
   onPendingChange?: (pending: boolean) => void;
@@ -28,6 +27,28 @@ interface AtendimentoAssistenteIAProps {
 
 const buttonClass = "inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50";
 const identificarAudio = (file: File) => JSON.stringify([file.name, file.size, file.type, file.lastModified]);
+
+type AlvoIncorporacao = { tipo: "campo" | "achado"; index: number };
+type ItemRevisado = AlvoIncorporacao & AssistenteCampoRevisado;
+
+function itensDisponiveisParaIncorporar(revisao: AssistenteMemoryReview): ItemRevisado[] {
+  const { resultado } = revisao;
+  if (!resultado) return [];
+  const itens: ItemRevisado[] = [];
+  resultado.campos.forEach((campo, index) => {
+    const texto = revisao.edicoes[index]?.trim();
+    if (texto && revisao.revisados[index] && !revisao.aplicados[index] && podeIncorporarCampo(resultado, campo)) {
+      itens.push({ tipo: "campo", index, campo: campo.campo, texto });
+    }
+  });
+  resultado.achados_exames.forEach((achado, index) => {
+    const texto = revisao.achadosEditados[index]?.trim();
+    if (texto && revisao.achadosRevisados[index] && !revisao.achadosAplicados[index] && podeIncorporarAchado(resultado, achado)) {
+      itens.push({ tipo: "achado", index, campo: "dados_clinicos", texto });
+    }
+  });
+  return itens;
+}
 
 function AudioPreview({ audio }: { audio: File }) {
   const [url, setUrl] = useState("");
@@ -53,7 +74,7 @@ function ArquivoOriginalLink({ arquivo }: { arquivo: File }) {
   return url ? <a href={url} target="_blank" rel="noopener noreferrer" className="shrink-0 text-teal-800 underline">Ver original</a> : null;
 }
 
-function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, onApplyField, onAttachFiles, onEnsureSaved, onPendingChange, onBusyChange }: AtendimentoAssistenteIAProps & { atendimentoId: number }) {
+function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, onApplyFields, onAttachFiles, onEnsureSaved, onPendingChange, onBusyChange }: AtendimentoAssistenteIAProps & { atendimentoId: number }) {
   const [status, setStatus] = useState<AssistenteIAStatus | null>(null);
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [consentimento, setConsentimento] = useState(false);
@@ -74,7 +95,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
   const [lotePendente, setLotePendente] = useState(false);
   const [resultadoLoteId, setResultadoLoteId] = useState<string | null>(null);
   const [loteParaRevisar, setLoteParaRevisar] = useState<AssistenteLote | null>(null);
-  const [busy, setBusy] = useState<"transcrever" | "analisar" | "anexar" | "incorporar" | null>(null);
+  const [busy, setBusy] = useState<"transcrever" | "analisar" | "anexar" | "incorporar" | "descartar-audio" | null>(null);
   const [erro, setErro] = useState("");
   const [avisos, setAvisos] = useState<string[]>([]);
   const [anexados, setAnexados] = useState(false);
@@ -93,7 +114,10 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
   const reviewKey = status?.usuario_id ? `${status.usuario_id}:${atendimentoId}:${pacienteId}` : "";
   const revisaoPronta = Boolean(reviewKey && reviewLoadedKey === reviewKey);
   const latestReview = useRef<AssistenteMemoryReview | null>(null);
-  latestReview.current = { texto, arquivos, resultado, edicoes, revisados, aplicados, achadosEditados, achadosRevisados, achadosAplicados, audioTranscrito, anexados, resultadoLoteId, revisoesTranscricao, transcricaoEditadaDesdeRevisao };
+  const revisaoAtual: AssistenteMemoryReview = { texto, arquivos, resultado, edicoes, revisados, aplicados, achadosEditados, achadosRevisados, achadosAplicados, audioTranscrito, anexados, resultadoLoteId, revisoesTranscricao, transcricaoEditadaDesdeRevisao };
+  latestReview.current = revisaoAtual;
+  const itensDisponiveis = itensDisponiveisParaIncorporar(revisaoAtual);
+  const editandoRevisaoBloqueado = busy === "analisar" || busy === "incorporar";
 
   useEffect(() => {
     if (!status?.usuario_id || !pacienteId) return;
@@ -172,27 +196,44 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
     setLoteParaRevisar(null);
   };
 
-  const incorporarResultado = (tipo: "campo" | "achado", index: number) => {
+  const incorporarResultado = (alvo?: AlvoIncorporacao) => {
     const revisao = latestReview.current;
     if (ocupada || incorporando.current || !revisao?.resultado) return;
-    const ehCampo = tipo === "campo";
-    const item = ehCampo ? revisao.resultado.campos[index] : revisao.resultado.achados_exames[index];
-    const textoRevisado = (ehCampo ? revisao.edicoes[index] : revisao.achadosEditados[index])?.trim();
-    if (!item || !textoRevisado || (ehCampo ? revisao.aplicados[index] || !revisao.revisados[index] || !podeIncorporarCampo(revisao.resultado, revisao.resultado.campos[index]) : revisao.achadosAplicados[index] || !revisao.achadosRevisados[index] || !podeIncorporarAchado(revisao.resultado, revisao.resultado.achados_exames[index]))) return;
+    const itens = itensDisponiveisParaIncorporar(revisao).filter(
+      (item) => !alvo || (item.tipo === alvo.tipo && item.index === alvo.index),
+    );
+    if (!itens.length) return;
+    setErro("");
     const aplicar = () => {
       const atual = latestReview.current;
-      if (!alive.current || atual?.resultado !== revisao.resultado || atual.resultadoLoteId !== revisao.resultadoLoteId ||
-        (ehCampo ? atual.edicoes[index]?.trim() !== textoRevisado || !atual.revisados[index] || atual.aplicados[index] : atual.achadosEditados[index]?.trim() !== textoRevisado || !atual.achadosRevisados[index] || atual.achadosAplicados[index])) return;
-      onApplyField(ehCampo ? revisao.resultado!.campos[index].campo : "dados_clinicos", textoRevisado);
-      if (ehCampo) setAplicados((previous) => ({ ...previous, [index]: true }));
-      else setAchadosAplicados((previous) => ({ ...previous, [index]: true }));
+      if (!alive.current || !atual || atual.resultado !== revisao.resultado || atual.resultadoLoteId !== revisao.resultadoLoteId) return;
+      const elegiveis = itensDisponiveisParaIncorporar(atual);
+      if (!itens.every((item) => elegiveis.some((elegivel) =>
+        elegivel.tipo === item.tipo && elegivel.index === item.index && elegivel.texto === item.texto,
+      ))) {
+        setErro("A revisão mudou enquanto a inclusão era confirmada. Confira os itens e tente novamente.");
+        return;
+      }
+      if (!onApplyFields(itens.map(({ campo, texto }) => ({ campo, texto })))) {
+        setErro("O atendimento mudou. Volte ao atendimento de origem para incorporar os itens revisados.");
+        return;
+      }
+      const camposAplicados = { ...atual.aplicados };
+      const novosAchadosAplicados = { ...atual.achadosAplicados };
+      for (const { tipo, index } of itens) {
+        if (tipo === "campo") camposAplicados[index] = true;
+        else novosAchadosAplicados[index] = true;
+      }
+      latestReview.current = { ...atual, aplicados: camposAplicados, achadosAplicados: novosAchadosAplicados };
+      setAplicados(camposAplicados);
+      setAchadosAplicados(novosAchadosAplicados);
     };
     if (!revisao.resultadoLoteId) { aplicar(); return; }
     const id = revisao.resultadoLoteId;
     const controller = new AbortController();
     request.current = controller; incorporando.current = true; setBusy("incorporar"); setErro("");
     // A decision can be revoked in another tab. Verify current server evidence
-    // immediately before adding a reviewed batch finding to the encounter.
+    // once before adding the selected items from the batch.
     void api.get<AssistenteLote>(`/atendimentos/${atendimentoId}/assistente/lotes/${id}`, { signal: controller.signal, timeout: 30000 }).then(({ data }) => {
       if (controller.signal.aborted) return;
       if (!data || data.id !== id || data.atendimento_id !== atendimentoId || data.paciente_id !== pacienteId || data.status !== "completed" || JSON.stringify(data.resultado) !== JSON.stringify(revisao.resultado)) {
@@ -208,6 +249,19 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
       incorporando.current = false;
       if (alive.current && request.current === controller) { setBusy(null); request.current = null; }
     });
+  };
+
+  const descartarAudio = async () => {
+    if (ocupada) return;
+    setBusy("descartar-audio");
+    try {
+      await audio.descartar();
+    } finally {
+      if (alive.current) {
+        setBusy(null);
+        setConfirmarDescarte(false);
+      }
+    }
   };
 
   const transcrever = async () => {
@@ -308,7 +362,8 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
       key={`${status.usuario_id}:${atendimentoId}:${pacienteId}`}
       atendimentoId={atendimentoId} pacienteId={pacienteId} usuarioId={status.usuario_id}
       texto={texto} consentimento={consentimento} habilitado={Boolean(status.habilitado && status.configurado)}
-      disabled={Boolean(busy) || audio.gravando || audio.iniciando}
+      disabled={Boolean(busy) || audio.gravando || audio.iniciando || confirmarDescarte}
+      audioAtual={erroEnvioAudio || audio.carregandoBackup ? null : audio.audio}
       onEnsureSaved={onEnsureSaved} onBusyChange={setLoteBusy} onActiveChange={setLoteAtivo} onPendingChange={setLotePendente}
       onResultInvalidated={invalidarRevisaoLote}
       onSnapshot={(lote) => {
@@ -362,7 +417,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
           </div>
           {confirmarDescarte ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm">
             <p>Apagar este áudio e sua cópia local? A transcrição já obtida continuará nesta tela.</p>
-            <div className="mt-2 flex gap-2"><button type="button" className={buttonClass} onClick={() => { void audio.descartar(); setConfirmarDescarte(false); }}>Apagar áudio</button><button type="button" className={buttonClass} onClick={() => setConfirmarDescarte(false)}>Cancelar</button></div>
+            <div className="mt-2 flex gap-2"><button type="button" className={buttonClass} disabled={ocupada} onClick={() => void descartarAudio()}>{busy === "descartar-audio" ? "Apagando…" : "Apagar áudio"}</button><button type="button" className={buttonClass} disabled={busy === "descartar-audio"} onClick={() => setConfirmarDescarte(false)}>Cancelar</button></div>
           </div> : null}
         </> : null}
         {audio.aviso ? <p role="status" className="text-sm text-amber-800">{audio.aviso}</p> : null}
@@ -412,9 +467,9 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         <label htmlFor={`campo-ia-${atendimentoId}-${index}`} className="text-sm font-semibold">{ASSISTENTE_CAMPO_LABELS[campo.campo] || campo.campo}</label>
         <p className="mt-1 text-xs text-slate-500">Fonte: {campo.fonte}</p>
         <blockquote className="my-2 border-l-2 border-teal-300 pl-3 text-sm text-slate-600">{campo.evidencia}</blockquote>
-        <textarea id={`campo-ia-${atendimentoId}-${index}`} rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm" value={edicoes[index] ?? campo.texto} disabled={busy === "analisar" || aplicados[index] || resultado.bloqueado_integracao} onChange={(event) => { setEdicoes((prev) => ({ ...prev, [index]: event.target.value })); setRevisados((prev) => ({ ...prev, [index]: false })); }} />
-        <label className="mt-2 flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" checked={Boolean(revisados[index])} disabled={busy === "analisar" || aplicados[index] || !podeIncorporarCampo(resultado, campo)} onChange={(event) => setRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este trecho com a fonte e aprovo sua inclusão.</label>
-        <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || Boolean(aplicados[index]) || !revisados[index] || !edicoes[index]?.trim() || !podeIncorporarCampo(resultado, campo)} onClick={() => incorporarResultado("campo", index)}>{aplicados[index] ? "Adicionado ao atendimento" : "Adicionar ao atendimento"}</button>
+        <textarea id={`campo-ia-${atendimentoId}-${index}`} rows={3} className="w-full rounded-lg border border-slate-300 p-2 text-sm" value={edicoes[index] ?? campo.texto} disabled={editandoRevisaoBloqueado || aplicados[index] || resultado.bloqueado_integracao} onChange={(event) => { setEdicoes((prev) => ({ ...prev, [index]: event.target.value })); setRevisados((prev) => ({ ...prev, [index]: false })); }} />
+        <label className="mt-2 flex items-start gap-2 text-sm text-slate-700"><input type="checkbox" checked={Boolean(revisados[index])} disabled={editandoRevisaoBloqueado || aplicados[index] || !podeIncorporarCampo(resultado, campo)} onChange={(event) => setRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este trecho com a fonte e aprovo sua inclusão.</label>
+        <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || !itensDisponiveis.some((item) => item.tipo === "campo" && item.index === index)} onClick={() => incorporarResultado({ tipo: "campo", index })}>{aplicados[index] ? "Adicionado ao atendimento" : "Adicionar ao atendimento"}</button>
       </article>)}</div> : null}
       {resultado.achados_exames.length ? <div className="space-y-3"><h5 className="font-medium">Dados extraídos dos exames — conferir no original</h5>{resultado.achados_exames.map((achado, index) => <article key={index} className="rounded-xl border border-slate-200 p-4 text-sm">
         <p className="break-all text-xs text-slate-500">{achado.arquivo}{achado.pagina ? ` · página ${achado.pagina}` : ""} · confiança informada pela IA: {achado.confianca}</p>
@@ -425,11 +480,17 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         {achado.alertas.map((alerta, i) => <p key={i} className="mt-1 text-amber-800">{alerta}</p>)}
         {podeIncorporarAchado(resultado, achado) ? <div className="mt-3 border-t border-slate-100 pt-3">
           <label className="text-sm font-medium" htmlFor={`achado-ia-${atendimentoId}-${index}`}>Texto para os dados clínicos</label>
-          <textarea id={`achado-ia-${atendimentoId}-${index}`} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 p-2" value={achadosEditados[index] ?? ""} disabled={busy === "analisar" || achadosAplicados[index]} onChange={(event) => { setAchadosEditados((prev) => ({ ...prev, [index]: event.target.value })); setAchadosRevisados((prev) => ({ ...prev, [index]: false })); }} />
-          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={busy === "analisar" || achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo paciente, data, valor e unidade.</label>
-          <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || achadosAplicados[index] || !achadosRevisados[index] || !achadosEditados[index]?.trim()} onClick={() => incorporarResultado("achado", index)}>{achadosAplicados[index] ? "Achado adicionado" : "Adicionar achado aos dados clínicos"}</button>
+          <textarea id={`achado-ia-${atendimentoId}-${index}`} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 p-2" value={achadosEditados[index] ?? ""} disabled={editandoRevisaoBloqueado || achadosAplicados[index]} onChange={(event) => { setAchadosEditados((prev) => ({ ...prev, [index]: event.target.value })); setAchadosRevisados((prev) => ({ ...prev, [index]: false })); }} />
+          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={editandoRevisaoBloqueado || achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo paciente, data, valor e unidade.</label>
+          <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || !itensDisponiveis.some((item) => item.tipo === "achado" && item.index === index)} onClick={() => incorporarResultado({ tipo: "achado", index })}>{achadosAplicados[index] ? "Achado adicionado" : "Adicionar achado aos dados clínicos"}</button>
         </div> : <p className="mt-2 text-xs text-amber-800">Confira ou complemente a fonte antes de usar este achado no prontuário.</p>}
       </article>)}</div> : null}
+      {!resultado.bloqueado_integracao && !resultado.revisao_desatualizada && (resultado.campos.length > 0 || resultado.achados_exames.some((achado) => podeIncorporarAchado(resultado, achado))) ? <div className="flex flex-wrap items-center gap-3">
+        <button type="button" className={buttonClass} disabled={ocupada || !itensDisponiveis.length} onClick={() => incorporarResultado()}>
+          Incorporar itens revisados ({itensDisponiveis.length})
+        </button>
+        {busy === "incorporar" ? <p role="status" className="text-sm text-slate-600">Confirmando a revisão do conjunto…</p> : null}
+      </div> : null}
       {resultado.sugestoes.length ? <div className="space-y-3 rounded-2xl bg-indigo-50 p-4"><h5 className="font-medium text-indigo-950">Plano e condutas para sua avaliação</h5><p className="text-sm text-indigo-900">Estas são hipóteses e propostas da IA. Avalie sua pertinência clínica antes de redigir o plano ou emitir documentos.</p>{resultado.sugestoes.map((sugestao, index) => <article key={index} className="rounded-xl bg-white p-4 text-sm"><h6 className="font-semibold">{sugestao.titulo}</h6><p className="mt-2 whitespace-pre-wrap">{sugestao.conduta}</p><p className="mt-2 text-slate-600">Justificativa: {sugestao.justificativa}</p>{sugestao.limitacoes.map((item, i) => <p key={i} className="mt-1 text-amber-800">{item}</p>)}</article>)}</div> : null}
       <p className="text-xs text-slate-500">Resultado gerado por {resultado.modelo} ({resultado.esforco}). A confiança declarada pela IA não substitui a conferência clínica. Ao navegar, a revisão permanece temporariamente na memória desta aba para o mesmo usuário, paciente e atendimento. Recarregar ou fechar a aba apaga essa revisão; a cópia de áudio no dispositivo segue a opção de recuperação acima.</p>
     </div> : null}
