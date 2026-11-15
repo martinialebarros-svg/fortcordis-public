@@ -20,7 +20,3 @@ export function normalizeEchoSpecies(species: string | null | undefined): string
 export function isFelineEchoSpecies(species: string | null | undefined): boolean {
   return normalizeEchoSpecies(species) === "Felina";
 }
-
-export function isCanineEchoSpecies(species: string | null | undefined): boolean {
-  return normalizeEchoSpecies(species) === "Canina";
-}

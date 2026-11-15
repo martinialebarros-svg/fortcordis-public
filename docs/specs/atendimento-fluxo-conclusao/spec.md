@@ -1,5 +1,12 @@
 # Especificação
 
+## Atalhos do atendimento
+
+- A análise conjunta oferece o original que já está disponível para ouvir no atendimento. A escolha é explícita e aparece na seleção do conjunto. Enviar exige a ação de analisar, o consentimento, o vínculo com o paciente, o atendimento sincronizado e os limites de arquivo já vigentes. A seleção local deve acompanhar a troca ou o descarte do áudio. Um conjunto cujo envio já começou segue o fluxo de retomada existente.
+- A revisão oferece uma ação de incorporação com a contagem dos itens aprovados e ainda disponíveis. A confirmação de cada trecho ou achado continua individual e é invalidada quando seu texto é editado. Um item bloqueado, sem evidência exigida, sem confirmação ou já incluído fica fora. Sugestões de conduta permanecem para avaliação.
+- A incorporação preserva o conteúdo que já estava no formulário e acrescenta os trechos aceitos em uma única atualização. Se mais de uma fonte contribuir para o mesmo campo, todos os trechos aceitos são acrescentados em ordem. Para uma revisão de conjunto, consultar uma vez a versão atual do resultado antes da inclusão e bloquear a ação se a identidade, o estado ou o resultado não conferirem. Entradas já revisadas ficam disponíveis se o contexto do formulário rejeitar a inclusão.
+- As pendências clínicas do fechamento e do radar levam à Consulta e focam o campo de destino, mesmo quando é preciso trocar de etapa ou aguardar o carregamento do editor. A navegação mantém os valores do formulário e os critérios de conclusão.
+
 ## Comportamento
 
 - RF-001: a abertura de resultados do assistente não pode substituir texto editado ou revisão pendente sem decisão explícita. Reabrir conteúdo idêntico preserva as edições e aprovações, sem confirmação adicional.
@@ -28,9 +35,3 @@
 - Após a promoção, restaurar a árvore de Stage `43b14787e48f8152b8b3656d827127284f8798c0` acrescida destas correções e do registro documental das verificações; comprovar igualdade de todos os arquivos paralelos.
 
 - A regressão de recuperação em memória deve aguardar a criação assíncrona do link do original e conferir o endereço e o mesmo arquivo recuperado, além de preservar texto, aprovações e a ausência de nova incorporação automática.
-
-## Restauração de Stage após a promoção de 15/11/2026
-
-O ciclo usa uma instalação isolada para homologar e promover somente esta entrega. Depois da verificação de produção, Stage retorna à árvore compartilhada da base `43b14787e48f8152b8b3656d827127284f8798c0`, acrescida dos 14 caminhos desta entrega. Os 86 caminhos paralelos e todos os caminhos existentes fora do escopo devem permanecer idênticos por modo, tipo e blob à base compartilhada.
-
-O código promovido permanece idêntico em produção e no Stage restaurado; apenas spec/verify recebem o registro real deste ciclo. A restauração mantém os workflows e testes dos trabalhos paralelos, configurações dos ambientes, dados de runtime e Nginx. IA permanece desligada em Stage. A composição da árvore não substitui a exigência de PR, checks, workflow completo e conferência da instalação final.
