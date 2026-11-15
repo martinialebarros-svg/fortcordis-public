@@ -331,9 +331,12 @@ export function montarDescricaoEcocardiograma(
 ): string {
   let descricao = "## Medidas Ecocardiograficas\n";
   Object.entries(medidas).forEach(([key, value]) => {
-    if (value || DIASTOLIC_KEYS.has(key)) {
+    if (value || DIASTOLIC_KEYS.has(key) || key.startsWith("HP_")) {
       // An explicit clearing must survive beside an unchanged historical alias.
-      descricao += `- ${key}: ${value ?? ""}\n`;
+      // HP notes and the human review context may contain newlines/JSON. Keep
+      // them as one encoded value instead of creating new description fields.
+      const serialized = key.startsWith("HP_") ? JSON.stringify(value ?? "") : value ?? "";
+      descricao += `- ${key}: ${serialized}\n`;
     }
   });
 
