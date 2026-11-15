@@ -15,6 +15,8 @@ from app.schemas.ai_echo import (
     EchoMeasurementOutput,
 )
 from app.services.ai_echo_context import ECHO_MEASUREMENT_UNITS
+from app.utils.echo_pulmonary_probability import canine_ph_probability, evaluate_pulmonary_probability
+from app.utils.referencia_eco_defaults import normalizar_especie_referencia
 
 
 @dataclass(frozen=True)
@@ -589,6 +591,8 @@ def _warning_key(warning: EchoClinicalWarningOutput) -> tuple[str, str]:
 
 
 def _warning_concept(warning: EchoClinicalWarningOutput) -> str:
+    if warning.warning_type in {"psap_is_estimate", "ph_probability_requires_reviewed_context", "feline_ph_framework_limited"}:
+        return warning.warning_type
     normalized = _strip_accents(
         f"{warning.warning_type} {warning.message}"
     )
@@ -1539,19 +1543,62 @@ def _pulmonary_hypertension_anatomic_sites(transcript: str) -> list[str]:
 
 
 def _canine_ph_probability(tr_velocity: float, anatomic_sites: int) -> str:
-    if tr_velocity <= 3.0:
-        return "intermediaria" if anatomic_sites >= 2 else "baixa"
-    if tr_velocity <= 3.4:
-        if anatomic_sites == 0:
-            return "baixa"
-        return "alta" if anatomic_sites >= 2 else "intermediaria"
-    return "alta" if anatomic_sites >= 1 else "intermediaria"
+    return canine_ph_probability(tr_velocity, anatomic_sites)
 
 
-def _feline_ph_probability(tr_velocity: float, anatomic_sites: int) -> str:
-    if tr_velocity <= 2.7:
-        return "intermediaria" if anatomic_sites >= 2 else "baixa"
-    return "alta" if anatomic_sites >= 1 else "intermediaria"
+_PH_GRADE = r"(?:baix[ao]|alt[ao]|intermediari[ao]|elevad[ao]|moderad[ao])"
+_PH_TERM = r"(?:hipertensao\s+pulmonar|hp)"
+_PROVIDER_PH_GRADE_PATTERN = re.compile(
+    rf"\b{_PH_GRADE}\s+(?:probabilidade|suspeita)\b[^.!?;\n]{{0,120}}\b{_PH_TERM}\b"
+    rf"|\b(?:probabilidade|suspeita)(?:\s+ecocardiografica)?\s+{_PH_GRADE}\b[^.!?;\n]{{0,120}}\b{_PH_TERM}\b"
+    rf"|\b{_PH_TERM}\b[^.!?;\n]{{0,80}}\b(?:probabilidade|suspeita)(?:\s+ecocardiografica)?\s+{_PH_GRADE}\b"
+    rf"|\b{_PH_TERM}\b[^.!?;\n]{{0,80}}\b{_PH_GRADE}\s+(?:probabilidade|suspeita)\b"
+    rf"|\b(?:probabilidade|suspeita)(?:\s+ecocardiografica)?\s+de\s+{_PH_TERM}\s*"
+    rf"(?::|[-–—]|e|classificada\s+como)?\s*{_PH_GRADE}\b"
+)
+_LOCAL_PH_NEGATION_PATTERN = re.compile(
+    r"(?:\bsem\s+(?:evidencias?|sinais)(?:\s+ecocardiografic[ao]s?)?(?:\s+de)?|"
+    r"\bnao\s+(?:ha|apresenta|sugere|sustenta|evidencia|se\s+observa)"
+    r"(?:\s+(?:evidencias?|sinais))?(?:\s+de)?)\s*$"
+)
+
+
+def _strip_provider_pulmonary_grade(text: str) -> tuple[str, bool]:
+    """Remove provider-authored probability clauses, retaining other findings.
+
+    This is output sanitation, not a narrative classifier: descriptions without
+    a probability grade and local negative statements remain untouched. No
+    probability can be inferred from this text by the structured evaluator.
+    """
+    if not _PROVIDER_PH_GRADE_PATTERN.search(_strip_accents(text)):
+        return text, False
+    sentences = re.split(r"(?<=[.!?])\s+|\n+", text)
+    kept_sentences, removed = [], False
+    for sentence in sentences:
+        if not _PROVIDER_PH_GRADE_PATTERN.search(_strip_accents(sentence)):
+            kept_sentences.append(sentence)
+            continue
+        # Distinct comma/semicolon/conjunction clauses preserve normal findings
+        # when a generated PH grade shares the same sentence.
+        clauses = re.split(r"(?<=[,;])\s+|\s+(?=(?:e|mas)\s+)", sentence, flags=re.IGNORECASE)
+        kept_clauses = []
+        for clause in clauses:
+            normalized = _strip_accents(clause)
+            grade_match = _PROVIDER_PH_GRADE_PATTERN.search(normalized)
+            prefix = normalized[:grade_match.start()] if grade_match else ""
+            negative = bool(_LOCAL_PH_NEGATION_PATTERN.search(prefix))
+            if grade_match and not negative:
+                removed = True
+            else:
+                kept_clauses.append(clause)
+        if kept_clauses:
+            preserved = " ".join(kept_clauses).strip()
+            preserved = re.sub(r"[,;]\s*$", ".", preserved)
+            # A surviving independent clause must not begin with a dangling
+            # conjunction from the removed generated assertion.
+            preserved = re.sub(r"^(?:e|mas)\s+", "", preserved, flags=re.IGNORECASE)
+            kept_sentences.append(preserved)
+    return (" ".join(part.strip() for part in kept_sentences if part.strip()) if removed else text), removed
 
 
 def _enrich_pulmonary_hypertension_probability(
@@ -1562,48 +1609,53 @@ def _enrich_pulmonary_hypertension_probability(
     current_measurements: dict[str, str] | None,
     species: str | None,
 ) -> tuple[list[EchoFieldSuggestionOutput], list[EchoClinicalWarningOutput]]:
+    cleaned_suggestions = []
+    removed_provider_grade = False
+    for item in suggestions:
+        cleaned, removed = _strip_provider_pulmonary_grade(item.text)
+        removed_provider_grade = removed_provider_grade or removed
+        if cleaned.strip():
+            cleaned_suggestions.append(item.model_copy(update={"text": cleaned}) if removed else item)
+    suggestions = cleaned_suggestions
+    assessment = evaluate_pulmonary_probability(current_measurements, species)
     tr_velocity = _measurement_float(current_measurements, "IT_Vmax")
     if tr_velocity is None:
         tr_velocity = _tricuspid_velocity_from_transcript(transcript)
-    if tr_velocity is None or tr_velocity <= 0:
+    if (tr_velocity is None or tr_velocity <= 0) and not assessment["active"]:
+        if removed_provider_grade:
+            warnings = [*warnings, EchoClinicalWarningOutput(
+                warning_type="ph_probability_requires_reviewed_context", severity="info",
+                message="Graduação de probabilidade de hipertensão pulmonar sugerida pelo modelo foi removida: faltam critérios estruturados revisados e aplicáveis à espécie.",
+                related_fields=["IT_Vmax", "conclusao"],
+            )]
         return suggestions, warnings
 
-    sites = _pulmonary_hypertension_anatomic_sites(transcript)
-    normalized_species = _strip_accents(str(species or ""))
-    feline = any(
-        token in normalized_species for token in ("felina", "felino", "gato")
+    # Narrative mentions may describe findings, but missing mentions are not
+    # reviewed negative sites. Only the structured, explicitly reviewed model
+    # can determine probability; the canine matrix is never applied to cats.
+    feline = normalizar_especie_referencia(species) == "Felina"
+    probability = assessment["probability"]
+    probability_label = "intermediária" if probability == "intermediaria" else probability
+    evidence = assessment["evidence"] or ([f"Velocidade da regurgitação tricúspide: {tr_velocity:g} m/s"] if tr_velocity is not None else ["Avaliação estruturada de hipertensão pulmonar"])
+    trv_unmeasurable = assessment["active"] and str((current_measurements or {}).get("HP_TRV") or "").strip() == "nao_mensuravel"
+    valve_text = (
+        "Regurgitação tricúspide não mensurável para estimativa hemodinâmica."
+        if trv_unmeasurable else "Avaliação da regurgitação tricúspide pendente de revisão da qualidade e velocidade."
+        if tr_velocity is None or tr_velocity <= 0 else "Regurgitação tricúspide documentada; interpretar a velocidade com qualidade do sinal, via de saída do VD e achados anatômicos."
     )
-    probability = (
-        _feline_ph_probability(tr_velocity, len(sites))
-        if feline
-        else _canine_ph_probability(tr_velocity, len(sites))
-    )
-    labels = {
-        "baixa": "baixa",
-        "intermediaria": "intermediária",
-        "alta": "alta",
-    }
-    probability_label = labels[probability]
-    evidence = [
-        f"Velocidade da regurgitação tricúspide: {tr_velocity:g} m/s",
-        *(
-            [f"Locais anatômicos de suporte: {', '.join(sites)}"]
-            if sites
-            else ["Sem local anatômico adicional descrito"]
-        ),
-    ]
+    if probability:
+        valve_text += f" O conjunto revisado sustenta {probability_label} probabilidade ecocardiográfica de hipertensão pulmonar."
+    previous_valve_text = next((item.text.strip() for item in suggestions if str(item.field_key) == "valva_tricuspide"), "")
+    if previous_valve_text:
+        valve_text = previous_valve_text + " " + valve_text
 
     enriched = _replace_field_suggestion(
         suggestions,
         field_key="valva_tricuspide",
-        text=(
-            "Regurgitação tricúspide com velocidade elevada. O conjunto dos "
-            f"achados sustenta {probability_label} probabilidade ecocardiográfica "
-            "de hipertensão pulmonar."
-        ),
+        text=valve_text,
         source_spans=evidence,
         evidence_type="inference",
-        confidence=0.93 if probability == "alta" else 0.86,
+        confidence=0.93 if probability else 0.86,
     )
     previous_conclusion = next(
         (
@@ -1613,45 +1665,33 @@ def _enrich_pulmonary_hypertension_probability(
         ),
         "",
     )
-    previous_conclusion = re.sub(
-        r"\s*(?:Conjunto|Achados)\s+compat[ií]ve(?:l|is)\s+com\s+"
-        r"(?:baixa|intermedi[aá]ria|alta)\s+(?:probabilidade|suspeita)"
-        r".*?hipertens[aã]o\s+pulmonar\.\s*",
-        " ",
-        previous_conclusion,
-        flags=re.IGNORECASE,
-    ).strip()
-    ph_term = "suspeita ecocardiográfica" if feline else "probabilidade ecocardiográfica"
-    ph_conclusion = (
-        f"Conjunto compatível com {probability_label} {ph_term} de "
-        "hipertensão pulmonar."
-    )
-    enriched = _replace_field_suggestion(
-        enriched,
-        field_key="conclusao",
-        text=" ".join(part for part in (previous_conclusion, ph_conclusion) if part),
-        source_spans=evidence,
-        evidence_type="diagnostic_suggestion",
-        confidence=0.93 if probability == "alta" else 0.84,
-    )
-
-    enriched_warnings = [
-        warning
-        for warning in warnings
-        if not (
-            warning.warning_type == "tr_velocity_requires_ph_context"
-            and len(sites) >= 1
+    if probability:
+        ph_conclusion = f"Conjunto compatível com {probability_label} probabilidade ecocardiográfica de hipertensão pulmonar."
+        enriched = _replace_field_suggestion(
+            enriched, field_key="conclusao",
+            text=" ".join(part for part in (previous_conclusion, ph_conclusion) if part),
+            source_spans=evidence, evidence_type="diagnostic_suggestion", confidence=0.93,
         )
-    ]
+    else:
+        # Remove any prior auto-grade while retaining the physician's unrelated
+        # conclusion. Review limitations belong to internal warnings.
+        enriched = [item.model_copy(update={"text": previous_conclusion}) if str(item.field_key) == "conclusao" else item
+                    for item in enriched if str(item.field_key) != "conclusao" or previous_conclusion]
+    enriched_warnings = list(warnings)
+    if not probability:
+        enriched_warnings.append(EchoClinicalWarningOutput(
+            warning_type="ph_probability_requires_reviewed_context", severity="info",
+            message="Dados insuficientes para graduar probabilidade de hipertensão pulmonar: revisar qualidade/mensurabilidade da TRV, via de saída do VD e os três sítios anatômicos na avaliação estruturada.",
+            related_fields=["IT_Vmax", "conclusao"],
+        ))
     if feline:
         enriched_warnings.append(
             EchoClinicalWarningOutput(
                 warning_type="feline_ph_framework_limited",
                 severity="info",
                 message=(
-                    "Em gatos, a classificação foi apresentada como suspeita "
-                    "ecocardiográfica orientativa; os critérios de probabilidade "
-                    "caninos não devem ser transferidos diretamente."
+                    "Em gatos, não foi atribuída graduação de probabilidade: "
+                    "os critérios ACVIM caninos não devem ser transferidos diretamente."
                 ),
                 related_fields=["IT_Vmax", "conclusao"],
             )
@@ -1662,6 +1702,7 @@ def _enrich_pulmonary_hypertension_probability(
 def _derived_right_heart_measurements(
     transcript: str,
     current_measurements: dict[str, str] | None,
+    species: str | None = None,
 ) -> list[EchoMeasurementOutput]:
     remodeling = (
         _right_atrial_remodeling_from_transcript(transcript)
@@ -1694,6 +1735,10 @@ def _derived_right_heart_measurements(
     if tr_velocity is None:
         tr_velocity = _tricuspid_velocity_from_transcript(transcript)
     if tr_velocity is None or tr_velocity <= 0:
+        return outputs
+    if str((current_measurements or {}).get("HP_ativa") or "").strip() == "sim" and not evaluate_pulmonary_probability(current_measurements, species)["psap_usable"]:
+        # Imported velocities are retained for review, but an unreviewed or
+        # explicitly nonmeasurable signal must not generate pressure estimates.
         return outputs
 
     gradient = 4 * tr_velocity**2
@@ -1743,13 +1788,31 @@ def validate_and_enrich_clinical_output(
     *,
     species: str | None = None,
     current_measurements: dict[str, str] | None = None,
+    pulmonary_measurements: dict[str, str] | None = None,
     exam_context: dict | None = None,
     reference_context: dict | None = None,
 ) -> EchoClinicalStructureOutput:
+    # General enrichers receive safe clinical values. HP review validation must
+    # retain the original unit-detection cohort, including unrelated lengths.
+    if pulmonary_measurements is None:
+        pulmonary_measurements = current_measurements
+    provider_conclusions = []
+    removed_conclusion_grade = False
+    for text in output.conclusion_suggestion:
+        cleaned, removed = _strip_provider_pulmonary_grade(text)
+        removed_conclusion_grade = removed_conclusion_grade or removed
+        if cleaned.strip():
+            provider_conclusions.append(cleaned)
     deterministic, numeric_warnings = extract_measurements_from_transcript(transcript)
     field_suggestions, duplicate_warnings = _consolidate_field_suggestions(
         list(output.field_suggestions)
     )
+    if removed_conclusion_grade:
+        duplicate_warnings.append(EchoClinicalWarningOutput(
+            warning_type="ph_probability_requires_reviewed_context", severity="info",
+            message="A graduação de hipertensão pulmonar proposta na conclusão do modelo foi removida; somente a avaliação estruturada revisada pode fornecer o grau canino.",
+            related_fields=["IT_Vmax", "conclusao"],
+        ))
     field_suggestions, normality_warnings = _expand_asserted_normality(
         transcript=transcript,
         suggestions=field_suggestions,
@@ -1773,7 +1836,7 @@ def validate_and_enrich_clinical_output(
         field_suggestions,
         measurement_warnings,
         transcript=transcript,
-        current_measurements=current_measurements,
+        current_measurements=pulmonary_measurements,
         species=species or output.exam_context.species,
     )
     field_suggestions = _normalize_clinical_reference_language(
@@ -1784,7 +1847,8 @@ def validate_and_enrich_clinical_output(
     measurements = list(output.measurements)
     derived_right_heart = _derived_right_heart_measurements(
         transcript,
-        current_measurements,
+        pulmonary_measurements,
+        species or output.exam_context.species,
     )
     derived_targets = {
         str(item.target_field_key)
@@ -1909,6 +1973,19 @@ def validate_and_enrich_clinical_output(
             )
         validated_measurements.append(safe_measurement)
     measurements = validated_measurements
+    pulmonary_assessment = evaluate_pulmonary_probability(pulmonary_measurements, species or output.exam_context.species)
+    if pulmonary_assessment["active"] and not pulmonary_assessment["psap_usable"]:
+        blocked_targets = {"PSAP"}
+        blocked_names = {"psap_estimated"}
+        if str((pulmonary_measurements or {}).get("HP_TRV") or "").strip() == "nao_mensuravel":
+            blocked_targets.update({"IT_Vmax", "IT_Grad"})
+            blocked_names.update({"tricuspid_regurgitation_velocity", "tricuspid_gradient", "tricuspid_gradient_calculated"})
+        # Neither provider nor deterministic extraction may reintroduce a
+        # pressure or peak that the physician declared unusable in this exam.
+        # This filters suggestions only; stored source measurements stay intact.
+        measurements = [item for item in measurements
+                        if str(item.target_field_key or "") not in blocked_targets
+                        and item.canonical_name not in blocked_names]
 
     velocity = next(
         (
@@ -1987,13 +2064,16 @@ def validate_and_enrich_clinical_output(
         existing_warning_concepts.add(concept)
         deduped_warnings.append(warning)
 
-    if output.conclusion_suggestion and not any(
+    if pulmonary_assessment["probability"] and output.conclusion_suggestion:
+        label = "intermediária" if pulmonary_assessment["probability"] == "intermediaria" else pulmonary_assessment["probability"]
+        provider_conclusions.append(f"Conjunto compatível com {label} probabilidade ecocardiográfica de hipertensão pulmonar.")
+    if provider_conclusions and not any(
         suggestion.field_key == "conclusao" for suggestion in field_suggestions
     ):
         field_suggestions.append(
             {
                 "field_key": "conclusao",
-                "text": "\n".join(output.conclusion_suggestion),
+                "text": "\n".join(provider_conclusions),
                 "confidence": min(
                     [suggestion.confidence for suggestion in output.field_suggestions] or [0.75]
                 ),
@@ -2007,6 +2087,7 @@ def validate_and_enrich_clinical_output(
             **output.model_dump(),
             "measurements": measurements,
             "field_suggestions": field_suggestions,
+            "conclusion_suggestion": provider_conclusions,
             "warnings": deduped_warnings,
         }
     )
