@@ -1,5 +1,9 @@
 # Revisão do fluxo de atendimento
 
+## Atalhos solicitados em 15/11/2026
+
+Usar o áudio que já está no atendimento ao montar a análise conjunta, incorporar os itens aprovados em uma ação e levar o veterinário ao campo correspondente ao clicar numa pendência. A implementação parte de `fc0163cf812c47cd0322777598cf1d65e48cd2a0` no repositório público. A revisão individual, o vínculo com o atendimento e os requisitos de conclusão continuam sendo parte do fluxo. A autorização desta rodada cobre implementação e testes locais com dados fictícios.
+
 ## Intenção aprovada
 
 Conferir o Atendimento e seu assistente, corrigir erros reproduzíveis e propor formas de reduzir os passos até a conclusão, conforme solicitação de 15/11/2026.

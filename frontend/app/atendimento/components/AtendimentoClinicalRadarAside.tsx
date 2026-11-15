@@ -1,9 +1,14 @@
 "use client";
 
 import { AlertTriangle, ArrowRight, Copy, FileText } from "lucide-react";
+import type { ClinicalPendingField, ClinicalQuickSummary } from "@/lib/atendimento-clinical-notes";
+import AtendimentoPendenciasClinicas from "./AtendimentoPendenciasClinicas";
 import type { LooseAtendimentoComponentProps } from "./component-props";
 
-type AtendimentoClinicalRadarAsideProps = LooseAtendimentoComponentProps;
+type AtendimentoClinicalRadarAsideProps = LooseAtendimentoComponentProps & {
+  clinicalSummary: Pick<ClinicalQuickSummary, "completeness" | "pending">;
+  irParaPendenciaClinica: (field: ClinicalPendingField) => void;
+};
 
 export default function AtendimentoClinicalRadarAside(props: AtendimentoClinicalRadarAsideProps) {
   const {
@@ -17,6 +22,7 @@ export default function AtendimentoClinicalRadarAside(props: AtendimentoClinical
     getGravidadeClass,
     herdarAtendimentoAnterior,
     historicoPaciente,
+    irParaPendenciaClinica,
     pacienteNomeExibicao,
     preenchimentoConsultaLabel,
     selecionado,
@@ -78,11 +84,7 @@ export default function AtendimentoClinicalRadarAside(props: AtendimentoClinical
         {clinicalSummary.pending.length > 0 ? (
           <div className="mt-5 rounded-[22px] border border-amber-200 bg-amber-50 px-4 py-4">
             <p className="text-xs uppercase tracking-[0.25em] text-amber-700">Pendencias mais proximas</p>
-            <div className="mt-3 space-y-2 text-sm text-amber-900">
-              {clinicalSummary.pending.slice(0, 3).map((item: string) => (
-                <p key={item}>{item}</p>
-              ))}
-            </div>
+            <AtendimentoPendenciasClinicas items={clinicalSummary.pending.slice(0, 3)} onNavigate={irParaPendenciaClinica} />
           </div>
         ) : (
           <div className="mt-5 rounded-[22px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">

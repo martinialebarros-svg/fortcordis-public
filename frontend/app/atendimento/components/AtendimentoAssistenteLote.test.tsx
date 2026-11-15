@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import api from "@/lib/axios";
 import type { AssistenteLote } from "@/lib/atendimento-assistente-lote";
 import type { AssistenteIAResultado } from "@/lib/atendimento-assistente-ia";
+import type { ComponentProps } from "react";
 import AtendimentoAssistenteLote from "./AtendimentoAssistenteLote";
 
 vi.mock("@/lib/axios", () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() } }));
@@ -43,7 +44,7 @@ beforeEach(() => {
   vi.mocked(api.delete).mockImplementation(async () => { stored = null; return { data: null }; });
 });
 afterEach(() => { cleanup(); vi.resetAllMocks(); vi.useRealTimers(); });
-async function open(overrides: Partial<ReturnType<typeof props>> = {}) {
+async function open(overrides: Partial<ComponentProps<typeof AtendimentoAssistenteLote>> = {}) {
   const handlers = { ...props(), ...overrides };
   const view = render(<AtendimentoAssistenteLote {...handlers} />);
   await waitFor(() => expect(screen.queryByText("Recuperando conjunto…")).toBeNull());
@@ -180,6 +181,75 @@ describe("análise de conjunto", () => {
     expect(screen.getAllByRole("link", { name: "Baixar original" })).toHaveLength(2);
     fireEvent.click(screen.getByRole("button", { name: "Abrir revisão do conjunto" }));
     expect(onReview).toHaveBeenCalledWith(stored);
+  });
+
+  it("usa o File original do atendimento com o exame e só envia após autorizar e analisar", async () => {
+    const audioAtual = files[0];
+    const outroAudio = new File(["outra"], audioAtual.name, {
+      type: audioAtual.type, lastModified: audioAtual.lastModified,
+    });
+    expect(outroAudio.size).toBe(audioAtual.size);
+    const { rerender } = await open({ audioAtual, consentimento: false });
+    select([files[1], outroAudio]);
+    fireEvent.click(screen.getByRole("button", { name: "Usar áudio deste atendimento" }));
+    select([audioAtual]);
+    expect(screen.getAllByRole("button", { name: `Retirar ${audioAtual.name} do conjunto` })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "Analisar conjunto" })).toBeDisabled();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.put).not.toHaveBeenCalled();
+
+    rerender(<AtendimentoAssistenteLote {...props()} audioAtual={audioAtual} />);
+    fireEvent.click(screen.getByRole("button", { name: "Analisar conjunto" }));
+    await screen.findByText("Conjunto na fila de processamento");
+    expect(api.put).toHaveBeenCalledTimes(3);
+    const enviados = vi.mocked(api.put).mock.calls.map(([, payload]) => (payload as FormData).get("arquivo"));
+    expect(enviados[0]).toBe(files[1]);
+    expect(enviados[1]).toBe(outroAudio);
+    expect(enviados[2]).toBe(audioAtual);
+  });
+
+  it("aplica o limite do conjunto à gravação e conserva as fontes já selecionadas", async () => {
+    await open({ audioAtual: files[0] });
+    select(Array.from({ length: 5 }, (_, index) => new File(["audio"], `gravacao-${index}.webm`)));
+    fireEvent.click(screen.getByRole("button", { name: "Usar áudio deste atendimento" }));
+    expect(screen.getByText("Selecione até cinco áudios por conjunto.")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: /Retirar .* do conjunto/ })).toHaveLength(5);
+    expect(screen.queryByRole("button", { name: `Retirar ${files[0].name} do conjunto` })).toBeNull();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("mantém o PDF e retira a gravação vinculada quando o áudio é descartado ou substituído", async () => {
+    const audioAtual = files[0];
+    const { rerender } = await open({ audioAtual });
+    select([files[1]]);
+    fireEvent.click(screen.getByRole("button", { name: "Usar áudio deste atendimento" }));
+    const retirarAudio = { name: `Retirar ${audioAtual.name} do conjunto` };
+    expect(screen.getByRole("button", retirarAudio)).toBeTruthy();
+
+    rerender(<AtendimentoAssistenteLote {...props()} audioAtual={null} />);
+    expect(screen.queryByRole("button", retirarAudio)).toBeNull();
+    expect(screen.getByRole("button", { name: "Retirar exame.pdf do conjunto" })).toBeTruthy();
+    const novoAudio = new File(["nova gravação"], "gravacao-atual.webm", { type: "audio/webm" });
+    rerender(<AtendimentoAssistenteLote {...props()} audioAtual={novoAudio} />);
+    expect(screen.queryByRole("button", { name: `Retirar ${novoAudio.name} do conjunto` })).toBeNull();
+    expect(screen.getByRole("button", { name: "Usar áudio deste atendimento" })).toBeEnabled();
+    expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("não recria uma tentativa sem resposta com a gravação retirada do conjunto", async () => {
+    vi.mocked(api.post).mockRejectedValueOnce(new Error("Criação do conjunto sem resposta"));
+    const { rerender } = await open({ audioAtual: files[0] });
+    select([files[1]]);
+    fireEvent.click(screen.getByRole("button", { name: "Usar áudio deste atendimento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Analisar conjunto" }));
+    await screen.findByText("Criação do conjunto sem resposta");
+
+    rerender(<AtendimentoAssistenteLote {...props()} audioAtual={null} />);
+    fireEvent.click(screen.getByRole("button", { name: "Analisar conjunto" }));
+    await screen.findByText(/Uma fonte da tentativa anterior foi retirada/);
+    expect(screen.getByRole("button", { name: "Preparar novo conjunto" })).toBeEnabled();
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.put).not.toHaveBeenCalled();
   });
 
   it("retoma somente envio pendente após falha de um arquivo", async () => {

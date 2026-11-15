@@ -39,7 +39,7 @@ function deferred<T>() {
 
 const form = (id: number) => ({
   id, paciente_id: String(id), status: "Triagem", anamnese: `Texto ${id}`,
-  exames: [], prescricao_itens: [],
+  exames: [], prescricao_itens: [], dados_clinicos: "Anotação anterior. ", diagnostico: { prognostico: "Favoravel" },
 });
 
 function harness() {
@@ -47,9 +47,9 @@ function harness() {
   const state = { selected: 99 as number | null, form: initial, error: "", autosave: "saved" };
   const context: Record<string, any> = {
     Promise, Number, Array, JSON, String, Date, Set,
-    selecionado: 99, selecionadoRef: { current: 99 }, formRef: { current: initial },
+    selecionado: 99, selecionadoRef: { current: 99 }, form: initial, formRef: { current: initial },
     abrirAtendimentoRequestIdRef: { current: 0 },
-    atendimentoContextoAplicadoRef: { current: 0 },
+    atendimentoContextoAplicadoRef: { current: 0 }, contextoIncorporacaoIA: 0,
     historicoPacienteRequestIdRef: { current: 0 }, cadastroComplementarRequestIdRef: { current: 0 },
     confirmarSaidaAssistente: vi.fn(async () => true),
     hasEncounterContent: () => false, confirmarAcao: async () => true,
@@ -70,7 +70,7 @@ function harness() {
     cadastroComplementar: { paciente: { nome: "Paciente ficticio", especie: "Canina" } }, pacienteBusca: "",
     emptyPrescriptionItem: () => ({}), cloneHistoricalPrescriptionItem: (value: unknown) => value,
   };
-  const names = ["preservarBackupAntesDeTrocar", "abrirAtendimento", "novoAtendimento", "executarSaveAtendimento", "saveAtendimento", "finalizarAtendimento", "iniciarNovoAtendimentoPaciente", "herdarAtendimentoAnterior"];
+  const names = ["preservarBackupAntesDeTrocar", "abrirAtendimento", "novoAtendimento", "executarSaveAtendimento", "saveAtendimento", "finalizarAtendimento", "iniciarNovoAtendimentoPaciente", "herdarAtendimentoAnterior", "adicionarCamposRevisadosIA"];
   for (const name of names) {
     for (const match of callbackSource(name).matchAll(/\b(set[A-Z]\w+)\(/g)) context[match[1]] = vi.fn();
   }
@@ -104,6 +104,29 @@ function harness() {
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
 
 describe("isolamento do contexto do Atendimento durante a rede", () => {
+  it("acrescenta trechos do mesmo campo em ordem e rejeita inclusão depois de trocar o paciente", () => {
+    const { state, context } = harness();
+    const itens = [
+      { campo: "dados_clinicos", texto: "Primeiro trecho revisado." },
+      { campo: "anamnese", texto: "História conferida." },
+      { campo: "dados_clinicos", texto: "Segundo trecho revisado." },
+    ];
+    expect(context.adicionarCamposRevisadosIA(itens)).toBe(true);
+    expect(state.form.dados_clinicos).toBe("Anotação anterior. \n\nPrimeiro trecho revisado.\n\nSegundo trecho revisado.");
+    expect(state.form.anamnese).toBe("Texto 99\n\nHistória conferida.");
+    expect(state.form.diagnostico).toEqual({ prognostico: "Favoravel" });
+
+    const depoisDeIncorporar = state.form;
+    context.atendimentoContextoAplicadoRef.current++;
+    expect(context.adicionarCamposRevisadosIA(itens)).toBe(false);
+    expect(state.form).toBe(depoisDeIncorporar);
+
+    context.atendimentoContextoAplicadoRef.current = 0;
+    context.setForm(form(101));
+    expect(context.adicionarCamposRevisadosIA(itens)).toBe(false);
+    expect(state.form).toEqual(form(101));
+  });
+
   it("mantem a identidade anterior ate o detalhe e historico estarem prontos", async () => {
     const { state, context } = harness();
     const history = deferred<void>();

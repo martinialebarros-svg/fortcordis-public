@@ -18,6 +18,7 @@ interface Props {
   consentimento: boolean;
   habilitado: boolean;
   disabled: boolean;
+  audioAtual?: File | null;
   onEnsureSaved?: () => Promise<boolean>;
   onReview: (lote: AssistenteLote) => void;
   onBusyChange: (busy: boolean) => void;
@@ -31,11 +32,15 @@ const buttonBaseClass = "rounded-xl border border-teal-300 px-4 py-2 text-sm fon
 const buttonClass = `${buttonBaseClass} bg-white text-teal-900`;
 const accept = `${ASSISTENTE_AUDIO_ACCEPT},${ASSISTENTE_FILE_ACCEPT}`;
 
+type ArquivoSelecionado = ArquivoLoteLocal & { audioDoAtendimento?: true };
+
 export default function AtendimentoAssistenteLote(props: Props) {
-  const { atendimentoId, pacienteId, usuarioId, texto, consentimento, habilitado, disabled,
+  const { atendimentoId, pacienteId, usuarioId, texto, consentimento, habilitado, disabled, audioAtual,
     onEnsureSaved, onReview, onBusyChange, onActiveChange, onPendingChange, onResultInvalidated, onSnapshot } = props;
   const [lote, setLote] = useState<AssistenteLote | null>(null);
-  const [arquivos, setArquivos] = useState<ArquivoLoteLocal[]>([]);
+  const [selecao, setArquivos] = useState<ArquivoSelecionado[]>([]);
+  const arquivos = selecao.filter((item) => !item.audioDoAtendimento || item.file === audioAtual);
+  const audioJaSelecionado = Boolean(audioAtual && arquivos.some((item) => item.file === audioAtual));
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [erro, setErro] = useState("");
@@ -48,6 +53,8 @@ export default function AtendimentoAssistenteLote(props: Props) {
   const request = useRef<AbortController | null>(null);
   const activeOperation = useRef(false);
   const latestRead = useRef(0);
+  const audioAtualRef = useRef(audioAtual);
+  audioAtualRef.current = audioAtual;
   const snapshotCallback = useRef(onSnapshot);
   snapshotCallback.current = onSnapshot;
   const revisaoAnterior = useRef<string | null>(null);
@@ -130,6 +137,11 @@ export default function AtendimentoAssistenteLote(props: Props) {
   useEffect(() => { onBusyChange(busy); return () => onBusyChange(false); }, [busy, onBusyChange]);
   useEffect(() => { onActiveChange(active); return () => onActiveChange(false); }, [active, onActiveChange]);
   useEffect(() => {
+    setArquivos((current) => current.some((item) => item.audioDoAtendimento && item.file !== audioAtual)
+      ? current.filter((item) => !item.audioDoAtendimento || item.file === audioAtual)
+      : current);
+  }, [audioAtual]);
+  useEffect(() => {
     const token = lote?.revisao_raca?.token ?? null;
     if (revisaoAnterior.current !== token) {
       if (revisaoAnterior.current && !activeOperation.current) {
@@ -167,8 +179,13 @@ export default function AtendimentoAssistenteLote(props: Props) {
     // Reconcile uncertain writes before uploading or scheduling again.
     let atual = await consultar(signal, lote?.id);
     if (signal.aborted) return;
+    const audioDisponivel = (item: ArquivoSelecionado) => !item.audioDoAtendimento || item.file === audioAtualRef.current;
     if (!atual) {
       if (!arquivos.length) throw new Error("Selecione os áudios e exames deste atendimento.");
+      if (!arquivos.every(audioDisponivel)) throw new Error("O áudio deste atendimento mudou. Confira o conjunto antes de analisar.");
+      if (manifest.current?.arquivos.some((fonte) => !arquivos.some((item) => item.id === fonte.id))) {
+        throw new Error("Uma fonte da tentativa anterior foi retirada. Use Preparar novo conjunto para escolher as fontes novamente.");
+      }
       const invalid = validarArquivosLote(arquivos.map((item) => item.file));
       if (invalid) throw new Error(invalid);
       if (texto.length > 80000) throw new Error("A transcrição excede 80.000 caracteres. Revise o texto antes de iniciar.");
@@ -190,7 +207,7 @@ export default function AtendimentoAssistenteLote(props: Props) {
     const falhas: string[] = [];
     for (const fonte of atual.arquivos.filter((item) => item.status === "pending")) {
       if (signal.aborted) return;
-      const local = arquivos.find((item) => item.id === fonte.id);
+      const local = arquivos.find((item) => item.id === fonte.id && audioDisponivel(item));
       if (!local) { falhas.push(fonte.nome); continue; }
       const payload = new FormData();
       payload.append("arquivo", local.file);
@@ -240,7 +257,13 @@ export default function AtendimentoAssistenteLote(props: Props) {
       setArquivos(next);
       return;
     }
-    const next = [...arquivos, ...files.map((file) => ({ id: crypto.randomUUID(), file, tipo: tipoArquivoLote(file) }))];
+    const novos: ArquivoSelecionado[] = files
+      .filter((file, index) => file !== audioAtual || (!audioJaSelecionado && files.indexOf(file) === index))
+      .map((file) => ({
+        id: crypto.randomUUID(), file, tipo: tipoArquivoLote(file),
+        ...(file === audioAtual ? { audioDoAtendimento: true } : {}),
+      }));
+    const next = [...arquivos, ...novos];
     const invalid = validarArquivosLote(next.map((item) => item.file));
     if (invalid) { setErro(invalid); return; }
     setArquivos(next); setErro("");
@@ -338,8 +361,12 @@ export default function AtendimentoAssistenteLote(props: Props) {
       {pendingUpload ? "Selecionar novamente arquivos pendentes" : "Áudios e PDFs do conjunto"}
       <input aria-label={pendingUpload ? "Selecionar novamente arquivos pendentes" : "Áudios e PDFs do conjunto"} type="file" multiple accept={accept} disabled={bloqueado || (!lote && Boolean(manifest.current))} className="mt-2 block w-full" onChange={(event) => { selecionar(Array.from(event.target.files || [])); event.target.value = ""; }} />
     </label> : null}
-    {!lote && arquivos.length ? <ol className="space-y-2">{arquivos.map(({ id, file, tipo }, index) => <li key={id} className="flex items-center justify-between gap-3 rounded-lg bg-white p-2 text-sm">
-      <span className="min-w-0 flex-1 break-all">{index + 1}. {file.name} · {tipo === "audio" ? "Áudio" : "Exame"} · {(file.size / 1_000_000).toFixed(1)} MB</span>
+    {!lote && audioAtual ? <button type="button" className={buttonClass}
+      disabled={bloqueado || Boolean(manifest.current) || audioJaSelecionado}
+      onClick={() => selecionar([audioAtual])}
+    >{audioJaSelecionado ? "Áudio do atendimento no conjunto" : "Usar áudio deste atendimento"}</button> : null}
+    {!lote && arquivos.length ? <ol className="space-y-2">{arquivos.map(({ id, file, tipo, audioDoAtendimento }, index) => <li key={id} className="flex items-center justify-between gap-3 rounded-lg bg-white p-2 text-sm">
+      <span className="min-w-0 flex-1 break-all">{index + 1}. {file.name} · {audioDoAtendimento ? "Áudio deste atendimento" : tipo === "audio" ? "Áudio" : "Exame"} · {(file.size / 1_000_000).toFixed(1)} MB</span>
       <button type="button" className="shrink-0 text-red-700 disabled:opacity-50" disabled={bloqueado || Boolean(manifest.current)} onClick={() => setArquivos((current) => current.filter((item) => item.id !== id))} aria-label={`Retirar ${file.name} do conjunto`}>Retirar</button>
     </li>)}</ol> : null}
     {lote ? <>

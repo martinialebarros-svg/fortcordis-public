@@ -70,6 +70,8 @@ export interface AssistenteIAResultado {
   avisos: string[];
 }
 
+export type AssistenteCampoRevisado = { campo: ClinicalFieldKey; texto: string };
+
 export function validarArquivosAssistente(files: File[], limites?: AssistenteIAStatus["limites"]): string | null {
   if (files.length > (limites?.arquivos ?? 5)) return "Selecione no máximo cinco arquivos por análise.";
   const maxArquivo = limites?.arquivo_bytes ?? 10 * 1024 * 1024;

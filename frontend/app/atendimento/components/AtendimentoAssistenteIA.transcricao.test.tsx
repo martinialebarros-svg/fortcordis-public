@@ -38,12 +38,12 @@ beforeEach(() => {
 });
 afterEach(() => { cleanup(); vi.resetAllMocks(); vi.unstubAllGlobals(); });
 
-async function abrir(pacienteId = 11, atendimentoId = 1, onApplyField = vi.fn()) {
-  const view = render(<AtendimentoAssistenteIA atendimentoId={atendimentoId} pacienteId={pacienteId} patientLabel="Paciente cadastrado fictício" onApplyField={onApplyField} />);
+async function abrir(pacienteId = 11, atendimentoId = 1, onApplyFields = vi.fn(() => true)) {
+  const view = render(<AtendimentoAssistenteIA atendimentoId={atendimentoId} pacienteId={pacienteId} patientLabel="Paciente cadastrado fictício" onApplyFields={onApplyFields} />);
   view.container.querySelector("details")?.setAttribute("open", "");
   await waitFor(() => expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).disabled).toBe(false));
   fireEvent.click(screen.getByLabelText(/Confirmei a autorização do tutor/));
-  return { ...view, onApplyField };
+  return { ...view, onApplyFields };
 }
 
 async function transcrever() {
@@ -53,7 +53,7 @@ async function transcrever() {
 
 describe("incertezas da transcrição sem alteração clínica", () => {
   it("preserva literalmente o texto principal e o texto já revisado; exibe outra leitura sem incorporá-la", async () => {
-    const { onApplyField } = await abrir();
+    const { onApplyFields } = await abrir();
     const textarea = screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement;
     fireEvent.change(textarea, { target: { value: "Anotação já revisada.\n" } });
     await transcrever();
@@ -66,7 +66,7 @@ describe("incertezas da transcrição sem alteração clínica", () => {
     expect(within(panel).queryByRole("button")).toBeNull();
     expect(textarea.value).not.toContain(alternativa);
     expect(textarea.value).not.toContain("Paciente cadastrado fictício");
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(api.post).toHaveBeenCalledWith("/atendimentos/1/assistente/transcrever", expect.any(FormData), expect.anything());
   });
@@ -81,8 +81,8 @@ describe("incertezas da transcrição sem alteração clínica", () => {
     expect(screen.getByText(alternativa)).toBeTruthy();
     expect(screen.getByText(/suas edições não foram reavaliadas/)).toBeTruthy();
     expect(api.post).toHaveBeenCalledTimes(1);
-    expect(first.onApplyField).not.toHaveBeenCalled();
-    expect(next.onApplyField).not.toHaveBeenCalled();
+    expect(first.onApplyFields).not.toHaveBeenCalled();
+    expect(next.onApplyFields).not.toHaveBeenCalled();
   });
 
   it.each([
@@ -104,12 +104,12 @@ describe("incertezas da transcrição sem alteração clínica", () => {
     const view = await abrir();
     fireEvent.click(screen.getByRole("button", { name: "Transcrever áudio" }));
     await waitFor(() => expect(api.post).toHaveBeenCalledTimes(1));
-    view.rerender(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={12} patientLabel="Outro paciente fictício" onApplyField={view.onApplyField} />);
+    view.rerender(<AtendimentoAssistenteIA atendimentoId={1} pacienteId={12} patientLabel="Outro paciente fictício" onApplyFields={view.onApplyFields} />);
     view.container.querySelector("details")?.setAttribute("open", "");
     await act(async () => resolve({ data: { texto: original, modelo: "gpt-transcribe", avisos: [], revisao_transcricao: revisao } }));
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("");
     expect(screen.queryByText(alternativa)).toBeNull();
-    expect(view.onApplyField).not.toHaveBeenCalled();
+    expect(view.onApplyFields).not.toHaveBeenCalled();
   });
 
   it("carrega as revisões por fonte do lote sem alterar transcrição ou prontuário", async () => {
@@ -118,13 +118,13 @@ describe("incertezas da transcrição sem alteração clínica", () => {
       revisoes_transcricao: [{ arquivo_id: "audio-1", nome: "fonte-ficticia.webm", revisao_transcricao: revisao }],
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
-    const { onApplyField } = await abrir();
+    const { onApplyFields } = await abrir();
     fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe(original);
     const panel = screen.getByRole("region", { name: "Revisão das incertezas da transcrição" });
     expect(within(panel).getByText("fonte-ficticia.webm")).toBeTruthy();
     expect(within(panel).getByText(alternativa)).toBeTruthy();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
   });
 
@@ -134,10 +134,10 @@ describe("incertezas da transcrição sem alteração clínica", () => {
       revisoes_transcricao: [{ arquivo_id: "audio-1", nome: "fonte-ficticia.webm", revisao_transcricao: revisao }],
     };
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
-    const { onApplyField } = await abrir();
+    const { onApplyFields } = await abrir();
     await screen.findByRole("region", { name: "Revisão das incertezas da transcrição" });
     expect(screen.getByText(alternativa)).toBeTruthy();
-    expect(onApplyField).not.toHaveBeenCalled();
+    expect(onApplyFields).not.toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
   });
 

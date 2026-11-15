@@ -32,10 +32,10 @@ beforeEach(() => {
   });
 });
 afterEach(() => { cleanup(); vi.clearAllMocks(); vi.unstubAllGlobals(); });
-function abrir(onApplyField = vi.fn(), pacienteId = 11, atendimentoId = 1) {
-  const view = render(<AtendimentoAssistenteIA atendimentoId={atendimentoId} pacienteId={pacienteId} patientLabel={`Paciente ${pacienteId}`} onApplyField={onApplyField} />);
+function abrir(onApplyFields = vi.fn(() => true), pacienteId = 11, atendimentoId = 1) {
+  const view = render(<AtendimentoAssistenteIA atendimentoId={atendimentoId} pacienteId={pacienteId} patientLabel={`Paciente ${pacienteId}`} onApplyFields={onApplyFields} />);
   view.container.querySelector("details")?.setAttribute("open", "");
-  return { ...view, onApplyField };
+  return { ...view, onApplyFields };
 }
 async function aguardarIdentidade() {
   await waitFor(() => expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).disabled).toBe(false));
@@ -53,14 +53,14 @@ async function prepararRevisao() {
   const checks = screen.getAllByLabelText(/Conferi este trecho com a fonte/);
   fireEvent.click(checks[0]); fireEvent.click(checks[1]);
   fireEvent.click(screen.getAllByRole("button", { name: "Adicionar ao atendimento" })[0]);
-  expect(view.onApplyField).toHaveBeenCalledTimes(1);
+  expect(view.onApplyFields).toHaveBeenCalledTimes(1);
   return { ...view, file };
 }
 
 describe("rascunho de IA em memória após navegação", () => {
   it("recupera fontes, edições e aprovação sem repetir incorporação", async () => {
     const original = await prepararRevisao(); original.unmount();
-    const nextApply = vi.fn(); abrir(nextApply);
+    const nextApply = vi.fn(() => true); abrir(nextApply);
     await aguardarIdentidade();
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe(transcript);
     expect(screen.getByText("exame-sintetico.pdf")).toBeTruthy();
@@ -76,7 +76,8 @@ describe("rascunho de IA em memória após navegação", () => {
     expect(nextApply).not.toHaveBeenCalled(); expect(api.post).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Adicionar ao atendimento" }));
     expect(nextApply).toHaveBeenCalledTimes(1);
-    expect(nextApply).toHaveBeenCalledWith("queixa_principal", "Tosse relatada pelo tutor.");
+    expect(nextApply).toHaveBeenCalledWith([{ campo: "queixa_principal", texto: "Tosse relatada pelo tutor." }]);
+    expect(screen.getAllByRole("button", { name: "Adicionado ao atendimento" })).toHaveLength(2);
   });
   it.each([
     { scenario: "outro usuário", usuarioId: 8, pacienteId: 11, atendimentoId: 1 },
@@ -85,12 +86,12 @@ describe("rascunho de IA em memória após navegação", () => {
   ])("não restaura dados para $scenario", async ({ usuarioId, pacienteId, atendimentoId }) => {
     const original = await prepararRevisao(); original.unmount();
     vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? null : { ...status, usuario_id: usuarioId, paciente_id: pacienteId } }));
-    const next = abrir(vi.fn(), pacienteId, atendimentoId); await aguardarIdentidade();
+    const next = abrir(vi.fn(() => true), pacienteId, atendimentoId); await aguardarIdentidade();
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("");
     expect(screen.queryByText("exame-sintetico.pdf")).toBeNull();
     expect(screen.queryByLabelText("Anamnese")).toBeNull();
     expect(screen.queryByRole("button", { name: "Adicionado ao atendimento" })).toBeNull();
-    expect(next.onApplyField).not.toHaveBeenCalled();
+    expect(next.onApplyFields).not.toHaveBeenCalled();
   });
   it("não revela rascunho antes de confirmar identidade autenticada", async () => {
     const original = await prepararRevisao(); original.unmount();
@@ -100,9 +101,9 @@ describe("rascunho de IA em memória após navegação", () => {
     const textarea = screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement;
     expect(textarea.disabled).toBe(true); expect(textarea.value).toBe("");
     expect(screen.queryByText("exame-sintetico.pdf")).toBeNull(); expect(screen.queryByLabelText("Anamnese")).toBeNull();
-    expect(next.onApplyField).not.toHaveBeenCalled();
+    expect(next.onApplyFields).not.toHaveBeenCalled();
     await act(async () => resolveStatus({ data: status })); await aguardarIdentidade();
     expect(textarea.value).toBe(transcript); expect(screen.getByText("exame-sintetico.pdf")).toBeTruthy();
-    expect(next.onApplyField).not.toHaveBeenCalled();
+    expect(next.onApplyFields).not.toHaveBeenCalled();
   });
 });
