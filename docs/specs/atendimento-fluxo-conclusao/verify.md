@@ -1,5 +1,12 @@
 # Verificação
 
+## Precisão do horário — 15/11/2026
+
+- Regressão na base `9af367ab`: sete testes evidenciaram descarte de segundos na abertura, no horário inicial e na recuperação de rascunho antigo. A candidata passou nos 62 testes focados de horário, rascunho, contexto e pendências.
+- A ficha sintética em SQLite foi aberta pela interface compilada, com a API real local. Editar só a queixa pelo salvamento automático preservou `17:59:35.970744` no banco. A edição manual por teclado para `17:59:36` e, depois, para `17:59:00` foi salva e confirmada ao reabrir e consultar o banco.
+- O campo mostrou os segundos sem corte na janela de 1280 px. Treze testes de persistência parcial e fuso horário no backend passaram. O build inclui verificação de tipos e lint.
+- O teste teve uma única ficha fictícia em banco temporário. Stage e produção não receberam a alteração.
+
 ## Atalhos do atendimento — 15/11/2026
 
 | Critério | Evidência local com dados fictícios |

@@ -7,6 +7,13 @@
 - A incorporação preserva o conteúdo que já estava no formulário e acrescenta os trechos aceitos em uma única atualização. Se mais de uma fonte contribuir para o mesmo campo, todos os trechos aceitos são acrescentados em ordem. Para uma revisão de conjunto, consultar uma vez a versão atual do resultado antes da inclusão e bloquear a ação se a identidade, o estado ou o resultado não conferirem. Entradas já revisadas ficam disponíveis se o contexto do formulário rejeitar a inclusão.
 - As pendências clínicas do fechamento e do radar levam à Consulta e focam o campo de destino, mesmo quando é preciso trocar de etapa ou aguardar o carregamento do editor. A navegação mantém os valores do formulário e os critérios de conclusão.
 
+## Precisão do horário do atendimento
+
+- O campo de data e hora permite visualizar e editar segundos no horário operacional de Fortaleza. O horário inicial de um novo encontro e o horário recebido da Agenda também mantêm segundos.
+- A abertura e o salvamento, manual ou automático, conservam os segundos e as frações recebidas do servidor enquanto o horário permanecer sem edição. Uma edição do horário usa a precisão de segundo do campo, incluindo `:00` quando escolhido.
+- Um rascunho local antigo com apenas o mesmo minuto do horário salvo mantém a precisão do registro. Mudanças explícitas do horário continuam permitidas.
+- A conversão dos outros campos de data que usam minutos fica independente. A correção vale para salvamentos futuros e não reconstitui segundos que já foram perdidos.
+
 ## Comportamento
 
 - RF-001: a abertura de resultados do assistente não pode substituir texto editado ou revisão pendente sem decisão explícita. Reabrir conteúdo idêntico preserva as edições e aprovações, sem confirmação adicional.
