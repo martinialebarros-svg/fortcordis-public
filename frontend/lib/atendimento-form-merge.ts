@@ -11,9 +11,14 @@ export const restorePersistedAtendimentoDraft = (
     (backup.paciente_id && backup.paciente_id !== persisted.paciente_id)
   ) return persisted;
 
+  const backupDate = backup.data_atendimento;
   return {
     ...persisted,
     ...backup,
+    // Old drafts have only minutes. The same minute should keep the saved precision.
+    data_atendimento: backupDate === persisted.data_atendimento.slice(0, 16)
+      ? persisted.data_atendimento
+      : backupDate ?? persisted.data_atendimento,
     id: persisted.id,
     paciente_id: persisted.paciente_id,
     agendamento_id: persisted.agendamento_id,

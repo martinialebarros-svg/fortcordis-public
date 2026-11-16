@@ -130,12 +130,17 @@ export default function AtendimentoConsultaOverviewSection(props: AtendimentoCon
                 ))}
               </select>
             </label>
-            <label className="block text-xs font-medium text-slate-600">
+            <label className="block text-xs font-medium text-slate-600 md:col-span-2">
               Data e hora do atendimento
               <input
                 type="datetime-local"
-                value={form.data_atendimento}
-                onChange={(e) => setField("data_atendimento", e.target.value)}
+                step={1}
+                value={form.data_atendimento.split(".")[0]}
+                onChange={(e) => {
+                  const value = e.currentTarget.value;
+                  // The native input omits zero seconds. Keep explicit edits distinct from old drafts.
+                  setField("data_atendimento", value.length === 16 ? `${value}:00` : value);
+                }}
                 className="mt-1.5 block w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900"
               />
             </label>
