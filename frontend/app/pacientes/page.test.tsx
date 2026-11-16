@@ -79,6 +79,28 @@ describe("PacientesPage", () => {
     expect(screen.getByText("1299")).toBeInTheDocument();
   });
 
+  it("abre a revisão com os dois códigos selecionados, sem excluir cadastros", async () => {
+    mocks.get.mockResolvedValue({ data: { total: 3, items: [
+      { id: 10, nome: "Pet teste", tutor: "Tutor teste", tutor_id: 101 },
+      { id: 20, nome: "Pet teste", tutor: "Tutor teste", tutor_id: 102 },
+      { id: 30, nome: "Outro pet", tutor: "Outro tutor" },
+    ] } });
+    render(<PacientesPage />);
+    const primeiro = await screen.findByRole("checkbox", { name: "Selecionar paciente Pet teste #10" });
+    const segundo = screen.getByRole("checkbox", { name: "Selecionar paciente Pet teste #20" });
+    const terceiro = screen.getByRole("checkbox", { name: "Selecionar paciente Outro pet #30" });
+    const acao = screen.getByRole("button", { name: "Revisar mesclagem" });
+    fireEvent.click(segundo);
+    expect(acao).toBeDisabled();
+    fireEvent.click(primeiro);
+    fireEvent.click(terceiro);
+    expect(acao).toBeDisabled();
+    fireEvent.click(terceiro);
+    fireEvent.click(acao);
+    expect(mocks.push).toHaveBeenCalledWith("/pacientes/mesclagens?paciente=20&duplicado=10");
+    expect(mocks.delete).not.toHaveBeenCalled();
+  });
+
   it("solicita a próxima página sem carregar todos os pacientes", async () => {
     mocks.get.mockImplementation((url: string) => {
       if (url === "/pacientes?limit=100&skip=0") {

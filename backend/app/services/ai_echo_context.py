@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 from app.services.echo_reference_resolver import load_echo_reference
 from app.utils.referencia_eco_defaults import normalizar_especie_referencia
 from app.utils.echo_diastolic import diastolic_references
-from app.utils.echo_pulmonary_probability import evaluate_pulmonary_probability
 from app.utils.echo_unit_provenance import (
     clinically_safe_echo_measurements,
 )
@@ -271,7 +270,6 @@ def safe_measurement_context(
     resolved_species = normalizar_especie_referencia(
         species or (reference_context or {}).get("species")
     )
-    pulmonary = evaluate_pulmonary_probability(current_measurements, resolved_species)
     ranges = safe_reference_context(
         reference_context, current_measurements=normalized_measurements,
         species=resolved_species,
@@ -293,11 +291,6 @@ def safe_measurement_context(
         if reviewed and wave_state != "separadas":
             excluded_diastolic_indices.update(dependent_indices)
     for key, value in normalized_measurements.items():
-        if pulmonary["active"] and (
-            (key == "PSAP" and not pulmonary["psap_usable"])
-            or (key in {"IT_Vmax", "IT_Grad"} and str((current_measurements or {}).get("HP_TRV") or "").strip() == "nao_mensuravel")
-        ):
-            continue
         if key in excluded_diastolic_indices:
             continue
         # Keep numeric history in the exam, but never offer a fused peak or its
@@ -357,14 +350,6 @@ def safe_measurement_context(
         if isinstance(reference_range, dict):
             item["reference"] = reference_range
         safe[key] = item
-    if pulmonary["active"]:
-        safe["HP_avaliacao_revisada"] = {
-            "value": pulmonary["summary"], "status": pulmonary["status"],
-            "method": "Critérios ACVIM 2020 caninos; revisão explícita e vigente",
-            "probability": pulmonary["probability"], "evidence": pulmonary["evidence"],
-            "metrics": pulmonary["metrics"],
-            "limitations": pulmonary["missing"] + pulmonary["notes"],
-        }
     return safe
 
 

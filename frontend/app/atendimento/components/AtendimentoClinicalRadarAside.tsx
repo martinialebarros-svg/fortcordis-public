@@ -135,14 +135,6 @@ export default function AtendimentoClinicalRadarAside(props: AtendimentoClinical
             </span>
           </div>
 
-          {Number(form.paciente_id) > 0 && (
-            <a href={`/pacientes/mesclagens?paciente=${Number(form.paciente_id)}`} target="_blank" rel="noopener noreferrer"
-              className="mt-3 inline-block text-sm font-semibold text-blue-800 underline">
-              Revisar duplicidade do paciente
-              <span className="sr-only"> (abre em nova aba)</span>
-            </a>
-          )}
-
           <div className="mt-4 space-y-3">
             {historicoPaciente?.atendimentos.slice(0, 4).map((atendimento: any) => (
               <div key={atendimento.id} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
