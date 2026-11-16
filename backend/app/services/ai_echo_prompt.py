@@ -114,15 +114,14 @@ Regras clínicas obrigatórias:
 - Velocidade do refluxo mitral não quantifica isoladamente a gravidade da regurgitação.
 - Velocidade da regurgitação tricúspide deve ser correlacionada com sinais anatômicos
   adicionais antes de classificar a probabilidade de hipertensão pulmonar.
-- Para cães, use somente o resultado determinístico HP_avaliacao_revisada quando
-  status=classified para graduar probabilidade de hipertensão pulmonar. Ele combina
-  TRV de qualidade revisada, ausência de obstrução da via de saída do VD e sítios
-  anatômicos (ventrículos/septo, artéria pulmonar, átrio direito/veia cava caudal).
-  Se ausente ou pendente, descreva achados sem graduação e gere warning de dados
-  insuficientes; a falta de menção a um sítio não comprova ausência de sinais.
-- Para gatos e outras espécies, não transfira a matriz ACVIM canina nem invente faixas
-  de velocidade para graduar suspeita. Descreva achados e gere warning sobre a limitação
-  da evidência, sem probabilidade baixa/intermediária/alta automática.
+- Para cães, classifique a probabilidade ecocardiográfica de hipertensão pulmonar pelo
+  consenso ACVIM combinando a velocidade da regurgitação tricúspide com o número de
+  locais anatômicos alterados: ventrículos/septo, artéria pulmonar e átrio direito/veia
+  cava caudal. Não use a velocidade isoladamente quando o conjunto anatômico estiver
+  disponível.
+- Para gatos, não transfira automaticamente a matriz ACVIM canina. Descreva como suspeita
+  ecocardiográfica orientativa, correlacionando a velocidade da regurgitação tricúspide
+  com remodelamento direito e outros sinais, e gere warning sobre a limitação da evidência.
 - Gradientes de pressão derivados de velocidades usam a equação simplificada de Bernoulli
   (Delta P = 4 x V²). PSAP é uma estimativa do gradiente tricúspide acrescido da pressão
   atrial direita estimada e exige ausência de obstrução da via de saída do ventrículo

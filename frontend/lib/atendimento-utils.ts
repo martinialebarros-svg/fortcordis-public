@@ -1,7 +1,7 @@
 export const ATENDIMENTO_OPERATIONAL_TIME_ZONE = "America/Fortaleza";
 const ATENDIMENTO_OPERATIONAL_OFFSET = "-03:00";
 
-const formatOperationalLocalInput = (date: Date) => {
+const formatOperationalLocalInput = (date: Date, includeSeconds = false) => {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: ATENDIMENTO_OPERATIONAL_TIME_ZONE,
     year: "numeric",
@@ -9,6 +9,7 @@ const formatOperationalLocalInput = (date: Date) => {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hourCycle: "h23",
   });
   const parts = Object.fromEntries(
@@ -17,7 +18,8 @@ const formatOperationalLocalInput = (date: Date) => {
       .filter((part) => part.type !== "literal")
       .map((part) => [part.type, part.value])
   );
-  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  const minute = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+  return includeSeconds ? `${minute}:${parts.second}` : minute;
 };
 
 const parseOperationalDate = (value?: string | null) => {
@@ -52,9 +54,12 @@ export const localInputToOperationalIso = (value?: string | null) => {
 export const nowLocalInput = () => formatOperationalLocalInput(new Date());
 
 export const isoToLocalInput = (value?: string | null) => {
-  if (!value) return nowLocalInput();
   const date = parseOperationalDate(value);
-  return date ? formatOperationalLocalInput(date) : nowLocalInput();
+  if (!date) return formatOperationalLocalInput(new Date(), true);
+
+  // Date supports milliseconds, but the stored timestamp can have microseconds.
+  const fraction = value?.trim().match(/:\d{2}(\.\d+)(?:Z|[+-]\d{2}:?\d{2})?$/i)?.[1] ?? "";
+  return `${formatOperationalLocalInput(date, true)}${fraction}`;
 };
 
 export const isoToOptionalLocalInput = (value?: string | null) => {

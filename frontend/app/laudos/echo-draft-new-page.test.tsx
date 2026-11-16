@@ -81,6 +81,23 @@ describe("novo ecocardiograma: recuperação e emissão explícita", () => {
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); window.history.replaceState(null, "", "/"); });
 
+  it.each(["Dog", "Cão"])("emite índice recalculado após editar DIVEd de paciente %s", async (species) => {
+    const original = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url, ...args) => url === "/pacientes/901"
+      ? Promise.resolve({ data: { ...patient, especie: species, peso_kg: 10 } }) : original(url, ...args));
+    const view = await open();
+    mocks.imported = { DIVEd: "25", DIVEd_normalizado: "0.9" };
+    fireEvent.click(screen.getByRole("button", { name: "Importar estudo sintético" }));
+    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
+    fireEvent.change(input("DIVEd (mm - Diâmetro interno do VE em diástole)"), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("button", { name: "Emitir laudo" }));
+    await waitFor(() => expect(mocks.post.mock.calls.some(([url]) => url === "/laudos")).toBe(true));
+    const payload = mocks.post.mock.calls.find(([url]) => url === "/laudos")![1];
+    expect(payload).toMatchObject({ paciente: { especie: species }, medidas: { DIVEd: "30", DIVEd_normalizado: "1.52" } });
+    expect(input("DIVEd normalizado (DIVEd [cm] / peso^0,294)")).toHaveValue("1.52");
+    view.unmount();
+  });
+
   it("prévia usa o mesmo payload da emissão, salva só a cópia privada e não emite ao conferir", async () => {
     vi.stubGlobal("URL", Object.assign(class extends URL {}, {
       createObjectURL: vi.fn(() => "blob:qa-preview"), revokeObjectURL: vi.fn(),

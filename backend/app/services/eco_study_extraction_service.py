@@ -15,7 +15,7 @@ from app.services.image_header_import_service import _extract_text_with_tesserac
 
 MAX_ECO_STUDY_IMPORT_SIZE = 30 * 1024 * 1024
 MAX_ECO_STUDY_PDF_PAGES = 20
-ECO_STUDY_EXTRACTOR_VERSION = "9"
+ECO_STUDY_EXTRACTOR_VERSION = "8"
 GE_LOGIQ_E_PROFILE = "ge_logiq_e"
 GE_VIVID_IQ_PROFILE = "ge_vivid_iq"
 ALLOWED_ECO_STUDY_EXTENSIONS = {
@@ -104,17 +104,6 @@ MEASUREMENT_DEFINITIONS: tuple[MeasurementDefinition, ...] = (
     MeasurementDefinition("DeltaD_FS", "FS", (r"FS", r"(?:%\s*)?Delta\s*D", r"FEnc"), "percent"),
     MeasurementDefinition("TAPSE", "TAPSE", (r"TAPSE",), "length"),
     MeasurementDefinition("MAPSE", "MAPSE", (r"MAPSE",), "length"),
-    # A numeric acquisition is not confirmation of CW quality, anatomical signs
-    # or review. Require a pulmonary label and explicit units for these inputs.
-    MeasurementDefinition("HP_RPAD", "RPAD", (r"RPAD(?:\s*index)?",), "percent"),
-    MeasurementDefinition("HP_TA", "Tempo de aceleração pulmonar", (
-        rf"{_PULMONARY_LABEL}\s*(?:AT|TA|AccT|acceleration\s*time)",
-        r"(?:TA|tempo\s*de\s*aceleracao)\s*pulmonar",
-    ), "time"),
-    MeasurementDefinition("HP_TE", "Tempo de ejeção pulmonar", (
-        rf"{_PULMONARY_LABEL}\s*(?:ET|TE|ejection\s*time)",
-        r"(?:TE|tempo\s*de\s*ejecao)\s*pulmonar",
-    ), "time"),
     MeasurementDefinition("Atrio_esquerdo", "Atrio esquerdo", (r"LA\s*(?:Diam(?:eter)?|Dimension)", r"(?:Diam|Diametro)\s*AE", r"D\.?\s*AE", r"AE\s*(?:Diam|Dimensao)", r"Atrio\s*Esquerdo"), "length"),
     MeasurementDefinition("AE_diametro_max", "AE diametro maximo", (r"LAD\s*max", r"(?:AE|LA)\s*(?:Diam(?:etro|eter)?|Dimensao|Dimension)\s*max"), "length"),
     MeasurementDefinition("AE_diametro_min", "AE diametro minimo", (r"LAD\s*min", r"(?:AE|LA)\s*(?:Diam(?:etro|eter)?|Dimensao|Dimension)\s*min"), "length"),
@@ -607,10 +596,6 @@ def extract_measurements_from_text(
 
                 original_value = _parse_number(match.group("value"))
                 original_unit = _normalize_unit(match.group("unit"))
-                if definition.campo == "HP_RPAD" and original_unit != "%":
-                    continue
-                if definition.campo in {"HP_TA", "HP_TE"} and original_unit not in {"ms", "s"}:
-                    continue
                 if definition.campo == "Aorta" and (
                     original_unit not in {"", "mm", "cm"}
                     or re.search(
