@@ -735,7 +735,7 @@ jobs:
             python3 backend/scripts/sync_feline_diastolic_presets.py --apply
           EOF
 
-      - name: Verify atomic batch receipts on Stage with disposable data
+      - name: Verify service orders on Stage with disposable data
         run: |
           ssh -i ~/.ssh/id_vps -o IdentitiesOnly=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=10 ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
             set -euo pipefail
@@ -745,7 +745,10 @@ jobs:
             FORTCORDIS_PROCESS_ROLE=api \
               DATABASE_URL=sqlite:// \
               SECRET_KEY=batch-receipt-stage-synthetic-validation-1234567890 \
-              venv/bin/python -m unittest tests.test_ordens_servico_receber_lote
+              venv/bin/python -m unittest \
+                tests.test_ordens_servico_receber_lote \
+                tests.test_laudo_eletro_ordem_servico \
+                tests.test_os_responsavel_pagamento_migration
           EOF
 
       - name: Run one-shot Nginx TLS listener inventory on Stage

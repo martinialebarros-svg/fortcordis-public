@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile, status
 from sqlalchemy import exists, func, literal, or_, select, union_all
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
@@ -56,6 +56,7 @@ from app.services.echo_editor_source import load_echo_editor_source
 from app.services.laudo_ordem_servico_service import (
     buscar_ordem_laudo, buscar_ordem_por_chave, chave_upload_ordem, criar_ordem_laudo,
     exigir_criacao_ordem, hash_upload_ordem, mesma_data, pode_acessar_ordens, resumo_ordem, validar_preco_ordem,
+    validar_responsavel_pagamento,
 )
 from app.services.portal_clinic_device_trust_service import revoke_trusts_for_exam
 from app.services.portal_clinic_exam_link_service import (
@@ -2069,15 +2070,29 @@ def listar_laudos(
 
 @router.get("/laudos/eletrocardiograma/ordem-servico/preview")
 def preview_ordem_servico_eletrocardiograma(
-    clinic_id: int,
-    servico_id: int,
+    clinic_id: Optional[int] = None,
+    servico_id: int = Query(...),
     tipo_horario: str = "comercial",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
+    responsavel_pagamento_tipo: str = "clinica",
+    veterinario_parceiro_id: Optional[int] = None,
 ):
     exigir_criacao_ordem(db, current_user)
-    valor = validar_preco_ordem(db, clinic_id, servico_id, tipo_horario)
-    return {"valor_servico": float(valor), "valor_final": float(valor)}
+    responsavel = validar_responsavel_pagamento(
+        db,
+        tipo=responsavel_pagamento_tipo,
+        clinic_id=clinic_id,
+        veterinario_parceiro_id=_to_optional_int(veterinario_parceiro_id),
+    )
+    valor = validar_preco_ordem(db, clinic_id, servico_id, tipo_horario, responsavel_tipo=responsavel["tipo"])
+    return {
+        "valor_servico": float(valor),
+        "valor_final": float(valor),
+        "responsavel_pagamento_tipo": responsavel["tipo"],
+        "responsavel_pagamento_id": responsavel["id"],
+        "responsavel_pagamento_nome": responsavel["nome"],
+    }
 
 
 def _resposta_upload_eletrocardiograma(db: Session, laudo: Laudo, anexo_id: int, ordem=None) -> dict:
@@ -2114,6 +2129,7 @@ async def criar_laudo_eletrocardiograma_por_pdf(
     gerar_ordem_servico: bool = Form(False),
     servico_id: Optional[int] = Form(None),
     tipo_horario: str = Form("comercial"),
+    responsavel_pagamento_tipo: str = Form("clinica"),
     idempotency_key: Optional[str] = Form(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -2129,10 +2145,16 @@ async def criar_laudo_eletrocardiograma_por_pdf(
     # Defaults Form também são objetos quando o endpoint é chamado diretamente.
     gerar_ordem_servico = gerar_ordem_servico is True
     servico_id = _to_optional_int(servico_id)
+    responsavel_pagamento_tipo = (
+        responsavel_pagamento_tipo
+        if isinstance(responsavel_pagamento_tipo, str)
+        else "clinica"
+    )
     ordem_servico = None
     chave_os = None
     request_hash = None
     valor_os = None
+    responsavel_pagamento = None
     if gerar_ordem_servico:
         exigir_criacao_ordem(db, current_user)
         if agendamento_id or atendimento_id:
@@ -2193,18 +2215,30 @@ async def criar_laudo_eletrocardiograma_por_pdf(
     if gerar_ordem_servico:
         if data_exame and _parse_data_exame(data_exame) is None:
             raise HTTPException(422, "Formato invalido para data_exame. Use YYYY-MM-DD ou ISO datetime.")
+        responsavel_pagamento = validar_responsavel_pagamento(
+            db,
+            tipo=responsavel_pagamento_tipo,
+            clinic_id=clinic_id,
+            veterinario_parceiro_id=veterinario_parceiro_id,
+        )
+        # O formato anterior já identifica a clínica. Preserve o hash de
+        # uploads emitidos antes da introdução do responsável veterinário.
+        pagador_hash = {"responsavel_pagamento_tipo": "veterinario"} if responsavel_pagamento["tipo"] == "veterinario" else {}
         request_hash = hash_upload_ordem(
             paciente_id=paciente_id, clinic_id=clinic_id, servico_id=servico_id,
             tipo_horario=tipo_horario, data_exame=data_exame,
             veterinario_parceiro_id=veterinario_parceiro_id,
             observacoes=(observacoes or "").strip(), arquivo_hash=calculate_attachment_sha256(content),
+            **pagador_hash,
         )
         ordem_servico = buscar_ordem_por_chave(db, chave_os, request_hash)
         if ordem_servico:
             return _resposta_retry_upload_eletrocardiograma(db, ordem_servico)
         if paciente.ativo != 1:
             raise HTTPException(422, "Selecione um paciente ativo para gerar a OS.")
-        valor_os = validar_preco_ordem(db, clinic_id, servico_id, tipo_horario)
+        valor_os = validar_preco_ordem(
+            db, clinic_id, servico_id, tipo_horario, responsavel_tipo=responsavel_pagamento["tipo"],
+        )
 
     data_exame_final = (
         _parse_data_exame(data_exame)
@@ -2283,6 +2317,7 @@ async def criar_laudo_eletrocardiograma_por_pdf(
             ordem_servico = criar_ordem_laudo(
                 db, laudo=laudo, servico_id=servico_id, tipo_horario=tipo_horario,
                 valor=valor_os, chave=chave_os, request_hash=request_hash, user=current_user,
+                responsavel_pagamento=responsavel_pagamento,
             )
 
         db.commit()

@@ -572,6 +572,8 @@ def _build_os_query(db: Session):
             OrdemServico.status.label("status_os"),
             OrdemServico.clinica_id,
             OrdemServico.origem_atendimento,
+            OrdemServico.responsavel_pagamento_tipo,
+            OrdemServico.responsavel_pagamento_nome,
             Paciente.nome.label("paciente_nome"),
             Tutor.nome.label("tutor_nome"),
             tutor_cpf_col,
@@ -604,6 +606,10 @@ def _serialize_os_row(row) -> dict:
         clinica_nome_exibicao = "Atendimento domiciliar"
     cliente_nome = row.clinica_razao_social or row.clinica_nome or row.tutor_nome or row.paciente_nome or ""
     cliente_documento = row.clinica_cnpj or row.tutor_cpf or ""
+    if row.responsavel_pagamento_tipo == "veterinario":
+        cliente_nome = row.responsavel_pagamento_nome or ""
+        # Cadastro de parceiro não comprova os dados do tomador fiscal.
+        cliente_documento = ""
 
     return {
         "os_id": row.os_id,

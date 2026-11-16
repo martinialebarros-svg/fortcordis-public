@@ -1,6 +1,7 @@
 export interface OrderSnapshot { id: number; status: string; valor_final: number }
 
 const fields = ["id", "status", "valor_final", "paciente_id", "tutor_id", "clinica_id", "servico_id",
+  "responsavel_pagamento_tipo", "responsavel_pagamento_id", "responsavel_pagamento_nome",
   "numero_os", "data_atendimento", "origem_atendimento", "destinatario_tipo", "destinatario_nome",
   "destinatario_telefone", "destinatario_email", "paciente", "tutor", "clinica", "servico"];
 function fingerprint(value: OrderSnapshot) {
