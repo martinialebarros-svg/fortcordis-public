@@ -95,7 +95,8 @@ EchoMeasurementFieldKey = Literal[
 
 
 def _validate_measurement_context(value: dict[str, str]) -> dict[str, str]:
-    allowed = set(EchoMeasurementFieldKey.__args__) | {"VE_vista_2D"} | set(ECHO_REFERENCE_METHOD_VALUES)
+    from app.utils.echo_pulmonary_probability import HP_MEASUREMENT_KEYS
+    allowed = set(EchoMeasurementFieldKey.__args__) | {"VE_vista_2D"} | set(ECHO_REFERENCE_METHOD_VALUES) | HP_MEASUREMENT_KEYS
     outflow_provenance_keys = {
         f"{prefix}_{site}_{suffix}"
         for prefix in ("Vmax", "Grad")
@@ -121,7 +122,8 @@ def _validate_measurement_context(value: dict[str, str]) -> dict[str, str]:
     # provenance without applying the short numeric-value limit to that text.
     oversized = sorted(
         key for key, text in normalized.items()
-        if len(text) > (2048 if key in outflow_provenance_keys and key.endswith("_rotulo_origem") else 80)
+        if len(text) > (8192 if key == "HP_revisao" else 5000 if key == "HP_observacoes" else
+                        2048 if key in outflow_provenance_keys and key.endswith("_rotulo_origem") else 80)
     )
     if oversized:
         raise ValueError(f"Valores de medida muito longos: {', '.join(oversized)}")
