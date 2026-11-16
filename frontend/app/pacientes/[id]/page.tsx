@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 import { PatientAgeFields } from "@/components/pacientes/PatientAgeFields";
 import { patientAgeForm, patientAgePayload } from "@/lib/paciente-idade";
 import { useEffect, useState } from "react";
@@ -311,6 +313,11 @@ export default function EditarPacientePage() {
               <Stethoscope className="h-4 w-4" />
               Iniciar atendimento
             </button>
+            <Link href={`/pacientes/mesclagens?paciente=${encodeURIComponent(pacienteId)}`}
+              target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800">
+              Revisar duplicidade <span className="sr-only">(abre em nova aba)</span>
+            </Link>
             <button
               type="button"
               onClick={() => setShowDeleteModal(true)}
