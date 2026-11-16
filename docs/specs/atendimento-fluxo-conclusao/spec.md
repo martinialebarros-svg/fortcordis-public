@@ -7,6 +7,13 @@
 - A incorporação preserva o conteúdo que já estava no formulário e acrescenta os trechos aceitos em uma única atualização. Se mais de uma fonte contribuir para o mesmo campo, todos os trechos aceitos são acrescentados em ordem. Para uma revisão de conjunto, consultar uma vez a versão atual do resultado antes da inclusão e bloquear a ação se a identidade, o estado ou o resultado não conferirem. Entradas já revisadas ficam disponíveis se o contexto do formulário rejeitar a inclusão.
 - As pendências clínicas do fechamento e do radar levam à Consulta e focam o campo de destino, mesmo quando é preciso trocar de etapa ou aguardar o carregamento do editor. A navegação mantém os valores do formulário e os critérios de conclusão.
 
+## Precisão do horário do atendimento
+
+- O campo de data e hora permite visualizar e editar segundos no horário operacional de Fortaleza. O horário inicial de um novo encontro e o horário recebido da Agenda também mantêm segundos.
+- A abertura e o salvamento, manual ou automático, conservam os segundos e as frações recebidas do servidor enquanto o horário permanecer sem edição. Uma edição do horário usa a precisão de segundo do campo, incluindo `:00` quando escolhido.
+- Um rascunho local antigo com apenas o mesmo minuto do horário salvo mantém a precisão do registro. Mudanças explícitas do horário continuam permitidas.
+- A conversão dos outros campos de data que usam minutos fica independente. A correção vale para salvamentos futuros e não reconstitui segundos que já foram perdidos.
+
 ## Comportamento
 
 - RF-001: a abertura de resultados do assistente não pode substituir texto editado ou revisão pendente sem decisão explícita. Reabrir conteúdo idêntico preserva as edições e aprovações, sem confirmação adicional.
@@ -35,15 +42,3 @@
 - Após a promoção, restaurar a árvore de Stage `43b14787e48f8152b8b3656d827127284f8798c0` acrescida destas correções e do registro documental das verificações; comprovar igualdade de todos os arquivos paralelos.
 
 - A regressão de recuperação em memória deve aguardar a criação assíncrona do link do original e conferir o endereço e o mesmo arquivo recuperado, além de preservar texto, aprovações e a ausência de nova incorporação automática.
-
-## Restauração de Stage após a promoção de 15/11/2026
-
-O ciclo usa uma instalação isolada para homologar e promover somente esta entrega. Depois da verificação de produção, Stage retorna à árvore compartilhada da base `43b14787e48f8152b8b3656d827127284f8798c0`, acrescida dos 14 caminhos desta entrega. Os 86 caminhos paralelos e todos os caminhos existentes fora do escopo devem permanecer idênticos por modo, tipo e blob à base compartilhada.
-
-O código promovido permanece idêntico em produção e no Stage restaurado; apenas spec/verify recebem o registro real deste ciclo. A restauração mantém os workflows e testes dos trabalhos paralelos, configurações dos ambientes, dados de runtime e Nginx. IA permanece desligada em Stage. A composição da árvore não substitui a exigência de PR, checks, workflow completo e conferência da instalação final.
-
-## Restauração da base compartilhada após os três atalhos
-
-A composição de Stage parte da base compartilhada `4c70efc04183be1eb361a535d08eb365bd12d5df` e mantém os 59 caminhos paralelos exclusivos com o mesmo modo, tipo e conteúdo. Os dois documentos compartilhados de Atendimento retêm o conteúdo histórico e recebem os novos registros. Os outros 19 caminhos alterados pelos três atalhos correspondem ao snapshot homologado e promovido.
-
-A implantação da restauração depende da verificação da promoção protegida. A conferência final compara a árvore e os arquivos paralelos instalados, além de saúde, acesso e configurações dos ambientes. A IA permanece desativada em Stage.

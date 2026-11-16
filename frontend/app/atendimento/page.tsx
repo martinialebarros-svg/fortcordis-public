@@ -1229,7 +1229,7 @@ const emptyForm = (): AtendimentoForm => ({
   especie: "",
   clinica_id: "",
   agendamento_id: "",
-  data_atendimento: nowLocalInput(),
+  data_atendimento: isoToLocalInput(),
   status: "Triagem",
   triagem: emptyTriagem(),
   triagem_concluida: 0,
@@ -1410,7 +1410,7 @@ const hydrateFormFromDetail = (d: any, alvoId?: number | null): AtendimentoForm 
 const sanitizeDraftForm = (raw: Partial<AtendimentoForm> | null | undefined): AtendimentoForm => ({
   ...emptyForm(),
   ...raw,
-  data_atendimento: raw?.data_atendimento || nowLocalInput(),
+  data_atendimento: raw?.data_atendimento || isoToLocalInput(),
   triagem: {
     ...emptyTriagem(),
     ...(raw?.triagem || {}),

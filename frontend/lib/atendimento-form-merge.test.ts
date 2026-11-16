@@ -86,6 +86,18 @@ describe("recuperacao do backup de atendimento concluido", () => {
     expect(restored).toMatchObject({ anamnese: "Recuperado", documentos: [], evolucoes: [], anexos: [] });
   });
 
+  it("preserva segundos ao restaurar rascunho legado que mantém o mesmo minuto", () => {
+    const persisted = { ...baseForm(), id: 63, data_atendimento: "2026-08-07T10:00:35.970744" };
+    const restored = restorePersistedAtendimentoDraft(persisted, {
+      data_atendimento: "2026-08-07T10:00",
+      anamnese: "Texto fictício recuperado",
+    });
+    expect(restored).toMatchObject({ data_atendimento: persisted.data_atendimento, anamnese: "Texto fictício recuperado" });
+    expect(
+      restorePersistedAtendimentoDraft(persisted, { data_atendimento: "2026-08-07T10:00:00" }).data_atendimento
+    ).toBe("2026-08-07T10:00:00");
+  });
+
   it("mantem campos clinicos editados de um atendimento ainda em andamento", () => {
     const persisted = { ...baseForm(), id: 63 };
     expect(restorePersistedAtendimentoDraft(persisted, { status: "Em exame", anamnese: "Editado", data_atendimento: "2026-10-10T10:00" })).toMatchObject({ status: "Em exame", anamnese: "Editado", data_atendimento: "2026-10-10T10:00" });
