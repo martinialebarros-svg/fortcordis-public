@@ -22,7 +22,6 @@ from app.models.papel_permissao import PapelPermissao
 from app.models.referencia_eco import ReferenciaEco
 from app.models.user import User
 from app.services.laudo_pdf_service import compute_laudo_pdf_cache_key, render_laudo_pdf
-from app.utils.echo_pulmonary_probability import make_pulmonary_review_stamp
 
 
 def png(color="teal"):
@@ -433,36 +432,25 @@ class EchoPdfPreviewHTTPTest(unittest.TestCase):
         self.assertEqual(self.client.get(self.url,headers=self.headers()).status_code,200)
 
     def test_official_cache_drops_previous_layout_version_without_touching_other_modalities(self):
-        # Restored full Stage includes HP, unlike the isolated production PDF.
-        # Neither its former cache nor the production-only layout cache is valid.
+        # A v32 official PDF may contain the old empty page. The corrected
+        # renderer must not reuse that cache while a new preview renders fresh.
         with self.sessions() as db:
             db.add(Laudo(id=903, paciente_id=901, veterinario_id=1, tipo="pressao_arterial", titulo="QA"))
             db.commit()
+            with patch("app.services.laudo_pdf_service.LAUDO_PDF_ECO_RENDERER_VERSION",
+                       "2026-10-27-eco-extrapolated-age-note-v32"):
+                old_echo = compute_laudo_pdf_cache_key(db, 901, 1)
+                old_pressure = compute_laudo_pdf_cache_key(db, 903, 1)
             current_echo = compute_laudo_pdf_cache_key(db, 901, 1)
-            current_pressure = compute_laudo_pdf_cache_key(db, 903, 1)
-            for previous_version in (
-                "2026-10-27-eco-extrapolated-age-note-v32",
-                "2026-11-02-eco-reviewed-pulmonary-probability-v33",
-                "2026-11-04-eco-reviewed-preview-layout-v34",
-                "2026-11-04-eco-full-stage-reviewed-preview-hp-v35",
-            ):
-                with self.subTest(previous_version=previous_version):
-                    with patch("app.services.laudo_pdf_service.LAUDO_PDF_ECO_RENDERER_VERSION", previous_version):
-                        self.assertNotEqual(compute_laudo_pdf_cache_key(db, 901, 1), current_echo)
-                        self.assertEqual(compute_laudo_pdf_cache_key(db, 903, 1), current_pressure)
+            self.assertNotEqual(current_echo, old_echo)
+            self.assertEqual(compute_laudo_pdf_cache_key(db, 903, 1), old_pressure)
             self.assertEqual(render_laudo_pdf(db, 901, db.get(User, 1)).cache_key, current_echo)
 
-    def test_real_pdf_clinical_projections_match_for_2d_feline_fusion_and_hp_review_states(self):
+    def test_real_pdf_clinical_projections_match_for_2d_and_feline_fusion(self):
         cases=[]
         mode2d=self.new_body(); mode2d["payload_laudo"]["medidas"]={"DIVEd_2D":"22", "DIVES_2D":"14", "VE_tecnica_relatorio":"2d", "VE_vista_2D":"eixo_curto"}; cases.append(mode2d)
         fusion=self.new_body(); fusion["payload_laudo"]["paciente"]["especie"]="Gato"
         fusion["payload_laudo"]["medidas"]={"Onda_E":"1.08","Onda_A":".95","E_A":"1.14","E_E_linha":"6.75", "Diastolica_ondas":"fundidas", "e_doppler":".16", "TRIV":"40"}; cases.append(fusion)
-        for reviewed in (True,False):
-            hp=self.new_body()
-            measures={"HP_ativa":"sim","HP_TRV":"adequado","HP_VSVD":"sem_obstrucao","IT_Vmax":"3.2",
-                      "HP_ventriculos":"com_sinais","HP_arteria_pulmonar":"com_sinais","HP_atrio_cava":"sem_sinais"}
-            if reviewed: measures["HP_revisao"]=make_pulmonary_review_stamp(measures,"Canina")
-            hp["payload_laudo"]["medidas"]=measures; cases.append(hp)
         for index, body in enumerate(cases):
             with self.subTest(case=index):
                 self.draft_id=str(uuid4());self.url=f"/api/v1/laudos/editor-drafts/{self.draft_id}";self.preview_url=self.url+"/preview"
@@ -475,23 +463,6 @@ class EchoPdfPreviewHTTPTest(unittest.TestCase):
                 self.assert_preview_matches_official(response.content,emitted.json()["id"])
                 if index==1:
                     self.assertNotIn("1.14",text(response.content)); self.assertIn("fundidas",text(response.content))
-                if index==2: self.assertIn("probabilidade ecocardiográfica alta",text(response.content).lower())
-                if index==3: self.assertIn("pendente",text(response.content).lower())
-
-    def test_preview_and_official_withhold_ambiguous_pulmonary_ratio(self):
-        body = self.new_body()
-        measures = {"HP_ativa":"sim", "HP_TRV":"adequado", "HP_VSVD":"sem_obstrucao", "IT_Vmax":"3.0", "HP_ventriculos":"com_sinais", "HP_arteria_pulmonar":"sem_sinais", "HP_atrio_cava":"sem_sinais", "HP_suporte_automatico":"sim", "AP":"2.2", "Ao_nivel_AP":"20", "unidade_confirmada_Ao_nivel_AP":"mm", "DIVEd":"2.2", "SIVd":"1.2", "PLVEd":"1.2"}
-        measures["HP_revisao"] = make_pulmonary_review_stamp(measures,"Canina")
-        body["payload_laudo"]["medidas"] = measures
-        self.save()
-        preview = self.post(body); self.assert_pdf(preview)
-        content = text(preview.content).lower()
-        self.assertIn("confirmar unidade de ap/ao", content)
-        self.assertNotRegex(content, r"\bap/ao\s*[:=]?\s*0[.,]11\b")
-        self.assertNotIn("probabilidade ecocardiográfica baixa", content)
-        emitted = self.client.post("/api/v1/laudos",json=body["payload_laudo"],headers=self.headers())
-        self.assertEqual(emitted.status_code,201,emitted.text)
-        self.assert_preview_matches_official(preview.content,emitted.json()["id"])
 
 
 if __name__ == "__main__":

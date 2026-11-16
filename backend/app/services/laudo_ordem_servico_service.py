@@ -15,9 +15,21 @@ from app.models.auditoria_evento import AuditoriaEvento
 from app.models.clinica import Clinica
 from app.models.laudo import Laudo
 from app.models.ordem_servico import OrdemServico
+from app.models.portal_partner import (
+    PORTAL_PARTNER_TYPE_VETERINARIO,
+    PortalPartnerProfile,
+)
 from app.models.servico import Servico
 from app.models.user import User
-from app.services.precos_service import calcular_preco_servico
+from app.services.precos_service import calcular_preco_servico, to_decimal
+
+
+RESPONSAVEL_PAGAMENTO_CLINICA = "clinica"
+RESPONSAVEL_PAGAMENTO_VETERINARIO = "veterinario"
+RESPONSAVEIS_PAGAMENTO = {
+    RESPONSAVEL_PAGAMENTO_CLINICA,
+    RESPONSAVEL_PAGAMENTO_VETERINARIO,
+}
 
 
 def pode_acessar_ordens(db: Session, user: User, action: str) -> bool:
@@ -29,22 +41,66 @@ def exigir_criacao_ordem(db: Session, user: User) -> None:
         raise HTTPException(403, "Sem permissao para gerar ordens de servico.")
 
 
-def validar_preco_ordem(db: Session, clinic_id: int | None, servico_id: int | None, tipo_horario: str) -> Decimal:
+def validar_preco_ordem(
+    db: Session, clinic_id: int | None, servico_id: int | None, tipo_horario: str,
+    *, responsavel_tipo: str = RESPONSAVEL_PAGAMENTO_CLINICA,
+) -> Decimal:
     if tipo_horario not in {"comercial", "plantao"}:
         raise HTTPException(422, "Tipo de horario invalido. Use comercial ou plantao.")
-    clinica = db.query(Clinica).filter(Clinica.id == clinic_id, Clinica.ativo.is_(True)).first()
-    if not clinica:
-        raise HTTPException(422, "Selecione uma clinica parceira ativa para gerar a OS.")
     servico = db.query(Servico).filter(Servico.id == servico_id, Servico.ativo.is_(True)).first()
     if not servico:
         raise HTTPException(422, "Selecione um servico ativo para gerar a OS.")
-    valor = calcular_preco_servico(
-        db, clinic_id, servico_id, tipo_horario,
-        usar_preco_clinica=True, origem_atendimento="clinica_parceira",
-    )
+    if clinic_id is None and responsavel_tipo == RESPONSAVEL_PAGAMENTO_VETERINARIO:
+        valor = to_decimal(
+            servico.preco_fortaleza_plantao if tipo_horario == "plantao" else servico.preco_fortaleza_comercial
+        )
+    else:
+        clinica = db.query(Clinica).filter(Clinica.id == clinic_id, Clinica.ativo.is_(True)).first()
+        if not clinica:
+            raise HTTPException(422, "Selecione uma clinica parceira ativa para gerar a OS.")
+        valor = calcular_preco_servico(db, clinic_id, servico_id, tipo_horario)
     if not valor.is_finite() or valor <= 0:
-        raise HTTPException(422, "Configure um preco maior que zero para a clinica, o servico e o horario selecionados.")
+        raise HTTPException(422, "Configure um preco maior que zero para o servico e o horario selecionados.")
     return valor.quantize(Decimal("0.01"))
+
+
+def validar_responsavel_pagamento(
+    db: Session,
+    *,
+    tipo: str | None,
+    clinic_id: int | None,
+    veterinario_parceiro_id: int | None,
+) -> dict:
+    tipo_normalizado = str(tipo or RESPONSAVEL_PAGAMENTO_CLINICA).strip().lower()
+    if tipo_normalizado not in RESPONSAVEIS_PAGAMENTO:
+        raise HTTPException(422, "Responsavel pelo pagamento invalido. Escolha clinica ou veterinario.")
+
+    if tipo_normalizado == RESPONSAVEL_PAGAMENTO_CLINICA:
+        clinica = db.query(Clinica).filter(Clinica.id == clinic_id, Clinica.ativo.is_(True)).first()
+        if not clinica:
+            raise HTTPException(422, "Selecione uma clinica parceira ativa como responsavel pela OS.")
+        return {
+            "tipo": tipo_normalizado,
+            "id": clinica.id,
+            "nome": clinica.nome,
+            "telefone": clinica.telefone,
+            "email": clinica.email,
+        }
+
+    parceiro = db.query(PortalPartnerProfile).filter(
+        PortalPartnerProfile.id == veterinario_parceiro_id,
+        PortalPartnerProfile.tipo == PORTAL_PARTNER_TYPE_VETERINARIO,
+        PortalPartnerProfile.ativo.is_(True),
+    ).first()
+    if not parceiro:
+        raise HTTPException(422, "Selecione um veterinario parceiro ativo como responsavel pela OS.")
+    return {
+        "tipo": tipo_normalizado,
+        "id": parceiro.id,
+        "nome": parceiro.nome_exibicao,
+        "telefone": parceiro.whatsapp or parceiro.telefone,
+        "email": parceiro.email_login,
+    }
 
 
 def chave_upload_ordem(user_id: int, value: str | None) -> str:
@@ -75,7 +131,15 @@ def buscar_ordem_laudo(db: Session, laudo_id: int, *, somente_ativa: bool = Fals
 def resumo_ordem(ordem: OrdemServico | None) -> dict | None:
     if ordem is None:
         return None
-    return {"id": ordem.id, "numero_os": ordem.numero_os, "valor_final": float(ordem.valor_final), "status": ordem.status}
+    return {
+        "id": ordem.id,
+        "numero_os": ordem.numero_os,
+        "valor_final": float(ordem.valor_final),
+        "status": ordem.status,
+        "responsavel_pagamento_tipo": ordem.responsavel_pagamento_tipo or RESPONSAVEL_PAGAMENTO_CLINICA,
+        "responsavel_pagamento_id": ordem.responsavel_pagamento_id,
+        "responsavel_pagamento_nome": ordem.responsavel_pagamento_nome,
+    }
 
 
 def mesma_data(db: Session, original: datetime | None, nova: datetime | None) -> bool:
@@ -89,11 +153,20 @@ def mesma_data(db: Session, original: datetime | None, nova: datetime | None) ->
 def criar_ordem_laudo(
     db: Session, *, laudo: Laudo, servico_id: int, tipo_horario: str,
     valor: Decimal, chave: str, request_hash: str, user: User,
+    responsavel_pagamento: dict,
 ) -> OrdemServico:
     ordem = OrdemServico(
         numero_os=f"OS-LAUDO-{laudo.id}", laudo_id=laudo.id, agendamento_id=None,
         idempotency_key=chave, request_hash=request_hash,
-        paciente_id=laudo.paciente_id, clinica_id=laudo.clinic_id, servico_id=servico_id,
+        paciente_id=laudo.paciente_id, servico_id=servico_id,
+        # Consultas financeiras legadas por clinica_id não devem cobrar da
+        # clínica quando ela é apenas a origem, preservada em laudo.clinic_id.
+        clinica_id=laudo.clinic_id if responsavel_pagamento["tipo"] == RESPONSAVEL_PAGAMENTO_CLINICA else None,
+        responsavel_pagamento_tipo=responsavel_pagamento["tipo"],
+        responsavel_pagamento_id=responsavel_pagamento["id"],
+        responsavel_pagamento_nome=responsavel_pagamento["nome"],
+        responsavel_pagamento_telefone=responsavel_pagamento["telefone"],
+        responsavel_pagamento_email=responsavel_pagamento["email"],
         origem_atendimento="clinica_parceira", data_atendimento=laudo.data_exame,
         tipo_horario=tipo_horario, valor_servico=valor, desconto=Decimal("0.00"),
         valor_final=valor, status="Pendente",
@@ -110,6 +183,9 @@ def criar_ordem_laudo(
         rota="/api/v1/laudos/eletrocardiograma/upload-pdf", metodo="POST",
         detalhes_json=json.dumps({"laudo_id": laudo.id, "numero_os": ordem.numero_os,
             "clinic_id": laudo.clinic_id, "paciente_id": laudo.paciente_id,
-            "servico_id": servico_id, "tipo_horario": tipo_horario, "valor_final": str(valor)}, sort_keys=True),
+            "servico_id": servico_id, "tipo_horario": tipo_horario, "valor_final": str(valor),
+            "responsavel_pagamento_tipo": responsavel_pagamento["tipo"],
+            "responsavel_pagamento_id": responsavel_pagamento["id"],
+            "responsavel_pagamento_nome": responsavel_pagamento["nome"]}, sort_keys=True),
     ))
     return ordem

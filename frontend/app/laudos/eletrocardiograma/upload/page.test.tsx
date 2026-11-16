@@ -125,11 +125,20 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function mockGetPadrao(url: string) {
+function mockGetPadrao(url: string, config?: { params?: Record<string, unknown> }) {
   if (url === "/portal/parceiros/veterinarios/opcoes") return Promise.resolve({ data: { items: [{ id: 5, nome_exibicao: "Dra. Ana" }] } });
   if (url === "/pacientes/7") return Promise.resolve({ data: { id: 7, nome: "Bidu", tutor: "Ana" } });
   if (url === "/servicos") return Promise.resolve({ data: { items: [{ id: 11, nome: "Laudo de eletrocardiograma" }] } });
-  if (url === PREVIEW_URL) return Promise.resolve({ data: { valor_servico: 120, valor_final: 120 } });
+  if (url === PREVIEW_URL) {
+    const veterinario = config?.params?.responsavel_pagamento_tipo === "veterinario";
+    return Promise.resolve({ data: {
+      valor_servico: 120,
+      valor_final: 120,
+      responsavel_pagamento_tipo: veterinario ? "veterinario" : "clinica",
+      responsavel_pagamento_id: veterinario ? 5 : 3,
+      responsavel_pagamento_nome: veterinario ? "Dra. Ana" : "Clínica A",
+    } });
+  }
   return Promise.reject(new Error(`URL inesperada: ${url}`));
 }
 
@@ -145,7 +154,7 @@ function submeter() {
 }
 
 async function ativarOrdem() {
-  fireEvent.click(screen.getByRole("checkbox", { name: "Gerar ordem de serviço para a clínica" }));
+  fireEvent.click(screen.getByRole("checkbox", { name: "Gerar ordem de serviço" }));
   await waitFor(() => expect(screen.getByLabelText("Serviço da ordem")).toBeEnabled());
   fireEvent.change(screen.getByLabelText("Serviço da ordem"), { target: { value: "11" } });
 }
@@ -182,11 +191,11 @@ describe("upload de eletro com ordem de serviço opcional", () => {
       ? Promise.resolve({ data: { id: 42, paciente_id: 7, clinica_id: 3 } })
       : mockGetPadrao(url));
     await prepararUpload(`paciente_id=7&clinic_id=3&${contexto}`);
-    expect(screen.queryByRole("checkbox", { name: "Gerar ordem de serviço para a clínica" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("checkbox", { name: "Gerar ordem de serviço" })).not.toBeInTheDocument();
     expect(mocks.get.mock.calls.some(([url]) => url === "/servicos")).toBe(false);
   });
 
-  it("exige clínica mesmo com veterinário e valida antes de criar cadastros rápidos", async () => {
+  it("exige clínica quando ela é a responsável e valida antes de criar cadastros rápidos", async () => {
     await prepararUpload("veterinario_parceiro_id=5");
     fireEvent.click(screen.getByRole("button", { name: "Cadastrar tutor e pet" }));
     fireEvent.click(screen.getByRole("checkbox"));
@@ -206,15 +215,45 @@ describe("upload de eletro com ordem de serviço opcional", () => {
     expect(mocks.post).not.toHaveBeenCalled();
     fireEvent.change(screen.getByLabelText("Serviço da ordem"), { target: { value: "11" } });
     await screen.findByText(/Valor da ordem de serviço: R\$\s*120,00/);
-    expect(mocks.get).toHaveBeenCalledWith(PREVIEW_URL, { params: { clinic_id: 3, servico_id: 11, tipo_horario: "comercial" } });
+    expect(mocks.get).toHaveBeenCalledWith(PREVIEW_URL, { params: {
+      clinic_id: 3,
+      servico_id: 11,
+      tipo_horario: "comercial",
+      responsavel_pagamento_tipo: "clinica",
+    } });
     submeter();
     await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/laudos/90"));
     const payload = mocks.post.mock.calls[0][1] as FormData;
     expect(payload.get("gerar_ordem_servico")).toBe("true");
     expect(payload.get("servico_id")).toBe("11");
     expect(payload.get("tipo_horario")).toBe("comercial");
+    expect(payload.get("responsavel_pagamento_tipo")).toBe("clinica");
     expect(payload.get("idempotency_key")).toMatch(/^[\da-f-]{36}$/);
     expect(payload.has("valor_final")).toBe(false);
+  });
+
+  it.each(["", "&clinic_id=3"])("permite cobrar o veterinário parceiro com contexto de clínica %s", async (clinica) => {
+    await prepararUpload(`paciente_id=7&veterinario_parceiro_id=5${clinica}`);
+    fireEvent.click(screen.getByRole("checkbox", { name: "Gerar ordem de serviço" }));
+    fireEvent.click(screen.getByRole("radio", { name: /Veterinário parceiro/ }));
+    await waitFor(() => expect(screen.getByLabelText("Serviço da ordem")).toBeEnabled());
+    fireEvent.change(screen.getByLabelText("Serviço da ordem"), { target: { value: "11" } });
+
+    expect(await screen.findByText("Responsável: Dra. Ana")).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledWith(PREVIEW_URL, { params: {
+      ...(clinica ? { clinic_id: 3 } : {}),
+      servico_id: 11,
+      tipo_horario: "comercial",
+      responsavel_pagamento_tipo: "veterinario",
+      veterinario_parceiro_id: 5,
+    } });
+
+    submeter();
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith("/laudos/90"));
+    const payload = mocks.post.mock.calls[0][1] as FormData;
+    expect(payload.get("clinic_id")).toBe(clinica ? "3" : null);
+    expect(payload.get("veterinario_parceiro_id")).toBe("5");
+    expect(payload.get("responsavel_pagamento_tipo")).toBe("veterinario");
   });
 
   it("descarta resposta obsoleta e bloqueia envio até atualizar clínica e horário", async () => {

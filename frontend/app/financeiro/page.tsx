@@ -60,6 +60,9 @@ interface OrdemServico {
   laudo_id?: number | null;
   paciente_id?: number | null;
   clinica_id?: number | null;
+  responsavel_pagamento_tipo?: "clinica" | "veterinario" | string | null;
+  responsavel_pagamento_id?: number | null;
+  responsavel_pagamento_nome?: string | null;
   servico_id?: number | null;
   origem_atendimento?: "clinica_parceira" | "domiciliar" | string | null;
   paciente: string;
@@ -191,7 +194,7 @@ interface Resumo {
 
 interface ContatoDestinatario {
   chave: string;
-  tipo_destinatario: "clinica" | "tutor";
+  tipo_destinatario: "clinica" | "tutor" | "veterinario";
   nome_destinatario: string;
   telefone_destinatario: string;
   email_destinatario: string;
@@ -1160,7 +1163,9 @@ export default function FinanceiroPage() {
   const recebimentoLoteMesmoDestinatario = useMemo(() => {
     const chaves = new Set(
       ordensRecebimentoLote.map((os) =>
-        os.origem_atendimento === "domiciliar"
+        os.responsavel_pagamento_tipo === "veterinario"
+          ? `veterinario:${os.responsavel_pagamento_id ?? os.id}`
+          : os.origem_atendimento === "domiciliar"
           ? `tutor:${os.tutor_id ?? "sem-tutor"}`
           : `clinica:${os.clinica_id ?? "sem-clinica"}`
       )
@@ -1942,28 +1947,38 @@ export default function FinanceiroPage() {
 
   const obterContatoDestinatarioDaOS = useCallback((os: OrdemServico): ContatoDestinatario => {
     const tipoDestinatario =
-      os.destinatario_tipo === "tutor" || os.origem_atendimento === "domiciliar" ? "tutor" : "clinica";
+      os.destinatario_tipo === "veterinario" || os.responsavel_pagamento_tipo === "veterinario"
+        ? "veterinario"
+        : os.destinatario_tipo === "tutor" || os.origem_atendimento === "domiciliar"
+          ? "tutor"
+          : "clinica";
     const clinicaCadastro =
       os.clinica_id != null ? clinicaContatoPorId.get(os.clinica_id) || null : null;
     const nomeDestinatario = String(
       os.destinatario_nome ||
-        (tipoDestinatario === "tutor" ? os.tutor : os.clinica) ||
-        (tipoDestinatario === "tutor" ? "Tutor nao informado" : "Clinica nao informada")
+        (tipoDestinatario === "veterinario" ? os.responsavel_pagamento_nome : tipoDestinatario === "tutor" ? os.tutor : os.clinica) ||
+        (tipoDestinatario === "veterinario" ? "Veterinario parceiro nao informado" : tipoDestinatario === "tutor" ? "Tutor nao informado" : "Clinica nao informada")
     ).trim();
     const telefoneDestinatario = String(
       os.destinatario_telefone ||
         (tipoDestinatario === "tutor"
           ? os.tutor_whatsapp || os.tutor_telefone
-          : os.clinica_telefone || clinicaCadastro?.telefone) ||
+          : tipoDestinatario === "clinica"
+            ? os.clinica_telefone || clinicaCadastro?.telefone
+            : "") ||
         ""
     ).trim();
     const emailDestinatario = String(
       os.destinatario_email ||
-        (tipoDestinatario === "tutor" ? os.tutor_email : os.clinica_email || clinicaCadastro?.email) ||
+        (tipoDestinatario === "tutor" ? os.tutor_email : tipoDestinatario === "clinica" ? os.clinica_email || clinicaCadastro?.email : "") ||
         ""
     ).trim();
     const chave =
-      tipoDestinatario === "tutor"
+      tipoDestinatario === "veterinario"
+        ? os.responsavel_pagamento_id != null
+          ? `veterinario:${os.responsavel_pagamento_id}`
+          : `veterinario-nome:${nomeDestinatario.toLowerCase()}`
+        : tipoDestinatario === "tutor"
         ? os.tutor_id != null
           ? `tutor:${os.tutor_id}`
           : `tutor-nome:${nomeDestinatario.toLowerCase()}`
@@ -1974,7 +1989,7 @@ export default function FinanceiroPage() {
     return {
       chave,
       tipo_destinatario: tipoDestinatario,
-      nome_destinatario: nomeDestinatario || (tipoDestinatario === "tutor" ? "Tutor nao informado" : "Clinica nao informada"),
+      nome_destinatario: nomeDestinatario || (tipoDestinatario === "veterinario" ? "Veterinario parceiro nao informado" : tipoDestinatario === "tutor" ? "Tutor nao informado" : "Clinica nao informada"),
       telefone_destinatario: telefoneDestinatario,
       email_destinatario: emailDestinatario,
       clinica_id: os.clinica_id ?? null,
@@ -3326,7 +3341,11 @@ export default function FinanceiroPage() {
                               <div className="flex flex-col gap-3 border-b border-amber-100 p-4 lg:flex-row lg:items-center lg:justify-between">
                                 <div>
                                   <p className="text-xs text-gray-500">
-                                    {grupoDetalhado.tipo_destinatario === "tutor" ? "Atendimento domiciliar" : "Clinica parceira"}
+                                    {grupoDetalhado.tipo_destinatario === "veterinario"
+                                      ? "Veterinario parceiro"
+                                      : grupoDetalhado.tipo_destinatario === "tutor"
+                                        ? "Atendimento domiciliar"
+                                        : "Clinica parceira"}
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     Contato: {grupoDetalhado.telefone_destinatario || grupoDetalhado.email_destinatario || "nao informado"}
@@ -3707,7 +3726,9 @@ export default function FinanceiroPage() {
                             {formatarDataHoraCurta(os.data_atendimento)}
                           </span>
                           <span className="text-sm font-semibold text-gray-900">
-                            - {os.clinica || "Clinica nao informada"}
+                            - {os.destinatario_tipo === "veterinario"
+                              ? `Responsável: ${os.destinatario_nome || "Veterinário não informado"}`
+                              : os.clinica || "Clinica nao informada"}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(os.status)}`}>
                             {getStatusIcon(os.status)}
@@ -4498,7 +4519,7 @@ export default function FinanceiroPage() {
                 </div>
               )}
 
-              <BaixaCredito
+              {modalReceberOS.responsavel_pagamento_tipo !== "veterinario" && <BaixaCredito
                 onBusy={setBaixandoCredito}
                 key={modalReceberOS.id}
                 pacienteId={modalReceberOS.paciente_id}
@@ -4508,7 +4529,7 @@ export default function FinanceiroPage() {
                   setUsarCreditoClienteOS(false);
                   setValorCreditoUtilizadoOS("0.00");
                 }}
-              />
+              />}
 
 	              <div className="space-y-3">
 	                {pagamentosRecebimentoOS.map((pagamento, index) => (
@@ -4636,7 +4657,7 @@ export default function FinanceiroPage() {
                 </div>
               )}
 
-	              {resumoPagamentoOS.excedente > 0 && (
+	              {resumoPagamentoOS.excedente > 0 && modalReceberOS.responsavel_pagamento_tipo !== "veterinario" && (
 	                <div>
 	                  <label className="block text-sm font-medium text-gray-700 mb-2">
 	                    Excedente detectado. Destino do credito

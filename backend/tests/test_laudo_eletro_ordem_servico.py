@@ -35,9 +35,10 @@ from app.models.clinica import Clinica
 from app.models.laudo import Laudo
 from app.models.ordem_servico import OrdemServico
 from app.models.paciente import Paciente
+from app.models.portal_partner import PORTAL_PARTNER_TYPE_VETERINARIO, PortalPartnerProfile
 from app.models.servico import Servico
 from app.models.tabela_preco import PrecoServicoClinica
-from app.services import laudo_ordem_servico_service as service
+from app.services import fiscal_service, fiscal_fechamento_service, laudo_ordem_servico_service as service
 
 
 PDF = b"%PDF-1.4\nECG ficticio para teste\n"
@@ -54,6 +55,14 @@ class LaudoEletroOrdemServicoTest(unittest.TestCase):
         self.db.add_all([
             Paciente(id=1, nome="Pet teste", ativo=1),
             Clinica(id=1, nome="Clinica teste", ativo=True, tabela_preco_id=1),
+            PortalPartnerProfile(
+                id=5,
+                tipo=PORTAL_PARTNER_TYPE_VETERINARIO,
+                nome_exibicao="Dra. Ana Parceira",
+                email_login="ana@example.test",
+                whatsapp="5585999990000",
+                ativo=True,
+            ),
             Servico(id=1, nome="Laudo de eletrocardiograma", ativo=True,
                     preco_fortaleza_comercial=100, preco_fortaleza_plantao=160),
             PrecoServicoClinica(clinica_id=1, servico_id=1, ativo=1, preco_comercial=Decimal("75.50")),
@@ -78,6 +87,7 @@ class LaudoEletroOrdemServicoTest(unittest.TestCase):
             agendamento_id=None, atendimento_id=None, paciente_id=1, clinic_id=1,
             veterinario_parceiro_id=None, data_exame="2026-10-05", observacoes="",
             gerar_ordem_servico=True, servico_id=1, tipo_horario="comercial",
+            responsavel_pagamento_tipo="clinica",
             idempotency_key="envio-teste-123", db=db or self.db, current_user=self.user)
         args.update(overrides)
         return asyncio.run(laudos.criar_laudo_eletrocardiograma_por_pdf(**args))
@@ -97,6 +107,9 @@ class LaudoEletroOrdemServicoTest(unittest.TestCase):
         self.assertIsNone(laudo.agendamento_id)
         self.assertEqual(self.db.query(Agendamento).count(), 0)
         self.assertEqual(ordem.data_atendimento, laudo.data_exame)
+        self.assertEqual(ordem.responsavel_pagamento_tipo, "clinica")
+        self.assertEqual(ordem.responsavel_pagamento_id, 1)
+        self.assertEqual(ordem.responsavel_pagamento_nome, "Clinica teste")
         self.assertTrue(Path(self.db.query(AnexoAtendimento).one().caminho_arquivo).is_file())
         audit = self.db.query(AuditoriaEvento).one()
         self.assertEqual(audit.usuario_id, 7)
@@ -104,6 +117,71 @@ class LaudoEletroOrdemServicoTest(unittest.TestCase):
         detail = laudos.obter_laudo(laudo.id, self.db, self.user)
         self.assertEqual(detail["ordem_servico"], response["ordem_servico"])
         self.assertEqual(ordens_servico._serialize_os(ordem)["laudo_id"], laudo.id)
+
+    def test_upload_pode_gerar_os_para_veterinario_sem_perder_clinica_do_caso(self):
+        response = self.upload(
+            veterinario_parceiro_id=5,
+            responsavel_pagamento_tipo="veterinario",
+        )
+        ordem = self.db.query(OrdemServico).one()
+        laudo = self.db.query(Laudo).one()
+
+        self.assertEqual(laudo.clinic_id, 1)
+        self.assertEqual(laudo.veterinario_parceiro_id, 5)
+        self.assertIsNone(ordem.clinica_id)
+        self.assertEqual(response["ordem_servico"]["valor_final"], 75.5)
+        self.assertEqual(ordem.responsavel_pagamento_tipo, "veterinario")
+        self.assertEqual(ordem.responsavel_pagamento_id, 5)
+        self.assertEqual(ordem.responsavel_pagamento_nome, "Dra. Ana Parceira")
+        self.assertEqual(response["ordem_servico"]["responsavel_pagamento_tipo"], "veterinario")
+        serializada = ordens_servico._serialize_os(ordem)
+        self.assertEqual(serializada["destinatario_tipo"], "veterinario")
+        self.assertEqual(serializada["destinatario_nome"], "Dra. Ana Parceira")
+        self.assertEqual(ordens_servico.ordens_pendentes_clinica(1, self.db, self.user)["total"], 0)
+        fiscal = fiscal_service._serialize_os_row(fiscal_service._build_os_query(self.db).one())
+        fechamento = fiscal_fechamento_service._serializar_os(
+            fiscal_fechamento_service._query_os(self.db).one(), "2026-10", {}, {},
+        )
+        for item in (fiscal, fechamento):
+            self.assertEqual(item["cliente_nome"], "Dra. Ana Parceira")
+            self.assertEqual(item["cliente_documento"], "")
+        chave, nome, tipo = ordens_servico._destinatario_cobranca_sql()
+        grupo = (
+            ordens_servico._query_ordens_filtradas(self.db)
+            .with_entities(chave.label("chave"), nome.label("nome"), tipo.label("tipo"))
+            .one()
+        )
+        self.assertEqual((grupo.chave, grupo.nome, grupo.tipo), (
+            "veterinario:5", "Dra. Ana Parceira", "veterinario",
+        ))
+        nome_whatsapp, numeros = ordens_servico._numeros_whatsapp_os(
+            ordem,
+            clinica=self.db.query(Clinica).one(),
+            tutor=None,
+        )
+        self.assertEqual(nome_whatsapp, "Dra. Ana Parceira")
+        self.assertEqual(numeros, ["5585999990000"])
+
+    def test_veterinario_sem_clinica_usa_preco_de_catalogo_e_retry_reutiliza_os(self):
+        preview = laudos.preview_ordem_servico_eletrocardiograma(
+            servico_id=1, db=self.db, current_user=self.user,
+            responsavel_pagamento_tipo="veterinario", veterinario_parceiro_id=5,
+        )
+        args = dict(clinic_id=None, veterinario_parceiro_id=5, responsavel_pagamento_tipo="veterinario")
+        response = self.upload(**args)
+        self.assertEqual(preview["valor_final"], 100)
+        self.assertEqual(response["ordem_servico"]["valor_final"], preview["valor_final"])
+        self.assertIsNone(response["clinic_id"])
+        self.assertEqual(response, self.upload(**args))
+        self.assertEqual(self.db.query(OrdemServico).count(), 1)
+
+    def test_responsavel_veterinario_exige_parceiro_ativo_selecionado(self):
+        with self.assertRaises(HTTPException) as caught:
+            self.upload(responsavel_pagamento_tipo="veterinario")
+        self.assertEqual(caught.exception.status_code, 422)
+        self.assertEqual(self.db.query(Laudo).count(), 0)
+        self.assertEqual(self.db.query(OrdemServico).count(), 0)
+        self.store_mock.assert_not_called()
 
     def test_sem_opcao_preserva_upload_sem_criar_cobranca(self):
         response = self.upload(gerar_ordem_servico=False, servico_id=None, idempotency_key=None)
@@ -133,7 +211,8 @@ class LaudoEletroOrdemServicoTest(unittest.TestCase):
 
     def test_mesma_chave_com_outro_pdf_ou_dados_rejeita(self):
         self.upload()
-        for override in ({"content": PDF + b"alterado"}, {"tipo_horario": "plantao"}, {"data_exame": "2026-10-04"}):
+        for override in ({"content": PDF + b"alterado"}, {"tipo_horario": "plantao"}, {"data_exame": "2026-10-04"},
+                         {"veterinario_parceiro_id": 5, "responsavel_pagamento_tipo": "veterinario"}):
             with self.subTest(override=override), self.assertRaises(HTTPException) as caught:
                 self.upload(**override)
             self.assertEqual(caught.exception.status_code, 409)
