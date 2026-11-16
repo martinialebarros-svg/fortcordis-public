@@ -763,10 +763,8 @@ def _memory_contract_results(db: Session) -> list[dict[str, Any]]:
     bind = db.get_bind()
     if bind is None:
         return []
-    inspector = inspect(db.connection())
-    if not all(inspector.has_table(name) for name in (
-        "assistente_ia_memorias", "assistente_ia_regressao_casos",
-    )):
+    available_tables = set(inspect(bind).get_table_names())
+    if not {"assistente_ia_memorias", "assistente_ia_regressao_casos"}.issubset(available_tables):
         return []
     now_utc = _utc_now()
     results: list[dict[str, Any]] = []
@@ -1018,12 +1016,8 @@ def run_assistant_scheduler_due_once(*, limit: int = 20) -> dict[str, int]:
         bind = db.get_bind()
         if bind is None:
             return {"scheduled": 0, "processed": 0, "errors": 0}
-        # Use the session's connection and probe only the required tables. A new
-        # inspector per cycle keeps schema changes visible without a global cache.
-        inspector = inspect(db.connection())
-        if not all(inspector.has_table(name) for name in (
-            "assistente_ia_missoes", "assistente_ia_execucoes",
-        )):
+        available_tables = set(inspect(bind).get_table_names())
+        if not {"assistente_ia_missoes", "assistente_ia_execucoes"}.issubset(available_tables):
             logger.info("Scheduler da Mente aguardando a migration de autonomia segura.")
             return {"scheduled": 0, "processed": 0, "errors": 0}
         if bool(settings.ASSISTENTE_IA_SCHEDULER_DISTRIBUTED_LOCK_ENABLED) and _is_postgres(db):

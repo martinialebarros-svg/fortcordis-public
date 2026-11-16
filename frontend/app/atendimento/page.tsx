@@ -129,6 +129,7 @@ const AtendimentoConsultaOverviewSection = dynamic(() => import("./components/At
 const AtendimentoConsultaEditorSection = dynamic(() => import("./components/AtendimentoConsultaEditorSection"), { loading: AtendimentoSectionLoading });
 const AtendimentoAssistenteIA = dynamic(() => import("./components/AtendimentoAssistenteIA"), { ssr: false });
 const AtendimentoWhatsApp = dynamic(() => import("./components/AtendimentoWhatsApp"), { ssr: false });
+const RevisarPacienteNoAtendimento = dynamic(() => import("./components/RevisarPacienteNoAtendimento"));
 const AtendimentoClinicalRadarAside = dynamic(() => import("./components/AtendimentoClinicalRadarAside"), { loading: AtendimentoSectionLoading });
 const AtendimentoBackupRecovery = dynamic(() => import("./components/AtendimentoBackupRecovery"), { loading: AtendimentoSectionLoading });
 const AtendimentoHistoricoEdicoes = dynamic(() => import("./components/AtendimentoHistoricoEdicoes"), { loading: AtendimentoSectionLoading });
@@ -6892,6 +6893,7 @@ export default function AtendimentoPage() {
     if (!isConsultaWorkspace || consultaVerTodosCampos) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.altKey && event.shiftKey)) return;
+      if (event.target instanceof Element && event.target.closest("dialog[open]")) return;
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault();
       if (event.key === "ArrowLeft") {
@@ -7812,6 +7814,11 @@ export default function AtendimentoPage() {
               <div className="fc-care-patient-cell">
                 <p className="text-[11px] uppercase tracking-[0.25em] text-slate-300">Paciente</p>
                 <p className="mt-2 text-sm font-medium text-white">{pacienteNomeExibicao || "Nao selecionado"}</p>
+                {Number(form.paciente_id) > 0 && <RevisarPacienteNoAtendimento
+                  key={form.paciente_id}
+                  pacienteId={String(form.paciente_id)}
+                  nome={pacienteNomeExibicao}
+                />}
               </div>
               <div className="fc-care-patient-cell">
                 <p className="text-[11px] uppercase tracking-[0.25em] text-slate-300">Tutor</p>

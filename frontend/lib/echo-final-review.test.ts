@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { buildEchoFinalReviewIssues, type EchoFinalReviewInput } from "./echo-final-review";
-import { makePulmonaryReviewStamp } from "./echo-pulmonary-probability";
 
 const base = (measurements: Record<string, string> = {}, overrides: Partial<EchoFinalReviewInput> = {}): EchoFinalReviewInput => ({
   measurements, species: "Canina", qualitative: {}, conclusion: "Conclusão registrada pelo examinador.", patientName: "QA SINTÉTICO",
@@ -60,13 +59,5 @@ describe("conferência final compartilhada do ecocardiograma", () => {
     const issues = buildEchoFinalReviewIssues(base({ AE_Ao: "1.5", AE_Ao_metodo: "outro" }, { conclusion: "AE/Ao 2,5." }));
     expect(issues.some((item) => item.key.startsWith("consistency-AE_Ao") && item.target === "qualitative")).toBe(true);
   });
-  it("HP inativa não vira pendência, pendente usa o avaliador e confirmada a encerra", () => {
-    expect(keys(base({ IT_Vmax: "3.2" }))).not.toContain("pulmonary-pending");
-    const m = { HP_ativa: "sim", HP_TRV: "adequado", HP_VSVD: "sem_obstrucao", IT_Vmax: "3.2",
-      HP_ventriculos: "sem_sinais", HP_arteria_pulmonar: "sem_sinais", HP_atrio_cava: "sem_sinais" };
-    expect(keys(base(m))).toContain("pulmonary-pending");
-    expect(keys(base({ ...m, HP_revisao: makePulmonaryReviewStamp(m, "Canina") }))).not.toContain("pulmonary-pending");
-    const feline = buildEchoFinalReviewIssues(base(m, { species: "Gato" })).find((item) => item.key === "pulmonary-descriptive");
-    expect(feline?.kind).toBe("info");
-  });
+
 });

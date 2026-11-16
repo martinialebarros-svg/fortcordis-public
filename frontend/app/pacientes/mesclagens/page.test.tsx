@@ -50,6 +50,28 @@ describe("Revisão de duplicidade de pacientes", () => {
     expect(mocks.post.mock.calls).toEqual([[`${rota}/adiar`, par]]);
   });
 
+  it("aceita a dupla da carteira e permite inverter o destino; tutores distintos aparecem na prévia", async () => {
+    window.history.replaceState({}, "", `${rota}?paciente=20&duplicado=10`);
+    mocks.post.mockResolvedValue({ data: {
+      ...previa,
+      principal: { ...previa.principal, tutor_id: 101 },
+      secundario: { ...previa.secundario, tutor_id: 102 },
+      bloqueios: ["Os dois cadastros precisam estar vinculados ao mesmo tutor ativo."],
+    } });
+    render(<MesclagensPacientesPage />);
+    const inverter = await screen.findByRole("button", { name: "Trocar cadastro a manter" });
+    expect(screen.getByLabelText("Código do cadastro principal")).toHaveValue("20");
+    expect(screen.getByLabelText("Código do cadastro secundário")).toHaveValue("10");
+    expect(mocks.post).not.toHaveBeenCalled();
+    fireEvent.click(inverter);
+    fireEvent.click(screen.getByRole("button", { name: "Comparar cadastros" }));
+    expect(await screen.findByText(/Tutor #101/)).toBeInTheDocument();
+    expect(screen.getByText(/Tutor #102/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Tutores (nova aba)" })).toHaveAttribute("href", "/tutores");
+    expect(screen.getByRole("button", { name: "Confirmar mesclagem" })).toBeDisabled();
+    expect(mocks.post.mock.calls).toEqual([[`${rota}/previa`, par]]);
+  });
+
   it("retoma a revisão, lista exames, laudos e consultas, e confirma só com motivo e aceite", async () => {
     mocks.get.mockImplementation((_url, config) => Promise.resolve({ data: { items: [
       config.params.estado === "historico" ? { ...registro, estado: "concluida", motivo: "Conferido com o tutor",

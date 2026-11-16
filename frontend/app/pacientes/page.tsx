@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../layout-dashboard";
 import api from "@/lib/axios";
-import { Users, Search, Plus, Dog, Cat, User, Edit2, Trash2, ListChecks, ChevronLeft, ChevronRight } from "lucide-react";
+import { Users, Search, Plus, Dog, Cat, User, Edit2, Trash2, ListChecks, ChevronLeft, ChevronRight, GitMerge } from "lucide-react";
 
 const PACIENTES_POR_PAGINA = 100;
 
@@ -333,6 +333,15 @@ export default function PacientesPage() {
                 <div>
                   <span>{selecionados.length} selecionado(s)</span>
                   <button
+                    type="button"
+                    onClick={() => router.push(`/pacientes/mesclagens?paciente=${selecionados[0]}&duplicado=${selecionados[1]}`)}
+                    disabled={selecionados.length !== 2 || deletandoLote || loading}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-teal-200 bg-teal-50 px-3 py-1.5 text-sm font-bold text-teal-800 hover:bg-teal-100 disabled:opacity-50"
+                    title="Selecione dois pacientes para comparar"
+                  >
+                    <GitMerge className="h-4 w-4" /> Revisar mesclagem
+                  </button>
+                  <button
                     onClick={excluirSelecionados}
                     disabled={selecionados.length === 0 || deletandoLote}
                     className="fc-registry-danger"
@@ -349,6 +358,7 @@ export default function PacientesPage() {
                     <label className="fc-registry-row-check" title="Selecionar paciente">
                       <input
                         type="checkbox"
+                        aria-label={`Selecionar paciente ${paciente.nome} #${paciente.id}`}
                         checked={selecionadosSet.has(paciente.id)}
                         onChange={() => alternarSelecaoPaciente(paciente.id)}
                         className="fc-registry-checkbox"
