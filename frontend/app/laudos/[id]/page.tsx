@@ -92,6 +92,7 @@ interface Laudo {
     numero_os: string;
     valor_final: number;
     status: string;
+    responsavel_pagamento_nome?: string | null;
   } | null;
   pdf_externo?: {
     anexo_id?: number;
@@ -574,6 +575,7 @@ export default function VisualizarLaudoPage() {
               <p className="mt-1 text-sm text-slate-700">
                 {laudo.ordem_servico.status.toLowerCase() === "pendente" ? "Pendente no Financeiro" : laudo.ordem_servico.status}
                 {" · "}{Number(laudo.ordem_servico.valor_final).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                {laudo.ordem_servico.responsavel_pagamento_nome ? ` · ${laudo.ordem_servico.responsavel_pagamento_nome}` : ""}
               </p>
             </div>
             <Link href={`/financeiro?aba=ordens&os_id=${laudo.ordem_servico.id}`} className="text-sm font-bold text-teal-800 underline">Ver no Financeiro</Link>

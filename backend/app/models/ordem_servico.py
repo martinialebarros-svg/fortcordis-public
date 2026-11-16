@@ -10,6 +10,12 @@ class OrdemServico(Base):
     __table_args__ = (
         Index("ix_ordens_servico_status_data_atendimento_id", "status", "data_atendimento", "id"),
         Index("ix_ordens_servico_clinica_status_data_id", "clinica_id", "status", "data_atendimento", "id"),
+        Index(
+            "ix_ordens_servico_responsavel_pagamento",
+            "responsavel_pagamento_tipo",
+            "responsavel_pagamento_id",
+            "status",
+        ),
         Index("ix_ordens_servico_servico_status_data_id", "servico_id", "status", "data_atendimento", "id"),
         Index("ix_ordens_servico_criado_por_status_data_id", "criado_por_id", "status", "data_atendimento", "id"),
         Index("ix_ordens_servico_agendamento_status_id", "agendamento_id", "status", "id"),
@@ -40,6 +46,13 @@ class OrdemServico(Base):
     request_hash = Column(String(64), nullable=True)
     paciente_id = Column(Integer, nullable=False)
     clinica_id = Column(Integer, nullable=True)
+    # A clinica continua representando o contexto do atendimento. Estes campos
+    # registram separadamente quem assumiu a cobranca no momento da emissao.
+    responsavel_pagamento_tipo = Column(String(20), nullable=False, default="clinica", server_default="clinica")
+    responsavel_pagamento_id = Column(Integer, nullable=True)
+    responsavel_pagamento_nome = Column(String(255), nullable=True)
+    responsavel_pagamento_telefone = Column(String(50), nullable=True)
+    responsavel_pagamento_email = Column(String(255), nullable=True)
     servico_id = Column(Integer, nullable=False)
     origem_atendimento = Column(String(32), default="clinica_parceira")
     

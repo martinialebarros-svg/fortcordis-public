@@ -283,8 +283,22 @@ def _serialize_os(
     tutor_email_limpo = str(tutor_email or "").strip()
     clinica_telefone_limpo = str(clinica_telefone or "").strip()
     clinica_email_limpo = str(clinica_email or "").strip()
+    responsavel_tipo = str(
+        getattr(os_data, "responsavel_pagamento_tipo", None) or "clinica"
+    ).strip().lower()
 
-    if origem_atendimento == "domiciliar":
+    if responsavel_tipo == "veterinario":
+        destinatario_tipo = "veterinario"
+        destinatario_nome = str(
+            getattr(os_data, "responsavel_pagamento_nome", None) or "Veterinario parceiro nao informado"
+        ).strip()
+        destinatario_telefone = str(
+            getattr(os_data, "responsavel_pagamento_telefone", None) or ""
+        ).strip()
+        destinatario_email = str(
+            getattr(os_data, "responsavel_pagamento_email", None) or ""
+        ).strip()
+    elif origem_atendimento == "domiciliar":
         destinatario_tipo = "tutor"
         destinatario_nome = tutor_nome_limpo or "Tutor nao informado"
         destinatario_telefone = tutor_telefone_limpo
@@ -302,6 +316,9 @@ def _serialize_os(
         "laudo_id": os_data.laudo_id,
         "paciente_id": os_data.paciente_id,
         "clinica_id": os_data.clinica_id,
+        "responsavel_pagamento_tipo": responsavel_tipo,
+        "responsavel_pagamento_id": getattr(os_data, "responsavel_pagamento_id", None),
+        "responsavel_pagamento_nome": getattr(os_data, "responsavel_pagamento_nome", None),
         "servico_id": os_data.servico_id,
         "origem_atendimento": origem_atendimento,
         "paciente": paciente_nome or "",
@@ -638,7 +655,9 @@ def _gerar_pdf_cobranca_pendencias(
         key=lambda grupo: str(grupo["destinatario_nome"] or "").lower(),
     )
     for grupo in grupos_ordenados:
-        rotulo_destinatario = "Tutor responsavel" if grupo["destinatario_tipo"] == "tutor" else "Clinica"
+        rotulo_destinatario = {
+            "tutor": "Tutor responsavel", "veterinario": "Veterinario parceiro",
+        }.get(grupo["destinatario_tipo"], "Clinica")
         story.append(Spacer(1, 3 * mm))
         story.append(
             Paragraph(
@@ -1046,7 +1065,11 @@ def _gerar_pdf_recibos_ordens(
                             f"OS: {_texto_pdf(item['numero_os'])}",
                             f"Paciente: {_texto_pdf(item['paciente'])}",
                             f"Tutor: {_texto_pdf(item['tutor'])}",
-                            f"Clinica: {_texto_pdf(item['clinica'])}",
+                            (
+                                f"Responsavel pelo pagamento: {_texto_pdf(item['responsavel_pagamento_nome'])}"
+                                if item.get("responsavel_pagamento_nome")
+                                else f"Clinica: {_texto_pdf(item['clinica'])}"
+                            ),
                             f"Servico: {_texto_pdf(item['servico'])}",
                             f"Data do atendimento: {_texto_pdf(_formatar_data_ddmmaa(item['data_atendimento']))}",
                             f"Data do recebimento: {_texto_pdf(_formatar_data_ddmmaa(item['data_recebimento']))}",
@@ -1179,7 +1202,14 @@ def _numeros_whatsapp_os(
     tutor: Optional[Tutor],
 ) -> tuple[str, list[str]]:
     origem = str(os_data.origem_atendimento or "clinica_parceira").strip().lower()
-    if origem == "domiciliar":
+    responsavel_tipo = str(
+        getattr(os_data, "responsavel_pagamento_tipo", None) or "clinica"
+    ).strip().lower()
+    if responsavel_tipo == "veterinario":
+        nome = str(getattr(os_data, "responsavel_pagamento_nome", None) or "").strip()
+        values = [getattr(os_data, "responsavel_pagamento_telefone", None)]
+        destinatario = "veterinario parceiro"
+    elif origem == "domiciliar":
         nome = str(getattr(tutor, "nome", None) or "").strip()
         values = [getattr(tutor, "whatsapp", None), getattr(tutor, "telefone", None)]
         destinatario = "tutor"
@@ -1240,7 +1270,13 @@ def _carregar_contexto_whatsapp_os(
     clinica = db.query(Clinica).filter(Clinica.id == os_data.clinica_id).first() if os_data.clinica_id else None
     recipient_name, registered_numbers = _numeros_whatsapp_os(os_data, clinica=clinica, tutor=tutor)
     origem = str(os_data.origem_atendimento or "clinica_parceira").strip().lower()
-    recipient_key = f"tutor:{tutor_id}" if origem == "domiciliar" else f"clinica:{os_data.clinica_id}"
+    responsavel_tipo = str(
+        getattr(os_data, "responsavel_pagamento_tipo", None) or "clinica"
+    ).strip().lower()
+    if responsavel_tipo == "veterinario":
+        recipient_key = f"veterinario:{os_data.responsavel_pagamento_id}"
+    else:
+        recipient_key = f"tutor:{tutor_id}" if origem == "domiciliar" else f"clinica:{os_data.clinica_id}"
 
     return {
         "os": os_data,
@@ -1572,10 +1608,20 @@ def enviar_recibos_pdf_whatsapp(
 
 def _destinatario_cobranca_sql():
     domiciliar = func.trim(func.coalesce(OrdemServico.origem_atendimento, "")) == "domiciliar"
+    veterinario = func.trim(func.coalesce(OrdemServico.responsavel_pagamento_tipo, "clinica")) == "veterinario"
     nome_tutor = func.coalesce(func.nullif(func.trim(Tutor.nome), ""), "Tutor nao informado")
     nome_clinica = func.coalesce(func.nullif(func.trim(Clinica.nome), ""), "Clinica nao informada")
-    nome = case((domiciliar, nome_tutor), else_=nome_clinica)
+    nome_veterinario = func.coalesce(
+        func.nullif(func.trim(OrdemServico.responsavel_pagamento_nome), ""),
+        "Veterinario parceiro nao informado",
+    )
+    nome = case((veterinario, nome_veterinario), (domiciliar, nome_tutor), else_=nome_clinica)
     chave = case(
+        (veterinario, case(
+            (OrdemServico.responsavel_pagamento_id.isnot(None),
+             "veterinario:" + cast(OrdemServico.responsavel_pagamento_id, String)),
+            else_="veterinario-nome:" + func.lower(nome_veterinario),
+        )),
         (domiciliar, case(
             (Tutor.id.isnot(None), "tutor:" + cast(Tutor.id, String)),
             else_="tutor-nome:" + func.lower(nome_tutor),
@@ -1585,7 +1631,7 @@ def _destinatario_cobranca_sql():
             else_="clinica-nome:" + func.lower(nome_clinica),
         ),
     )
-    return chave, nome, case((domiciliar, "tutor"), else_="clinica")
+    return chave, nome, case((veterinario, "veterinario"), (domiciliar, "tutor"), else_="clinica")
 
 
 def _query_ordens_filtradas(
@@ -1657,6 +1703,7 @@ def _query_ordens_filtradas(
             Tutor.nome.ilike(pattern, escape="\\"),
             Servico.nome.ilike(pattern, escape="\\"),
             clinica_label.ilike(pattern, escape="\\"),
+            OrdemServico.responsavel_pagamento_nome.ilike(pattern, escape="\\"),
         ))
 
     if destinatario_chave is not None:
@@ -1907,7 +1954,11 @@ def gerar_relatorio_pendencias_pdf(
         itens_relatorio.append(
             {
                 "chave": (
-                    f"tutor:{tutor_id_row}"
+                    f"veterinario:{os_data.responsavel_pagamento_id}"
+                    if payload_os["destinatario_tipo"] == "veterinario" and os_data.responsavel_pagamento_id
+                    else f"veterinario-nome:{payload_os['destinatario_nome'].lower()}"
+                    if payload_os["destinatario_tipo"] == "veterinario"
+                    else f"tutor:{tutor_id_row}"
                     if payload_os["destinatario_tipo"] == "tutor" and tutor_id_row
                     else f"tutor-nome:{payload_os['destinatario_nome'].lower()}"
                     if payload_os["destinatario_tipo"] == "tutor"
@@ -2105,6 +2156,9 @@ def _montar_recibos_os(db: Session, ids: List[int]) -> List[Dict[str, Any]]:
                 "numero_os": os_data.numero_os,
                 "paciente": paciente_nome or "",
                 "tutor": tutor_nome or "",
+                "responsavel_pagamento_nome": (
+                    os_data.responsavel_pagamento_nome if os_data.responsavel_pagamento_tipo == "veterinario" else None
+                ),
                 "clinica": _serialize_os(
                     os_data,
                     paciente_nome=paciente_nome,
@@ -2730,6 +2784,9 @@ def _preparar_recebimento_ordem(
     os_data.valor_final = _to_decimal(valor_os)
     momento_recebimento_base = _montar_momento_recebimento(dados.data_recebimento, now)
     valor_credito_solicitado = round(float(dados.valor_credito_utilizado or 0), 2)
+    os_do_veterinario = os_data.responsavel_pagamento_tipo == "veterinario"
+    if os_do_veterinario and valor_credito_solicitado > 0:
+        raise HTTPException(400, "Use um pagamento do veterinario parceiro para receber esta OS.")
     pagamentos_input = list(dados.pagamentos or [])
     if not pagamentos_input and valor_credito_solicitado <= 0 and valor_os > 0:
         pagamentos_input = [
@@ -2938,6 +2995,8 @@ def _preparar_recebimento_ordem(
     excedente = round(total_cobertura - valor_os, 2)
     credito_gerado: Optional[CreditoFinanceiro] = None
     if excedente > 0:
+        if os_do_veterinario:
+            raise HTTPException(400, "Informe o valor exato da OS. O financeiro ainda nao gera credito para veterinarios parceiros.")
         destino_credito = str(dados.destino_credito_excedente or "cliente").strip().lower()
         if destino_credito == "nenhum":
             raise HTTPException(

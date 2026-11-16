@@ -119,6 +119,9 @@ def _serializar_os(row, competencia: str, claims: dict[int, int], exportacoes: d
     tomador = clinica if tipo == "PJ" else tutor
     data = _data_local(os_row.data_atendimento)
     nome_base = (getattr(clinica, "razao_social", None) or getattr(clinica, "nome", None)) if tipo == "PJ" else getattr(tutor, "nome", None)
+    if os_row.responsavel_pagamento_tipo == "veterinario":
+        tomador = None
+        nome_base = os_row.responsavel_pagamento_nome
     nome = str(nome_base or "").strip()
     doc = re.sub(r"[.\s/\-]", "", str(getattr(tomador, "cnpj" if tipo == "PJ" else "cpf", None) or "").upper())
     endereco_base, endereco_fonte, pendencias_endereco = resolver_endereco(tomador, tipo, doc)
@@ -141,7 +144,9 @@ def _serializar_os(row, competencia: str, claims: dict[int, int], exportacoes: d
         **{f"cliente_{field}": str(getattr(tomador, field, None) or "").strip() for field in ("telefone", "email")},
         **endereco_fonte,
         "clinica_id": os_row.clinica_id,
-        "clinica_nome": getattr(clinica, "nome", None) or ("Atendimento domiciliar" if tipo == "PF" else ""),
+        "clinica_nome": getattr(clinica, "nome", None) or (
+            "Atendimento domiciliar" if os_row.origem_atendimento == "domiciliar" else ""
+        ),
         "servico_nome": getattr(servico, "nome", None) or "",
         "origem_atendimento": os_row.origem_atendimento or "",
         "fechamento_id": claims.get(os_row.id),

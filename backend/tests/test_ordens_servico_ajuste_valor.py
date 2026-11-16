@@ -377,6 +377,31 @@ class OrdemServicoAjusteValorTest(unittest.TestCase):
         self.assertEqual(self.db.query(OrdemServicoPagamento).count(), 0)
         self.assertEqual(self.db.query(CreditoFinanceiro).count(), 0)
 
+    def test_os_do_veterinario_nao_gera_credito_para_clinica_do_atendimento(self) -> None:
+        ordem = self._ordem()
+        ordem.responsavel_pagamento_tipo = "veterinario"
+        ordem.responsavel_pagamento_id = 99
+        ordem.responsavel_pagamento_nome = "Dra. Parceira"
+        self.db.commit()
+        dados = ordens_servico.OrdemServicoReceberInput(
+            valor_final_esperado="460.00",
+            pagamentos=[ordens_servico.OrdemServicoPagamentoItemInput(
+                forma_pagamento="dinheiro", valor=500,
+            )],
+            destino_credito_excedente="clinica",
+        )
+
+        with self.assertRaises(HTTPException) as raised:
+            ordens_servico.receber_ordem(
+                self.ids[0], dados, self.request, db=self.db, current_user=self.user,
+            )
+
+        self.assertEqual(raised.exception.status_code, 400)
+        self.assertEqual(self._ordem().status, "Pendente")
+        self.assertEqual(self.db.query(Transacao).count(), 0)
+        self.assertEqual(self.db.query(OrdemServicoPagamento).count(), 0)
+        self.assertEqual(self.db.query(CreditoFinanceiro).count(), 0)
+
     def test_lembrete_usa_valor_atual_apesar_do_snapshot_antigo(self) -> None:
         self._ajustar()
         lembrete = PushScheduledNotification(

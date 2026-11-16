@@ -43,7 +43,12 @@ type PreviaOrdemServico = {
   chave: string;
   valor_servico: number;
   valor_final: number;
+  responsavel_pagamento_tipo: "clinica" | "veterinario";
+  responsavel_pagamento_id: number;
+  responsavel_pagamento_nome: string;
 };
+
+type ResponsavelPagamento = "clinica" | "veterinario";
 
 const formatarValor = (valor: number) =>
   valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -202,6 +207,7 @@ export default function UploadEletrocardiogramaPage() {
   const [tentativaServicos, setTentativaServicos] = useState(0);
   const [servicoId, setServicoId] = useState("");
   const [tipoHorario, setTipoHorario] = useState("comercial");
+  const [responsavelPagamento, setResponsavelPagamento] = useState<ResponsavelPagamento>("clinica");
   const [previaOrdemServico, setPreviaOrdemServico] = useState<PreviaOrdemServico | null>(null);
   const [loadingPrevia, setLoadingPrevia] = useState(false);
   const [erroPrevia, setErroPrevia] = useState("");
@@ -211,8 +217,11 @@ export default function UploadEletrocardiogramaPage() {
 
   const modoTelemedicina = !contexto.agendamento_id && !contexto.atendimento_id;
   const criarOrdemServico = modoTelemedicina && gerarOrdemServico;
-  const chavePrevia = criarOrdemServico && contexto.clinic_id && servicoId
-    ? `${contexto.clinic_id}:${servicoId}:${tipoHorario}`
+  const responsavelPagamentoId = responsavelPagamento === "clinica"
+    ? contexto.clinic_id
+    : contexto.veterinario_parceiro_id;
+  const chavePrevia = criarOrdemServico && responsavelPagamentoId && servicoId
+    ? `${contexto.clinic_id ?? ""}:${servicoId}:${tipoHorario}:${responsavelPagamento}:${responsavelPagamentoId}`
     : "";
   const previaAtual = chavePrevia && previaOrdemServico?.chave === chavePrevia
     ? previaOrdemServico
@@ -268,7 +277,15 @@ export default function UploadEletrocardiogramaPage() {
     let ativo = true;
     setLoadingPrevia(true);
     api.get("/laudos/eletrocardiograma/ordem-servico/preview", {
-      params: { clinic_id: Number(contexto.clinic_id), servico_id: Number(servicoId), tipo_horario: tipoHorario },
+      params: {
+        ...(contexto.clinic_id ? { clinic_id: Number(contexto.clinic_id) } : {}),
+        servico_id: Number(servicoId),
+        tipo_horario: tipoHorario,
+        responsavel_pagamento_tipo: responsavelPagamento,
+        ...(responsavelPagamento === "veterinario"
+          ? { veterinario_parceiro_id: Number(contexto.veterinario_parceiro_id) }
+          : {}),
+      },
     }).then((response) => {
       if (!ativo) return;
       const valorServico = Number(response.data?.valor_servico);
@@ -277,14 +294,21 @@ export default function UploadEletrocardiogramaPage() {
           !Number.isFinite(valorServico) || !Number.isFinite(valorFinal) || valorFinal <= 0) {
         throw new Error("Valor indisponível");
       }
-      setPreviaOrdemServico({ chave: chavePrevia, valor_servico: valorServico, valor_final: valorFinal });
+      setPreviaOrdemServico({
+        chave: chavePrevia,
+        valor_servico: valorServico,
+        valor_final: valorFinal,
+        responsavel_pagamento_tipo: response.data.responsavel_pagamento_tipo,
+        responsavel_pagamento_id: Number(response.data.responsavel_pagamento_id),
+        responsavel_pagamento_nome: String(response.data.responsavel_pagamento_nome || ""),
+      });
     }).catch((error) => {
       if (ativo) setErroPrevia(readApiError(error, "Não foi possível consultar o valor da ordem de serviço."));
     }).finally(() => {
       if (ativo) setLoadingPrevia(false);
     });
     return () => { ativo = false; };
-  }, [chavePrevia, contexto.clinic_id, servicoId, tipoHorario, tentativaPrevia]);
+  }, [chavePrevia, contexto.clinic_id, contexto.veterinario_parceiro_id, responsavelPagamento, servicoId, tipoHorario, tentativaPrevia]);
 
   useEffect(() => {
     let ativo = true;
@@ -618,8 +642,12 @@ export default function UploadEletrocardiogramaPage() {
     }
     // Valide a OS antes de criar cadastros rápidos ou iniciar o upload.
     if (criarOrdemServico) {
-      if (!contexto.clinic_id) {
+      if (responsavelPagamento === "clinica" && !contexto.clinic_id) {
         setErro("Selecione a clínica parceira para gerar a ordem de serviço.");
+        return;
+      }
+      if (responsavelPagamento === "veterinario" && !contexto.veterinario_parceiro_id) {
+        setErro("Selecione ou cadastre o veterinário parceiro responsável pelo pagamento.");
         return;
       }
       if (!servicoId) {
@@ -668,6 +696,7 @@ export default function UploadEletrocardiogramaPage() {
         formData.append("gerar_ordem_servico", "true");
         formData.append("servico_id", servicoId);
         formData.append("tipo_horario", tipoHorario);
+        formData.append("responsavel_pagamento_tipo", responsavelPagamento);
         // Cadastros rápidos já resolvidos fazem parte da identidade da submissão.
         // Uma falha de rede conserva a chave para repetir a mesma operação.
         const assinatura = JSON.stringify(Array.from(formData.entries()).filter(([campo]) => campo !== "arquivo"));
@@ -965,6 +994,22 @@ export default function UploadEletrocardiogramaPage() {
                       />
                     </div>
                   </div>
+                  {criarOrdemServico && responsavelPagamento === "veterinario" ? (
+                    <button
+                      type="button"
+                      disabled={salvandoNovoParceiro}
+                      onClick={() => {
+                        setErro("");
+                        void criarParceiroNoFluxo().catch((error) => {
+                          setErro(error instanceof Error ? error.message : "Nao foi possivel cadastrar o veterinario parceiro.");
+                        });
+                      }}
+                      className="mt-4 inline-flex items-center justify-center gap-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-bold text-white hover:bg-teal-800 disabled:opacity-50"
+                    >
+                      {salvandoNovoParceiro ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                      Cadastrar e usar como responsável da OS
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
 
@@ -1241,16 +1286,56 @@ export default function UploadEletrocardiogramaPage() {
                     onChange={(event) => setGerarOrdemServico(event.target.checked)}
                     className="h-4 w-4 accent-teal-700"
                   />
-                  Gerar ordem de serviço para a clínica
+                  Gerar ordem de serviço
                 </label>
                 <p className="mt-2 text-sm text-slate-600">
-                  Opcional. A ordem ficará pendente no Financeiro da clínica, sem registrar pagamento nem enviar mensagem automática.
+                  Opcional. A ordem ficará pendente no Financeiro para o responsável escolhido, sem registrar pagamento nem enviar mensagem automática.
                 </p>
                 {criarOrdemServico ? (
                   <div className="mt-4 space-y-3">
-                    {!contexto.clinic_id ? (
-                      <p className="text-sm text-amber-800">Selecione a clínica parceira acima para gerar a ordem de serviço.</p>
-                    ) : null}
+                    <fieldset>
+                      <legend className="text-sm font-semibold text-slate-900">Para quem gerar a ordem de serviço?</legend>
+                      <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                        <label className={`rounded-xl border p-3 ${responsavelPagamento === "clinica" ? "border-teal-500 bg-white ring-2 ring-teal-100" : "border-slate-200 bg-white"}`}>
+                          <span className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="responsavel_pagamento"
+                              value="clinica"
+                              checked={responsavelPagamento === "clinica"}
+                              onChange={() => setResponsavelPagamento("clinica")}
+                              className="mt-1 accent-teal-700"
+                            />
+                            <span>
+                              <span className="block text-sm font-bold text-slate-900">Clínica parceira</span>
+                              <span className="mt-1 block text-xs text-slate-600">{clinicaSelecionada?.nome || "Selecione a clínica acima"}</span>
+                            </span>
+                          </span>
+                        </label>
+                        <label className={`rounded-xl border p-3 ${responsavelPagamento === "veterinario" ? "border-teal-500 bg-white ring-2 ring-teal-100" : "border-slate-200 bg-white"}`}>
+                          <span className="flex items-start gap-3">
+                            <input
+                              type="radio"
+                              name="responsavel_pagamento"
+                              value="veterinario"
+                              checked={responsavelPagamento === "veterinario"}
+                              onChange={() => setResponsavelPagamento("veterinario")}
+                              className="mt-1 accent-teal-700"
+                            />
+                            <span>
+                              <span className="block text-sm font-bold text-slate-900">Veterinário parceiro</span>
+                              <span className="mt-1 block text-xs text-slate-600">{parceiroSelecionado?.nome_exibicao || "Selecione o veterinário acima"}</span>
+                            </span>
+                          </span>
+                        </label>
+                      </div>
+                      {responsavelPagamento === "veterinario" && !contexto.veterinario_parceiro_id ? (
+                        <p className="mt-2 text-sm text-amber-800">Selecione ou cadastre o veterinário parceiro responsável pelo pagamento.</p>
+                      ) : null}
+                      {responsavelPagamento === "veterinario" && !contexto.clinic_id ? (
+                        <p className="mt-2 text-sm text-slate-600">Sem clínica vinculada, o valor vem da tabela padrão de Fortaleza.</p>
+                      ) : null}
+                    </fieldset>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>
                         <label htmlFor="os-servico">Serviço da ordem</label>
@@ -1290,7 +1375,10 @@ export default function UploadEletrocardiogramaPage() {
                         </div>
                       ) : null}
                       {previaAtual ? (
-                        <p className="text-sm font-bold text-teal-900">Valor da ordem de serviço: {formatarValor(previaAtual.valor_final)}</p>
+                        <div className="text-sm text-teal-900">
+                          <p className="font-bold">Valor da ordem de serviço: {formatarValor(previaAtual.valor_final)}</p>
+                          <p>Responsável: {previaAtual.responsavel_pagamento_nome}</p>
+                        </div>
                       ) : null}
                     </div>
                   </div>
