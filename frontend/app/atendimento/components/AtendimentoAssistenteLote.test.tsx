@@ -46,8 +46,12 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.resetAllMocks(); vi.useRealTimers(); });
 async function open(overrides: Partial<ComponentProps<typeof AtendimentoAssistenteLote>> = {}) {
   const handlers = { ...props(), ...overrides };
-  const view = render(<AtendimentoAssistenteLote {...handlers} />);
-  await waitFor(() => expect(screen.queryByText("Recuperando conjunto…")).toBeNull());
+  let view!: ReturnType<typeof render>;
+  // A resposta mockada e os efeitos de revisão precisam terminar antes dos cliques.
+  await act(async () => {
+    view = render(<AtendimentoAssistenteLote {...handlers} />);
+  });
+  expect(screen.queryByText("Recuperando conjunto…")).toBeNull();
   return { ...view, ...handlers };
 }
 const select = (items = files) => fireEvent.change(screen.getByLabelText("Áudios e PDFs do conjunto"), { target: { files: items } });
@@ -76,6 +80,7 @@ describe("análise de conjunto", () => {
     fireEvent.click(screen.getByLabelText(/Confirmo que os documentos selecionados/));
     expect(breedButton().matches(":disabled")).toBe(true);
     fireEvent.click(screen.getByLabelText(/Confirmei que a única divergência/));
+    expect(breedButton()).toBeEnabled();
     fireEvent.click(breedButton()); fireEvent.click(breedButton());
     await screen.findByText(/Decisão registrada. A raça continua pendente/);
     expect(api.post).toHaveBeenCalledTimes(1);
