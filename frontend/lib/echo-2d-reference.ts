@@ -1,5 +1,5 @@
 import { lowWeightAgeContext } from "./echo-low-weight-reference";
-import { isCanineEchoSpecies } from "./echo-species";
+import { normalizeEchoSpecies } from "./echo-species";
 
 /** Visser et al. 2019, JVIM 33:1909-1920, Tables 1 and 2 (DOI 10.1111/jvim.15562). */
 export type Echo2DView = "eixo_curto" | "eixo_longo";
@@ -56,7 +56,7 @@ export function calculateCanine2DNormalizedLVIDd(
   species: string,
   age?: unknown,
 ): number | null {
-  if (diameterMm === null || diameterMm <= 0 || !isCanineEchoSpecies(species) ||
+  if (diameterMm === null || diameterMm <= 0 || normalizeEchoSpecies(species) !== "Canina" ||
       getCanine2DReference("DIVEd_normalizado_2D", weightKg ?? undefined, view, age) === null) return null;
   return Number((diameterMm / 10 / (weightKg as number) ** 0.316).toFixed(2));
 }
