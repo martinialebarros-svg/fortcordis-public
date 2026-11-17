@@ -589,8 +589,12 @@ describe("Ajuste de valor de OS pendente", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Receber pendentes" }));
     fireEvent.click(await screen.findByRole("button", { name: "Confirmar baixa em lote" }));
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledWith("/ordens-servico/receber-lote", expect.objectContaining({
-      ordens: [{ os_id: 1, valor_final_esperado: "100.00" }, { os_id: 2, valor_final_esperado: "100.00" }],
+      ordens: [
+        { os_id: 1, valor_final_esperado: "100.00", saldo_em_aberto_esperado: "100.00" },
+        { os_id: 2, valor_final_esperado: "100.00", saldo_em_aberto_esperado: "100.00" },
+      ],
       pagamentos: [expect.objectContaining({ valor: 200 })],
+      idempotency_key: expect.any(String),
     })));
     const modal = screen.getByRole("dialog", { name: "Receber OS em lote" });
     expect(await within(modal).findByRole("alert")).toHaveTextContent("Nenhuma baixa deste lote foi registrada por esta operacao");
@@ -658,9 +662,13 @@ describe("Recebimento atomico em lote", () => {
     fireEvent.click(within(modal).getByRole("button", { name: "Confirmar baixa em lote" }));
     expect(mocks.patch).toHaveBeenCalledTimes(1);
     expect(mocks.patch).toHaveBeenCalledWith("/ordens-servico/receber-lote", {
-      ordens: [{ os_id: 1, valor_final_esperado: "10.01" }, { os_id: 2, valor_final_esperado: "20.02" }],
+      ordens: [
+        { os_id: 1, valor_final_esperado: "10.01", saldo_em_aberto_esperado: "10.01" },
+        { os_id: 2, valor_final_esperado: "20.02", saldo_em_aberto_esperado: "20.02" },
+      ],
       pagamentos: [expect.objectContaining({ valor: 15.01 }), expect.objectContaining({ valor: 15.02 })],
       data_recebimento: "2026-10-09",
+      idempotency_key: expect.any(String),
     });
     expect(within(modal).getByRole("button", { name: "Recebendo..." })).toBeDisabled();
     expect(mocks.post).not.toHaveBeenCalled();
@@ -671,6 +679,36 @@ describe("Recebimento atomico em lote", () => {
     expect(mocks.post).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("dialog", { name: "Receber OS em lote" })).not.toBeInTheDocument();
     expect(window.alert).toHaveBeenCalledWith(expect.stringContaining("Baixa em lote registrada e recibo PDF consolidado enviado"));
+  });
+
+  it("registra baixa parcial, mantem o saldo aberto e nao envia recibo de quitacao", async () => {
+    mocks.patch.mockResolvedValue({ data: {
+      os_ids: [1], os_ids_pagas: [], os_ids_parciais: [1],
+      baixa_parcial: true, valor_recebido: 10, saldo_em_aberto: 20.03,
+      mensagem: "Baixa parcial registrada",
+    } });
+    const modal = await abrirLote();
+    fireEvent.change(within(modal).getByRole("spinbutton", { name: "Valor do pagamento 1" }), {
+      target: { value: "10.00" },
+    });
+    expect(within(modal).getByText(/permanecerao R\$\s*20,03 em aberto/)).toBeInTheDocument();
+    expect(within(modal).getByRole("checkbox", { name: /Enviar um recibo PDF consolidado/ })).toBeDisabled();
+    fireEvent.click(within(modal).getByRole("button", { name: "Confirmar baixa parcial" }));
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledWith(
+      "/ordens-servico/receber-lote",
+      expect.objectContaining({
+        ordens: [
+          { os_id: 1, valor_final_esperado: "10.01", saldo_em_aberto_esperado: "10.01" },
+          { os_id: 2, valor_final_esperado: "20.02", saldo_em_aberto_esperado: "20.02" },
+        ],
+        pagamentos: [expect.objectContaining({ valor: 10 })],
+        idempotency_key: expect.any(String),
+      }),
+    ));
+    await waitFor(() => expect(window.alert).toHaveBeenCalledWith(
+      expect.stringContaining("Saldo restante: R$\u00a020,03"),
+    ));
+    expect(mocks.post).not.toHaveBeenCalled();
   });
 
   it.each(["Pago", "Cancelado"])("mantem o lote original e impede retry reduzido quando outra pessoa deixa uma OS %s", async (status) => {
@@ -749,7 +787,8 @@ describe("Recebimento atomico em lote", () => {
     fireEvent.click(within(modal).getByRole("button", { name: "Confirmar baixa em lote" }));
     await waitFor(() => expect(window.alert).toHaveBeenCalledWith("Baixa em lote registrada com sucesso!"));
     expect(mocks.patch).toHaveBeenCalledWith("/ordens-servico/receber-lote", expect.objectContaining({
-      ordens: ordens.map((os) => ({ os_id: os.id, valor_final_esperado: "10.00" })),
+      ordens: ordens.map((os) => ({ os_id: os.id, valor_final_esperado: "10.00", saldo_em_aberto_esperado: "10.00" })),
+      idempotency_key: expect.any(String),
     }));
     expect(mocks.post).not.toHaveBeenCalled();
   });
