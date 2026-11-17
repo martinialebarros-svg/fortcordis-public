@@ -65,4 +65,6 @@ Cache ECO: `2026-11-16-eco-public-hp-reviewed-context-v38`; PDFs em cache anteri
 | ID | Critério adicional |
 | --- | --- |
 | HP-11 | Selo válido permanece válido com DIVEd/SIVd; mudança real da coorte invalida; nenhuma conversão dupla ou reseleção silenciosa. |
-| HP-12 | Somente HP difere da base pública de produção; após a promoção, Stage recupera todos os blobs/modos paralelos preservados. |
+| HP-12 | Antes da promoção, comprovar que somente HP difere da base pública de produção e preparar a árvore de restauração com todos os blobs/modos paralelos preservados. |
+
+HP-12 é o aceite da preparação verificável antes da promoção. A instalação em produção e a restauração efetiva de Stage continuam obrigatórias para encerrar a entrega; são etapas operacionais posteriores, registradas separadamente no checklist de `verify.md`. Uma árvore preparada ou um teste em Stage não comprova que essas etapas já ocorreram.
