@@ -1,6 +1,12 @@
-export interface OrderSnapshot { id: number; status: string; valor_final: number }
+export interface OrderSnapshot {
+  id: number;
+  status: string;
+  valor_final: number;
+  valor_recebido?: number;
+  valor_em_aberto?: number;
+}
 
-const fields = ["id", "status", "valor_final", "paciente_id", "tutor_id", "clinica_id", "servico_id",
+const fields = ["id", "status", "valor_final", "valor_recebido", "valor_em_aberto", "paciente_id", "tutor_id", "clinica_id", "servico_id",
   "responsavel_pagamento_tipo", "responsavel_pagamento_id", "responsavel_pagamento_nome",
   "numero_os", "data_atendimento", "origem_atendimento", "destinatario_tipo", "destinatario_nome",
   "destinatario_telefone", "destinatario_email", "paciente", "tutor", "clinica", "servico"];
