@@ -42,3 +42,15 @@
 - Após a promoção, restaurar a árvore de Stage `43b14787e48f8152b8b3656d827127284f8798c0` acrescida destas correções e do registro documental das verificações; comprovar igualdade de todos os arquivos paralelos.
 
 - A regressão de recuperação em memória deve aguardar a criação assíncrona do link do original e conferir o endereço e o mesmo arquivo recuperado, além de preservar texto, aprovações e a ausência de nova incorporação automática.
+
+## Restauração de Stage após a promoção de 15/11/2026
+
+O ciclo usa uma instalação isolada para homologar e promover somente esta entrega. Depois da verificação de produção, Stage retorna à árvore compartilhada da base `43b14787e48f8152b8b3656d827127284f8798c0`, acrescida dos 14 caminhos desta entrega. Os 86 caminhos paralelos e todos os caminhos existentes fora do escopo devem permanecer idênticos por modo, tipo e blob à base compartilhada.
+
+O código promovido permanece idêntico em produção e no Stage restaurado; apenas spec/verify recebem o registro real deste ciclo. A restauração mantém os workflows e testes dos trabalhos paralelos, configurações dos ambientes, dados de runtime e Nginx. IA permanece desligada em Stage. A composição da árvore não substitui a exigência de PR, checks, workflow completo e conferência da instalação final.
+
+## Restauração da base compartilhada após os três atalhos
+
+A composição de Stage parte da base compartilhada `4c70efc04183be1eb361a535d08eb365bd12d5df` e mantém os 59 caminhos paralelos exclusivos com o mesmo modo, tipo e conteúdo. Os dois documentos compartilhados de Atendimento retêm o conteúdo histórico e recebem os novos registros. Os outros 19 caminhos alterados pelos três atalhos correspondem ao snapshot homologado e promovido.
+
+A implantação da restauração depende da verificação da promoção protegida. A conferência final compara a árvore e os arquivos paralelos instalados, além de saúde, acesso e configurações dos ambientes. A IA permanece desativada em Stage.
