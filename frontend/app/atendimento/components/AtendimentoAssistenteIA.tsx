@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { CircleStop, FileAudio, Loader2, Mic, Sparkles, Trash2 } from "lucide-react";
 import api from "@/lib/axios";
-import AtendimentoAssistenteLote from "./AtendimentoAssistenteLote";
+import AtendimentoAssistenteLote, { type AtendimentoAssistenteLoteAcoes } from "./AtendimentoAssistenteLote";
 import AtendimentoTranscricaoRevisao from "./AtendimentoTranscricaoRevisao";
-import type { AssistenteLote } from "@/lib/atendimento-assistente-lote";
+import { validarArquivosLote, type AssistenteLote } from "@/lib/atendimento-assistente-lote";
 import { extractApiErrorMessageSync } from "@/lib/api-error";
 import {
-  ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_CAMPO_LABELS, ASSISTENTE_FILE_ACCEPT,
-  podeIncorporarAchado, podeIncorporarCampo, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarArquivosAssistente, validarAudioParaTranscricao, type AssistenteCampoRevisado, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
+  ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_CAMPO_LABELS, ASSISTENTE_FILE_ACCEPT, ASSISTENTE_LOTE_AUDIO_MAX_BYTES,
+  podeIncorporarAchado, podeIncorporarCampo, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarAudioParaTranscricao, type AssistenteCampoRevisado, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
 } from "@/lib/atendimento-assistente-ia";
 import { useAtendimentoAudio } from "@/lib/use-atendimento-audio";
 import { guardarRevisaoAssistenteMemoria, lerRascunhoAssistenteMemoria, type AssistenteMemoryReview } from "@/lib/atendimento-assistente-memory";
@@ -104,9 +104,10 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
   const [revisaoRecuperada, setRevisaoRecuperada] = useState(false);
   const alive = useRef(true);
   const request = useRef<AbortController | null>(null);
+  const loteAcoes = useRef<AtendimentoAssistenteLoteAcoes>(null);
   const incorporando = useRef(false);
   const audio = useAtendimentoAudio(atendimentoId, status?.usuario_id ?? null, pacienteId);
-  const erroEnvioAudio = audio.audio ? validarAudioParaTranscricao(audio.audio, status?.limites?.audio_bytes) : null;
+  const erroEnvioAudio = audio.audio ? validarAudioParaTranscricao(audio.audio, ASSISTENTE_LOTE_AUDIO_MAX_BYTES) : null;
   const podeUsarIA = status?.habilitado && status.configurado && consentimento;
   const transferindo = Boolean(busy) || loteBusy || audio.gravando || audio.iniciando;
   const ocupada = transferindo || loteAtivo;
@@ -181,8 +182,10 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
     setResultadoLoteId(lote.id);
     setResultado(lote.resultado);
     setTexto(lote.transcricao || "");
-    setRevisoesTranscricao(lote.revisoes_transcricao ?? []);
-    setTranscricaoEditadaDesdeRevisao(false);
+    if (lote.revisoes_transcricao?.length || texto.trim() !== lote.transcricao?.trim()) {
+      setRevisoesTranscricao(lote.revisoes_transcricao ?? []);
+      setTranscricaoEditadaDesdeRevisao(false);
+    }
     setEdicoes(Object.fromEntries(lote.resultado.campos.map((campo, index) => [index, campo.texto])));
     setAchadosEditados(Object.fromEntries(lote.resultado.achados_exames.map((achado, index) => [index, textoAchadoParaRevisao(lote.resultado!, achado)])));
     setLoteParaRevisar(null);
@@ -267,8 +270,16 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
   const transcrever = async () => {
     if (!audio.audio || identificarAudio(audio.audio) === audioTranscrito || !podeUsarIA || ocupada) return;
     const arquivoAudio = audio.audio;
-    const invalidAudio = validarAudioParaTranscricao(arquivoAudio, status?.limites?.audio_bytes);
+    const invalidAudio = validarAudioParaTranscricao(arquivoAudio, ASSISTENTE_LOTE_AUDIO_MAX_BYTES);
     if (invalidAudio) { setErro(invalidAudio); return; }
+    const limiteDireto = status?.limites?.audio_bytes ?? ASSISTENTE_AUDIO_MAX_BYTES;
+    if (arquivoAudio.size > limiteDireto || audio.seconds === 0 || audio.seconds > 30 * 60) {
+      setErro("");
+      if (!loteAcoes.current?.iniciarComFontes([arquivoAudio], "transcricao")) {
+        setErro("Aguarde recuperar o conjunto antes de transcrever o áudio.");
+      }
+      return;
+    }
     const controller = new AbortController();
     request.current = controller;
     setBusy("transcrever"); setErro(""); limparAnalise();
@@ -296,13 +307,19 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
 
   const analisar = async () => {
     if (!podeUsarIA || ocupada || (!texto.trim() && !arquivos.length)) return;
+    if (arquivos.length) {
+      setErro("");
+      if (!loteAcoes.current?.iniciarComFontes(arquivos, "analise")) {
+        setErro("Aguarde recuperar o conjunto antes de organizar os exames.");
+      }
+      return;
+    }
     const controller = new AbortController();
     request.current = controller;
     setBusy("analisar"); setErro("");
     const payload = new FormData();
     payload.append("transcricao", texto);
     payload.append("consentimento", "true");
-    arquivos.forEach((file) => payload.append("arquivos", file));
     try {
       if (onEnsureSaved && !(await onEnsureSaved())) {
         if (alive.current && !controller.signal.aborted) setErro("Salve o atendimento e confirme o paciente antes de analisar. As fontes foram preservadas.");
@@ -361,6 +378,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
     {revisaoPronta && status?.usuario_id ? <AtendimentoAssistenteLote
       key={`${status.usuario_id}:${atendimentoId}:${pacienteId}`}
       atendimentoId={atendimentoId} pacienteId={pacienteId} usuarioId={status.usuario_id}
+      acoesRef={loteAcoes}
       texto={texto} consentimento={consentimento} habilitado={Boolean(status.habilitado && status.configurado)}
       disabled={Boolean(busy) || audio.gravando || audio.iniciando || confirmarDescarte}
       audioAtual={erroEnvioAudio || audio.carregandoBackup ? null : audio.audio}
@@ -375,6 +393,23 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         }
       }}
       onReview={(lote) => {
+        if (lote.modo === "transcricao" && lote.transcricao) {
+          const fonte = lote.arquivos[0];
+          const arquivo = audio.audio;
+          const identificador = arquivo && arquivo.name === fonte?.nome && arquivo.size === fonte.tamanho
+            ? identificarAudio(arquivo) : lote.id;
+          if (audioTranscrito === identificador || revisoesTranscricao.some((item) => item.arquivo_id === fonte?.id)) return;
+          const combinado = texto ? `${texto}\n\n${lote.transcricao}` : lote.transcricao;
+          if (combinado.length > (status.limites?.transcricao_chars ?? 80000)) {
+            setErro("O texto combinado excede 80.000 caracteres. Revise o texto atual antes de acrescentar a transcrição.");
+            return;
+          }
+          limparAnalise();
+          setTexto(combinado);
+          setRevisoesTranscricao((previous) => [...previous, ...(lote.revisoes_transcricao ?? [])]);
+          setAudioTranscrito(identificador);
+          return;
+        }
         const mesmaRevisao = resultadoLoteId === lote.id && resultado && JSON.stringify(resultado) === JSON.stringify(lote.resultado);
         if (mesmaRevisao) return;
         const substituirTranscricao = Boolean(texto.trim()) && texto !== (lote.transcricao || "");
@@ -390,7 +425,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
     <div className="mt-4 grid gap-4 xl:grid-cols-2">
       <div className="space-y-3 rounded-2xl bg-slate-50 p-4">
         <h4 className="font-semibold text-slate-900">1. Gravar e transcrever</h4>
-        <p className="text-xs text-slate-600">Faça um teste curto do microfone. Envie uma gravação de até 30 minutos e 24 MB. O assistente divide gravações longas automaticamente. Mantenha a tela aberta até a transcrição terminar e baixe o áudio original para guardá-lo.</p>
+        <p className="text-xs text-slate-600">Faça um teste curto do microfone. Grave continuamente por até 65 minutos ou envie um áudio de até 70 minutos e 60 MB. Áudios longos são transcritos em trechos no servidor. Baixe o áudio original para guardá-lo.</p>
         <p className="rounded-lg border border-teal-100 bg-white p-3 text-xs text-slate-700">Vai alternar entre celular e computador? Pare a gravação, revise e incorpore os trechos desejados e confira se o atendimento foi salvo antes de abrir no outro aparelho. Áudio e revisão pendente ficam neste navegador; não são transferidos automaticamente. Baixe o áudio se precisar levá-lo ao outro aparelho.</p>
         <label className="flex items-start gap-2 text-sm text-slate-700">
           <input type="checkbox" checked={audio.manterCopia} disabled={ocupada || audio.carregandoBackup || !status?.usuario_id} onChange={(event) => void audio.setManterCopia(event.target.checked)} className="mt-1" />
@@ -398,7 +433,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         </label>
         <div className="flex flex-wrap items-center gap-2">
           {audio.gravando ? <button type="button" className={`${buttonClass} border-red-300 text-red-700`} onClick={audio.parar}><CircleStop className="h-4 w-4" />Parar gravação</button>
-            : <button type="button" className={buttonClass} disabled={!consentimento || !revisaoPronta || loadingStatus || ocupada || Boolean(audio.audio) || audio.carregandoBackup} onClick={() => void audio.iniciar(status?.limites?.audio_bytes)}><Mic className="h-4 w-4" />{audio.iniciando ? "Abrindo microfone…" : "Iniciar gravação"}</button>}
+            : <button type="button" className={buttonClass} disabled={!consentimento || !revisaoPronta || loadingStatus || ocupada || Boolean(audio.audio) || audio.carregandoBackup} onClick={() => void audio.iniciar()}><Mic className="h-4 w-4" />{audio.iniciando ? "Abrindo microfone…" : "Iniciar gravação"}</button>}
           <span className="font-mono text-sm" aria-label="Tempo de gravação">{Math.floor(audio.seconds / 60).toString().padStart(2, "0")}:{(audio.seconds % 60).toString().padStart(2, "0")}</span>
           {audio.gravando ? <span className="text-xs font-semibold text-red-700">● Gravando</span> : null}
         </div>
@@ -407,7 +442,7 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
           <p className="text-xs text-slate-500">Confira se o medidor reage à voz. Silêncio e ruído podem prejudicar a transcrição.</p>
         </div> : null}
         {!audio.audio ? <label className="block text-sm text-slate-700">Ou carregar áudio
-          <input aria-label="Carregar áudio" type="file" accept={ASSISTENTE_AUDIO_ACCEPT} disabled={!revisaoPronta || loadingStatus || ocupada || audio.carregandoBackup} className="mt-1 block w-full text-sm" onChange={(event) => { const file = event.target.files?.[0]; if (file) audio.importar(file, status?.limites?.audio_bytes ?? ASSISTENTE_AUDIO_MAX_BYTES); event.target.value = ""; }} />
+          <input aria-label="Carregar áudio" type="file" accept={ASSISTENTE_AUDIO_ACCEPT} disabled={!revisaoPronta || loadingStatus || ocupada || audio.carregandoBackup} className="mt-1 block w-full text-sm" onChange={(event) => { const file = event.target.files?.[0]; if (file) audio.importar(file); event.target.value = ""; }} />
         </label> : null}
         {audio.audio ? <>
           <AudioPreview audio={audio.audio} />
@@ -432,13 +467,13 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         <label className="block text-sm text-slate-700">Fotografias ou PDFs dos exames
           <input aria-label="Fotografias ou PDFs dos exames" type="file" multiple accept={ASSISTENTE_FILE_ACCEPT} disabled={!revisaoPronta || ocupada} className="mt-1 block w-full text-sm" onChange={(event) => {
             const next = [...arquivos, ...Array.from(event.target.files || [])];
-            const error = validarArquivosAssistente(next, status?.limites);
+            const error = validarArquivosLote(next);
             if (error) setErro(error);
             else { setArquivos(next); setAnexados(false); limparAnalise(); setErro(""); }
             event.target.value = "";
           }} />
         </label>
-        <p className="text-xs text-slate-500">Até 5 arquivos, 10 MB por arquivo e 20 MB no total. Selecione documentos do mesmo paciente; confira identificação, data e legibilidade.</p>
+        <p className="text-xs text-slate-500">Até 15 exames, 10 MB por arquivo e 60 MB no total. Selecione documentos do mesmo paciente; confira identificação, data e legibilidade.</p>
         {arquivos.length ? <ul className="space-y-2">{arquivos.map((file, index) => <li key={`${file.name}-${index}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-sm"><span className="break-all">{file.name}</span><ArquivoOriginalLink arquivo={file} /><button aria-label={`Remover ${file.name}`} type="button" className="text-red-700 disabled:opacity-50" disabled={ocupada} onClick={() => { setArquivos((prev) => prev.filter((_, i) => i !== index)); setAnexados(false); limparAnalise(); }}>Remover</button></li>)}</ul> : null}
         {arquivos.length ? <div>
           <p className="text-xs text-slate-600">{anexados ? "Arquivos guardados no prontuário." : "Selecionar ou analisar arquivos não os salva no prontuário."}</p>

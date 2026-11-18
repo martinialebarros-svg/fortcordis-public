@@ -61,7 +61,7 @@ describe("recuperação de áudio por atendimento e usuário", () => {
     expect(lerAudioBackup).toHaveBeenCalledWith(7, 1, 1);
     expect(result.current.audio).toBeNull();
   });
-  it("preserva os fragmentos na ordem e libera o microfone ao terminar", async () => {
+  it("grava continuamente por uma hora e preserva os fragmentos na ordem até o limite", async () => {
     const stop = vi.fn();
     const track = { stop, onended: null as (() => void) | null };
     const stream = { getTracks: () => [track], getAudioTracks: () => [track] };
@@ -85,10 +85,18 @@ describe("recuperação de áudio por atendimento e usuário", () => {
     vi.stubGlobal("MediaRecorder", Recorder);
     const { result } = renderHook(() => useAtendimentoAudio(1, 7, 1));
     await waitFor(() => expect(result.current.carregandoBackup).toBe(false));
-    await act(() => result.current.iniciar());
-    expect(result.current.gravando).toBe(true);
-    act(() => Recorder.current.ondataavailable?.({ data: new Blob(["header"]) }));
-    act(() => result.current.parar());
+    vi.useFakeTimers();
+    try {
+      await act(() => result.current.iniciar());
+      expect(result.current.gravando).toBe(true);
+      act(() => Recorder.current.ondataavailable?.({ data: new Blob(["header"]) }));
+      act(() => { vi.advanceTimersByTime(60 * 60 * 1000); });
+      expect(result.current.gravando).toBe(true);
+      expect(result.current.seconds).toBe(3600);
+      act(() => { vi.advanceTimersByTime(5 * 60 * 1000); });
+    } finally {
+      vi.useRealTimers();
+    }
     expect(result.current.gravando).toBe(false);
     expect(result.current.audio?.type).toBe("audio/mp4");
     expect(result.current.audio?.name).toMatch(/\.m4a$/);

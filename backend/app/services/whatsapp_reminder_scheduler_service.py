@@ -359,7 +359,7 @@ def is_reminder_scheduler_enabled_in_db() -> bool:
 
     db = SessionLocal()
     try:
-        config = db.query(Configuracao.whatsapp_lembrete_automatico_habilitado).first()
+        config = db.query(Configuracao).first()
         return bool(config and config.whatsapp_lembrete_automatico_habilitado)
     except Exception:
         logger.exception("Falha ao consultar configuracao do lembrete automatico do WhatsApp.")
