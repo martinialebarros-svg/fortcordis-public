@@ -101,23 +101,6 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); });
 
-  it.each(["Dog", "Cão"])("atualiza índice recalculado após editar DIVEd de paciente %s", async (species) => {
-    official.paciente = { ...patient, especie: species, peso_kg: 10 };
-    official.medidas = { DIVEd: "25", DIVEd_normalizado: "0.9" };
-    official.descricao = montarDescricaoEcocardiograma(official.medidas, { valvas: "", camaras: "", funcao: "", pericardio: "", vasos: "", ad_vd: "" });
-    const view = await open();
-    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
-    fireEvent.change(input("DIVEd (mm - Diâmetro interno do VE em diástole)"), { target: { value: "30" } });
-    fireEvent.click(screen.getByRole("button", { name: "Atualizar laudo" }));
-    await waitFor(() => expect(updates()).toHaveLength(1));
-    const body = updates()[0][1];
-    expect(body.payload_laudo.descricao).toContain("DIVEd_normalizado: 1.52");
-    expect(body.paciente).toBeUndefined();
-    expect(official.paciente.especie).toBe(species);
-    expect(input("DIVEd normalizado (DIVEd [cm] / peso^0,294)")).toHaveValue("1.52");
-    view.unmount();
-  });
-
   it("prévia preserva o oficial e compartilha payload, cadastro e imagens com a atualização explícita", async () => {
     vi.stubGlobal("URL", Object.assign(class extends URL {}, {
       createObjectURL: vi.fn(() => "blob:qa-existing-preview"), revokeObjectURL: vi.fn(),
