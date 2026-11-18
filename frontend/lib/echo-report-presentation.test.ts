@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildEchoReportGroups, prepareEchoReportMeasurements, splitReportObservations } from "./echo-report-presentation";
+import { buildEchoReportGroups, canineAeAoClinicalReference, prepareEchoReportMeasurements, splitReportObservations } from "./echo-report-presentation";
 import { deriveAutomaticEchoMeasurements, parseStoredEchoMeasurements } from "./echo-derived-measurements";
 import { mergeImportedEchoMeasurements, updateEchoMeasurement } from "./echo-unit-provenance";
 import type { ReferenciaEco } from "@/app/laudos/types/referencia-eco";
@@ -488,5 +488,25 @@ describe("pending historical diastolic indices in report preview", () => {
     const mixed = buildEchoReportGroups({ ...raw, Diastolica_ondas: "nao_confirmadas", TDI_ondas: "fundidas" }, null, new Set(), undefined, "Canina").flatMap((group) => group.rows);
     expect(mixed.find((row) => row.key === "E_E_linha")?.value).toBe("Não mensurável");
     expect(mixed.find((row) => row.key === "E_A")?.value).toBe("0.70 (valor a confirmar)");
+  });
+});
+
+
+describe("paridade dos índices caninos por espécie exata", () => {
+  it.each(["Canina", "Dog", "Cão", "cachorro"])("preserva fórmulas e índices atuais sem alterar a espécie registrada em %s", (species) => {
+    const raw = Object.freeze({ DIVEd: "30", DIVEd_normalizado: "0.9", DIVEd_2D: "32", DIVEd_normalizado_2D: "0.8", VE_vista_2D: "eixo_curto", AE_Ao: "1.4", AE_Ao_metodo: "2d_eixo_curto_diastole_inicial_sueco" });
+    const prepared = prepareEchoReportMeasurements(raw, 10, species, "5 anos");
+    expect(prepared.measurements).toMatchObject({ DIVEd_normalizado: "1.52", DIVEd_normalizado_2D: "1.55" });
+    const rows = buildEchoReportGroups(prepared.measurements, { especie: species, peso_kg: 10 } as ReferenciaEco, prepared.ambiguousKeys, 10, species, "5 anos").flatMap(group => group.rows);
+    expect(rows.find(row => row.key === "DIVEd_normalizado")?.value).toBe("1.52");
+    expect(canineAeAoClinicalReference(raw, species)).toBe("<1,60 (2D, eixo curto)");
+    expect(raw.DIVEd_normalizado).toBe("0.9");
+  });
+  it.each(["CaninaXYZ", "Dogfish", "Felina", "Cat", "Equina"])("não aplica índices ou limite caninos por prefixo à espécie %s", (species) => {
+    const raw = { DIVEd: "30", DIVEd_normalizado: "0.9", DIVEd_2D: "32", DIVEd_normalizado_2D: "0.8", VE_vista_2D: "eixo_curto", AE_Ao: "1.4", AE_Ao_metodo: "2d_eixo_curto_diastole_inicial_sueco" };
+    const prepared = prepareEchoReportMeasurements(raw, 10, species, "5 anos");
+    expect(prepared.measurements).not.toHaveProperty("DIVEd_normalizado");
+    expect(prepared.measurements).not.toHaveProperty("DIVEd_normalizado_2D");
+    expect(canineAeAoClinicalReference(raw, species)).toBeNull();
   });
 });
