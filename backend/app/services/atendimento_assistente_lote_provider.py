@@ -15,16 +15,17 @@ from pathlib import Path
 from pydantic import Field, ValidationError
 
 from app.core.config import settings
+from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_MINUTES, MAX_EXAMES
 from app.services.atendimento_ia_response import StructuredResponseError, parse_structured_response
 from app.schemas.atendimento_assistente import (
     AchadoExame,
+    FonteExame,
     AnaliseClinica,
     CampoSugerido,
     StrictOutput,
     SugestaoConduta,
 )
 from app.services.atendimento_assistente import (
-    ARQUIVOS_MAX_COUNT,
     INSTRUCTIONS,
     TRANSCRICAO_MAX_CHARS,
     ArquivoAnalise,
@@ -39,10 +40,10 @@ from app.services.atendimento_assistente import (
 )
 from app.services.atendimento_transcricao_revisao import TrechoTranscricao, revisar_trechos
 
-AUDIO_MAX_SECONDS = 30 * 60
+AUDIO_MAX_SECONDS = MAX_AUDIO_MINUTES * 60
 AUDIO_CHUNK_SECONDS = 8 * 60
 AUDIO_SAMPLE_RATE = 16000
-AUDIO_DECODE_TIMEOUT_SECONDS = 120
+AUDIO_DECODE_TIMEOUT_SECONDS = 180
 AUDIO_REVIEW_BUDGET_SECONDS = 180
 # The generation allowance includes reasoning and the structured answer. These
 # larger bounds belong only to the durable worker, never the synchronous route.
@@ -62,8 +63,8 @@ class AchadoExameLote(AchadoExame):
 
 
 class AnaliseClinicaLote(AnaliseClinica):
-    # Every finding already accepted for each of the five documents survives.
-    achados_exames: list[AchadoExameLote] = Field(max_length=500)
+    fontes: list[FonteExame] = Field(max_length=MAX_EXAMES)
+    achados_exames: list[AchadoExameLote] = Field(max_length=100 * MAX_EXAMES)
     pendencias: list[str] = Field(max_length=500)
     avisos: list[str] = Field(max_length=500)
 
@@ -154,7 +155,7 @@ def _decodificar_audio(source: Path, target: Path) -> None:
 
 def processar_audio(*, nome: str, mime: str, content: bytes, paciente_nome: str | None = None) -> dict:
     require_enabled()
-    safe_name, _ = validar_audio(nome, mime, content)
+    safe_name, _ = validar_audio(nome, mime, content, max_bytes=MAX_AUDIO_BYTES)
     with tempfile.TemporaryDirectory(prefix="fortcordis-audio-lote-") as directory:
         root = Path(directory)
         source = root / ("original" + Path(safe_name).suffix)
@@ -171,7 +172,7 @@ def processar_audio(*, nome: str, mime: str, content: bytes, paciente_nome: str 
             if not frames or rate != AUDIO_SAMPLE_RATE or recording.getnchannels() != 1 or recording.getsampwidth() != 2:
                 raise AssistenteError("O áudio preparado não contém uma faixa de voz válida.", 422)
             if frames > AUDIO_MAX_SECONDS * rate:
-                raise AssistenteError("Cada áudio do lote pode conter até 30 minutos.", 413)
+                raise AssistenteError(f"Cada áudio do lote pode conter até {MAX_AUDIO_MINUTES} minutos.", 413)
             provider = OpenAIAtendimentoProvider()
             transcripts: list[str] = []
             notices: list[str] = []
@@ -225,10 +226,10 @@ def processar_audio(*, nome: str, mime: str, content: bytes, paciente_nome: str 
 def processar_exame(*, nome: str, mime: str, content: bytes, indice: int, context: dict, user_id: int) -> dict:
     require_enabled()
     arquivo = validar_arquivo(nome, mime, content, indice)
-    read_timeout = PDF_READ_TIMEOUT_SECONDS if arquivo.mime == "application/pdf" else None
+    read_timeout = PDF_READ_TIMEOUT_SECONDS
     analise = OpenAIAtendimentoProvider(read_timeout=read_timeout).analisar(
         transcript="", context=context, files=[arquivo], user_id=user_id,
-        max_output_tokens=BATCH_ANALYSIS_MAX_OUTPUT_TOKENS if arquivo.mime == "application/pdf" else 16000,
+        max_output_tokens=BATCH_ANALYSIS_MAX_OUTPUT_TOKENS,
     )
     return {
         "arquivo": {"nome": arquivo.nome, "mime": arquivo.mime, "paginas": arquivo.paginas},
@@ -237,8 +238,8 @@ def processar_exame(*, nome: str, mime: str, content: bytes, indice: int, contex
 
 
 def _evidencias_exames(exames: list[dict], context: dict) -> tuple[list[ArquivoAnalise], dict, list[dict]]:
-    if len(exames) > ARQUIVOS_MAX_COUNT:
-        raise AssistenteError("Envie até cinco exames por lote.", 413)
+    if len(exames) > MAX_EXAMES:
+        raise AssistenteError(f"Envie até {MAX_EXAMES} exames por lote.", 413)
     files: list[ArquivoAnalise] = []
     isolated_notes: list[dict] = []
     combined = {"campos": [], "fontes": [], "achados_exames": [], "sugestoes": [], "pendencias": [], "avisos": []}

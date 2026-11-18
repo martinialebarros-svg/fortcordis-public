@@ -194,6 +194,50 @@ class BatchTests(unittest.TestCase):
             response = self.client.put(f'{self.base}/{job["id"]}/arquivos/{item["id"]}',files={"arquivo":(item["nome"],AUDIO if item["tipo"]=="audio" else self.pdf,item["mime"])})
             self.assertEqual(response.status_code,200,response.text)
 
+    def test_audio_parts_resume_at_confirmed_offset_and_verify_the_complete_file(self):
+        manifest = self.manifest(1, 0)
+        item = manifest["arquivos"][0]
+        job = self.create(manifest)
+        url = f'{self.base}/{job["id"]}/arquivos/{item["id"]}'
+        digest = hashlib.sha256(AUDIO).hexdigest()
+
+        def send(offset, content, sha=digest):
+            return self.client.put(url, params={"deslocamento": offset}, headers={"X-Audio-Sha256": sha},
+                                   files={"arquivo": (item["nome"], content, item["mime"])})
+
+        first = send(0, AUDIO[:8])
+        self.assertEqual(first.status_code, 200, first.text)
+        self.assertEqual(first.json()["arquivos"][0]["bytes_recebidos"], 8)
+        self.assertEqual(send(0, AUDIO[:8]).status_code, 409)
+        self.assertEqual(send(8, AUDIO[8:], "a" * 64).status_code, 409)
+        self.assertEqual(self.client.get(f"{url}/original").status_code, 404)
+        last = send(8, AUDIO[8:])
+        self.assertEqual(last.status_code, 200, last.text)
+        self.assertEqual(last.json()["arquivos"][0]["status"], "uploaded")
+        self.assertEqual(self.client.get(f"{url}/original").content, AUDIO)
+        self.assertEqual(send(8, AUDIO[8:]).status_code, 200)
+
+    def test_queue_transcription_without_synthesis_and_accept_fifteen_exams(self):
+        manifest = self.manifest(1, 0)
+        manifest.update(modo="transcricao", transcricao="")
+        job = self.create(manifest)
+        self.upload(job, manifest)
+        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/iniciar').status_code, 200)
+        with patch("app.services.atendimento_assistente_lote_provider.processar_audio",
+                   return_value={"texto": "Abertura. Meio. Encerramento.", "avisos": []}) as audio, patch(
+                   "app.services.atendimento_assistente_lote_provider.sintetizar_lote") as synthesis:
+            service.run_once()
+            audio.assert_called_once()
+            synthesis.assert_not_called()
+        state = self.client.get(f"{self.base}/atual").json()
+        self.assertEqual((state["status"], state["modo"], state["resultado"]), ("completed", "transcricao", None))
+        self.assertEqual(state["transcricao"], "Abertura. Meio. Encerramento.")
+
+        analysis = self.manifest(0, 15)
+        analysis["transcricao"] = state["transcricao"]
+        self.assertEqual(len(self.create(analysis)["arquivos"]), 15)
+        self.assertEqual(self.client.post(self.base, json=self.manifest(0, 16)).status_code, 422)
+
     def test_three_audios_five_documents_resume_only_failure_then_synthesize(self):
         self._assert_file_failure_resumes_independently("exame-2.pdf")
 

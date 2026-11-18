@@ -6,7 +6,7 @@ import { useAtendimentoAudio } from "@/lib/use-atendimento-audio";
 import type { AssistenteIAResultado } from "@/lib/atendimento-assistente-ia";
 import { limparRascunhosAssistenteMemoria } from "@/lib/atendimento-assistente-memory";
 
-vi.mock("@/lib/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }));
+vi.mock("@/lib/axios", () => ({ default: { get: vi.fn(), post: vi.fn(), put: vi.fn() } }));
 vi.mock("@/lib/use-atendimento-audio", () => ({ useAtendimentoAudio: vi.fn() }));
 
 const status = { usuario_id: 7, habilitado: true, configurado: true, modelo: "gpt-6.1-sol", esforco: "max", esforco_texto: "medium", modelo_transcricao: "gpt-transcribe" };
@@ -22,7 +22,7 @@ beforeEach(() => {
   vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? null : status }));
   vi.mocked(api.post).mockResolvedValue({ data: resultado });
   vi.mocked(useAtendimentoAudio).mockReturnValue({
-    audio: null, gravando: false, iniciando: false, carregandoBackup: false, seconds: 0, nivel: 0, aviso: "", erro: "", manterCopia: false,
+    audio: null, gravando: false, iniciando: false, carregandoBackup: false, seconds: 60, nivel: 0, aviso: "", erro: "", manterCopia: false,
     setManterCopia: vi.fn(), iniciar: vi.fn(), parar: vi.fn(), importar: vi.fn(), descartar: vi.fn(),
   });
   vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: vi.fn(() => "blob:audio"), revokeObjectURL: vi.fn() }));
@@ -40,6 +40,87 @@ async function preparar(props: Partial<React.ComponentProps<typeof AtendimentoAs
 }
 
 describe("AtendimentoAssistenteIA", () => {
+  it.each([false, true])("encaminha 15 exames e texto integral ao lote (já existe transcrição: %s)", async (comTranscricaoConcluida) => {
+    const base = "/atendimentos/1/assistente/lotes";
+    const transcricao = "Texto de consulta fictícia. ".repeat(1400).trim();
+    const fotos = Array.from({ length: 15 }, (_, i) => new File(["foto fictícia"], `exame-${i}.jpg`, { type: "image/jpeg" }));
+    const batch: { id: string; atendimento_id: number; paciente_id: number; status: string; arquivos: Array<{ id: string; status: string }>; transcricao: string; resultado: null } = {
+      id: "lote-exames", atendimento_id: 1, paciente_id: 1, status: "uploading", arquivos: [], transcricao, resultado: null,
+    };
+    const audioConcluido = comTranscricaoConcluida ? {
+      id: "audio-anterior", atendimento_id: 1, paciente_id: 1, status: "completed",
+      modo: "transcricao", arquivos: [], transcricao, resultado: null,
+    } : null;
+    vi.mocked(api.get).mockImplementation(async (url) => ({
+      data: url === `${base}/atual` || url === `${base}/audio-anterior`
+        ? audioConcluido : url === `${base}/${batch.id}` ? batch : status,
+    }));
+    vi.mocked(api.post).mockImplementation(async (url, payload) => {
+      if (url === base) {
+        const manifesto = payload as { transcricao: string; arquivos: Array<{ id: string; nome: string }> };
+        expect(manifesto.transcricao).toBe(transcricao);
+        expect(manifesto.arquivos.map((item) => item.nome)).toEqual(fotos.map((foto) => foto.name));
+        batch.arquivos = manifesto.arquivos.map((item) => ({ ...item, status: "pending" }));
+        return { data: batch };
+      }
+      expect(url).toBe(`${base}/${batch.id}/iniciar`);
+      return { data: { ...batch, status: "queued" } };
+    });
+    vi.mocked(api.put).mockImplementation(async (url) => {
+      const item = batch.arquivos.find((source) => String(url).endsWith(source.id))!;
+      item.status = "uploaded";
+      return { data: { ...batch } };
+    });
+    const onAttachFiles = vi.fn();
+    await preparar({ onAttachFiles, onEnsureSaved: vi.fn().mockResolvedValue(true) });
+    await waitFor(() => expect(screen.queryByText("Recuperando conjunto…")).toBeNull());
+    fireEvent.change(screen.getByLabelText("Transcrição para revisão"), { target: { value: transcricao } });
+    fireEvent.change(screen.getByLabelText("Fotografias ou PDFs dos exames"), { target: { files: fotos } });
+    fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
+    await screen.findByText("Conjunto na fila de processamento");
+    expect(api.put).toHaveBeenCalledTimes(15);
+    for (const [index, [, body]] of vi.mocked(api.put).mock.calls.entries()) {
+      expect((body as FormData).get("arquivo")).toBe(fotos[index]);
+    }
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(onAttachFiles).not.toHaveBeenCalled();
+  });
+
+  it("encaminha o áudio de uma hora à fila de transcrição sem solicitar análise", async () => {
+    const base = "/atendimentos/1/assistente/lotes";
+    const batch = { id: "lote-audio", atendimento_id: 1, paciente_id: 1, status: "uploading", arquivos: [] as Array<{ id: string; status: string }>, transcricao: "", resultado: null, modo: "transcricao" };
+    const state = vi.mocked(useAtendimentoAudio).getMockImplementation()!(1, 7, 1);
+    const file = new File(["audio fictício"], "consulta.webm", { type: "audio/webm" });
+    vi.mocked(useAtendimentoAudio).mockReturnValue({ ...state, audio: file, seconds: 3600 });
+    vi.mocked(api.get).mockImplementation(async (url) => ({
+      data: url === `${base}/atual` ? null : url === `${base}/${batch.id}` ? batch : status,
+    }));
+    vi.mocked(api.post).mockImplementation(async (url, payload) => {
+      if (url === base) {
+        expect(payload).toMatchObject({ modo: "transcricao", transcricao: "", arquivos: [{ tipo: "audio", nome: file.name }] });
+        const manifesto = payload as { arquivos: Array<{ id: string }> };
+        batch.arquivos = [{ ...manifesto.arquivos[0], status: "pending" }];
+        return { data: batch };
+      }
+      expect(url).toBe(`${base}/${batch.id}/iniciar`);
+      return { data: { ...batch, status: "completed", transcricao: "Texto da gravação completa.", arquivos: [{ ...batch.arquivos[0], status: "completed" }] } };
+    });
+    vi.mocked(api.put).mockImplementation(async (_url, body) => {
+      expect((body as FormData).get("arquivo")).toBe(file);
+      batch.arquivos[0].status = "uploaded";
+      return { data: { ...batch } };
+    });
+    await preparar();
+    await waitFor(() => expect(screen.queryByText("Recuperando conjunto…")).toBeNull());
+    fireEvent.click(screen.getByRole("button", { name: "Transcrever áudio" }));
+    const usar = await screen.findByRole("button", { name: "Usar transcrição" });
+    fireEvent.click(usar);
+    fireEvent.click(usar);
+    expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("tosse há dois dias\n\nTexto da gravação completa.");
+    expect(api.post).toHaveBeenCalledTimes(2);
+    expect(api.put).toHaveBeenCalledTimes(1);
+  });
+
   it("recupera conjunto concluído e exige revisão antes de incorporar, preservando aprovação na mesma aba", async () => {
     const batch = {
       id: "lote-concluido", atendimento_id: 1, paciente_id: 1, status: "completed", erro: null,
@@ -382,7 +463,7 @@ describe("AtendimentoAssistenteIA", () => {
     expect(screen.getByText("exame.pdf")).toBeTruthy();
   });
   it.each([
-    { name: "gravacao.webm", size: 24_000_001, mime: "audio/webm", message: "24.000.000 bytes" },
+    { name: "gravacao.webm", size: 60_000_001, mime: "audio/webm", message: "60.000.000 bytes" },
     { name: "gravacao.ogg", size: 20, mime: "audio/ogg", message: "converta uma cópia" },
     { name: "gravacao.flac", size: 20, mime: "audio/flac", message: "converta uma cópia" },
   ])("preserva reprodução/download mas não envia arquivo inviável: $name", async ({ name, size, mime, message }) => {

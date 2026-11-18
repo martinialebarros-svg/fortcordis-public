@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { apagarAudioBackup, lerAudioBackup, salvarAudioBackup, type AtendimentoAudioBackup } from "./atendimento-audio-backup";
-import { ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_AUDIO_MAX_SECONDS, escolherMimeGravacao, extensaoAudio, limiteAudioAssistente, validarAudioParaTranscricao } from "./atendimento-assistente-ia";
+import { ASSISTENTE_LOTE_AUDIO_MAX_BYTES, ASSISTENTE_AUDIO_MAX_SECONDS, escolherMimeGravacao, extensaoAudio, limiteAudioAssistente, validarAudioParaTranscricao } from "./atendimento-assistente-ia";
 import { apagarAudioAssistenteMemoria, guardarAudioAssistenteMemoria, lerRascunhoAssistenteMemoria, observarAudioAssistenteMemoria } from "./atendimento-assistente-memory";
 
 export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | null, pacienteId: number) {
@@ -27,7 +27,7 @@ export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | n
   const backupPendente = useRef(false);
   const escrevendoMemoria = useRef(false);
   const storageQueue = useRef(Promise.resolve());
-  const maxBytesRef = useRef(ASSISTENTE_AUDIO_MAX_BYTES);
+  const maxBytesRef = useRef(ASSISTENTE_LOTE_AUDIO_MAX_BYTES);
 
   const guardar = useCallback((value: AtendimentoAudioBackup) => {
     if (!usuarioId || !pacienteId) return;
@@ -107,7 +107,7 @@ export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | n
       secondsRef.current = value;
       setSeconds(value);
       if (value >= ASSISTENTE_AUDIO_MAX_SECONDS) {
-        setAviso("A gravação atingiu 30 minutos e foi encerrada. Transcreva este trecho antes de iniciar outro.");
+        setAviso("A gravação atingiu 65 minutos e foi encerrada. Transcreva este trecho antes de iniciar outro.");
         parar();
       }
     }, 500);
@@ -124,7 +124,7 @@ export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | n
     };
   }, [gravando, parar]);
 
-  const iniciar = async (maxBytes = ASSISTENTE_AUDIO_MAX_BYTES) => {
+  const iniciar = async (maxBytes = ASSISTENTE_LOTE_AUDIO_MAX_BYTES) => {
     if (iniciando || gravando || audio || carregandoBackup) return;
     setErro("");
     setAviso("");
@@ -139,7 +139,7 @@ export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | n
       if (!alive.current) { captured.getTracks().forEach((track) => track.stop()); return; }
       stream.current = captured;
       const mime = escolherMimeGravacao((value) => MediaRecorder.isTypeSupported(value));
-      const current = new MediaRecorder(captured, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 96000 });
+      const current = new MediaRecorder(captured, { ...(mime ? { mimeType: mime } : {}), audioBitsPerSecond: 48000 });
       recorder.current = current;
       const chunks: Blob[] = [];
       let total = 0;
@@ -224,7 +224,7 @@ export function useAtendimentoAudio(atendimentoId: number, usuarioId: number | n
     } finally { if (alive.current) setIniciando(false); }
   };
 
-  const importar = (file: File, maxBytes = ASSISTENTE_AUDIO_MAX_BYTES) => {
+  const importar = (file: File, maxBytes = ASSISTENTE_LOTE_AUDIO_MAX_BYTES) => {
     if (gravando || iniciando) return;
     if (!/\.(webm|mp3|m4a|mp4|wav|mpeg|mpga)$/i.test(file.name) || !file.size) {
       setErro("Selecione um áudio não vazio em MP3, MP4/M4A, MPEG/MPGA, WAV ou WebM.");
