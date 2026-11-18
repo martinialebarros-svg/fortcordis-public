@@ -7,3 +7,5 @@
 - O modo padrão mantém compatibilidade com lotes anteriores e com pedidos de análise já gravados. O novo modo fica armazenado no contexto privado do lote, sem migração. A autorização do solicitante e a identidade do paciente são verificadas também em processamento e retomada. Transcrição isolada não depende de campos de anamnese imutáveis.
 
 - Consultar o progresso não cria arquivos ou diretórios. Lotes anteriores sem campo de modo continuam sendo apresentados como análise.
+
+A homologação em Stage verifica a igualdade do original recebido, a leitura de cada fonte e a síntese entregue para revisão.
