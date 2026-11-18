@@ -92,9 +92,11 @@ def _filename(name: str | None, fallback: str) -> str:
     return re.sub(r"[^A-Za-z0-9._-]", "_", name).strip("._")[:160] or fallback
 
 
-def validar_audio(nome: str | None, mime: str | None, content: bytes) -> tuple[str, str]:
-    if not content or len(content) > AUDIO_MAX_BYTES:
-        raise AssistenteError("Envie um áudio não vazio de até 24 MB.", 413 if content else 422)
+def validar_audio(nome: str | None, mime: str | None, content: bytes, *, max_bytes: int | None = None) -> tuple[str, str]:
+    if max_bytes is None:
+        max_bytes = AUDIO_MAX_BYTES
+    if not content or len(content) > max_bytes:
+        raise AssistenteError(f"Envie um áudio não vazio de até {max_bytes // 1_000_000} MB.", 413 if content else 422)
     name = _filename(nome, "audio.webm")
     ext = os.path.splitext(name)[1].lower()
     kinds = {

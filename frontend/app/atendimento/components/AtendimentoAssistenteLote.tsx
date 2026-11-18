@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from "react";
 import api from "@/lib/axios";
 import { extractApiErrorMessageSync } from "@/lib/api-error";
 import AtendimentoTranscricaoRevisao from "./AtendimentoTranscricaoRevisao";
-import { ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_FILE_ACCEPT } from "@/lib/atendimento-assistente-ia";
+import { ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_FILE_ACCEPT } from "@/lib/atendimento-assistente-ia";
 import {
   STATUS_FONTE_LOTE, tipoArquivoLote, validarArquivosLote,
-  type ArquivoLoteLocal, type AssistenteLote, type FonteLote,
+  type ArquivoLoteLocal, type AssistenteLote, type FonteLote, type ModoAssistenteLote,
 } from "@/lib/atendimento-assistente-lote";
 
+export interface AtendimentoAssistenteLoteAcoes {
+  iniciarComFontes: (files: File[], modo: ModoAssistenteLote) => boolean;
+}
+
 interface Props {
+  acoesRef?: Ref<AtendimentoAssistenteLoteAcoes>;
   atendimentoId: number;
   pacienteId: number;
   usuarioId: number;
@@ -37,6 +42,7 @@ type ArquivoSelecionado = ArquivoLoteLocal & { audioDoAtendimento?: true };
 export default function AtendimentoAssistenteLote(props: Props) {
   const { atendimentoId, pacienteId, usuarioId, texto, consentimento, habilitado, disabled, audioAtual,
     onEnsureSaved, onReview, onBusyChange, onActiveChange, onPendingChange, onResultInvalidated, onSnapshot } = props;
+  const painel = useRef<HTMLElement | null>(null);
   const [lote, setLote] = useState<AssistenteLote | null>(null);
   const [selecao, setArquivos] = useState<ArquivoSelecionado[]>([]);
   const arquivos = selecao.filter((item) => !item.audioDoAtendimento || item.file === audioAtual);
@@ -66,7 +72,7 @@ export default function AtendimentoAssistenteLote(props: Props) {
     request_id: string;
   } | null>(null);
   const manifest = useRef<{
-    request_id: string; transcricao: string; consentimento: true;
+    request_id: string; transcricao: string; consentimento: true; modo?: ModoAssistenteLote;
     arquivos: Array<Pick<FonteLote, "id" | "nome" | "tipo" | "tamanho" | "mime">>;
   } | null>(null);
   const base = `/atendimentos/${atendimentoId}/assistente/lotes`;
@@ -172,27 +178,83 @@ export default function AtendimentoAssistenteLote(props: Props) {
     }
   };
 
-  const enviar = () => void executar(async (signal) => {
+  const enviarFonte = async (loteId: string, fonte: FonteLote, file: File, signal: AbortSignal) => {
+    const url = `${base}/${loteId}/arquivos/${fonte.id}`;
+    if (fonte.tipo !== "audio" || file.size <= ASSISTENTE_AUDIO_MAX_BYTES) {
+      const payload = new FormData();
+      payload.append("arquivo", file);
+      const { data } = await api.put<AssistenteLote>(url, payload, { signal, timeout: 300000 });
+      if (!signal.aborted) aceitarLote(data);
+      return;
+    }
+
+    const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    if (fonte.upload_sha256 && fonte.upload_sha256 !== hash) {
+      throw new Error("Selecione o mesmo áudio original para continuar o envio.");
+    }
+    let offset = fonte.bytes_recebidos ?? 0;
+    while (offset < file.size && !signal.aborted) {
+      const end = Math.min(offset + 8_000_000, file.size);
+      const payload = new FormData();
+      payload.append("arquivo", file.slice(offset, end), file.name);
+      const { data } = await api.put<AssistenteLote>(url, payload, {
+        params: { deslocamento: offset }, headers: { "X-Audio-Sha256": hash }, signal, timeout: 300000,
+      });
+      if (signal.aborted) return;
+      aceitarLote(data);
+      const saved = data.arquivos.find((item) => item.id === fonte.id);
+      if (saved?.status === "uploaded" && end === file.size) return;
+      if (saved?.bytes_recebidos !== end) throw new Error("Consulte o progresso para retomar o envio do áudio.");
+      offset = end;
+    }
+  };
+
+  const enviar = (novasFontes?: File[], modo: ModoAssistenteLote = "analise") => void executar(async (signal) => {
     if (!consentimento || !habilitado || disabled) return;
     if (onEnsureSaved && !(await onEnsureSaved())) throw new Error("Salve o atendimento e confirme o paciente antes de analisar o conjunto.");
     if (signal.aborted) return;
     // Reconcile uncertain writes before uploading or scheduling again.
-    let atual = await consultar(signal, lote?.id);
+    const substituindoTranscricao = Boolean(manifest.current && lote?.modo === "transcricao" && lote.status === "completed");
+    let atual = await consultar(signal, substituindoTranscricao ? undefined : lote?.id);
+    if (substituindoTranscricao && atual?.id === lote?.id) atual = null;
     if (signal.aborted) return;
+    const podeContinuarComExames = modo === "analise" && novasFontes && atual?.modo === "transcricao" && atual.status === "completed";
+    if (podeContinuarComExames && !texto.trim()) {
+      throw new Error("Use a transcrição concluída antes de organizar o texto com os exames.");
+    }
+    if (novasFontes && atual && !podeContinuarComExames) {
+      throw new Error("Já existe um conjunto neste atendimento. Consulte o progresso ou prepare um novo conjunto para usar outras fontes.");
+    }
+    let fontes = arquivos;
+    if (novasFontes) {
+      if (manifest.current && !atual) {
+        throw new Error("Consulte o progresso ou retome o envio da tentativa anterior no painel do conjunto.");
+      }
+      if (!atual && arquivos.some((item) => !novasFontes.includes(item.file))) {
+        throw new Error("Há outras fontes selecionadas no conjunto. Confira a seleção antes de iniciar.");
+      }
+      fontes = novasFontes.map((file): ArquivoSelecionado => ({
+        id: crypto.randomUUID(), file, tipo: tipoArquivoLote(file),
+        ...(file === audioAtual ? { audioDoAtendimento: true } : {}),
+      }));
+    }
     const audioDisponivel = (item: ArquivoSelecionado) => !item.audioDoAtendimento || item.file === audioAtualRef.current;
-    if (!atual) {
-      if (!arquivos.length) throw new Error("Selecione os áudios e exames deste atendimento.");
-      if (!arquivos.every(audioDisponivel)) throw new Error("O áudio deste atendimento mudou. Confira o conjunto antes de analisar.");
-      if (manifest.current?.arquivos.some((fonte) => !arquivos.some((item) => item.id === fonte.id))) {
+    if (!atual || podeContinuarComExames) {
+      if (!fontes.length) throw new Error("Selecione os áudios e exames deste atendimento.");
+      if (!fontes.every(audioDisponivel)) throw new Error("O áudio deste atendimento mudou. Confira o conjunto antes de analisar.");
+      if (manifest.current?.arquivos.some((fonte) => !fontes.some((item) => item.id === fonte.id))) {
         throw new Error("Uma fonte da tentativa anterior foi retirada. Use Preparar novo conjunto para escolher as fontes novamente.");
       }
-      const invalid = validarArquivosLote(arquivos.map((item) => item.file));
+      const invalid = validarArquivosLote(fontes.map((item) => item.file));
       if (invalid) throw new Error(invalid);
-      if (texto.length > 80000) throw new Error("A transcrição excede 80.000 caracteres. Revise o texto antes de iniciar.");
+      if (modo === "analise" && texto.length > 80000) throw new Error("A transcrição excede 80.000 caracteres. Revise o texto antes de iniciar.");
       manifest.current ??= {
-        request_id: crypto.randomUUID(), transcricao: texto, consentimento: true,
-        arquivos: arquivos.map(({ id, file, tipo }) => ({ id, nome: file.name, tipo, tamanho: file.size, mime: file.type })),
+        request_id: crypto.randomUUID(), transcricao: modo === "transcricao" ? "" : texto, consentimento: true,
+        ...(modo === "transcricao" ? { modo } : {}),
+        arquivos: fontes.map(({ id, file, tipo }) => ({ id, nome: file.name, tipo, tamanho: file.size, mime: file.type })),
       };
+      setArquivos(fontes);
       const { data } = await api.post<AssistenteLote>(base, manifest.current, { signal, timeout: 30000 });
       if (signal.aborted) return;
       atual = aceitarLote(data);
@@ -207,13 +269,10 @@ export default function AtendimentoAssistenteLote(props: Props) {
     const falhas: string[] = [];
     for (const fonte of atual.arquivos.filter((item) => item.status === "pending")) {
       if (signal.aborted) return;
-      const local = arquivos.find((item) => item.id === fonte.id && audioDisponivel(item));
+      const local = fontes.find((item) => item.id === fonte.id && audioDisponivel(item));
       if (!local) { falhas.push(fonte.nome); continue; }
-      const payload = new FormData();
-      payload.append("arquivo", local.file);
       try {
-        const { data } = await api.put<AssistenteLote>(`${base}/${atual.id}/arquivos/${fonte.id}`, payload, { signal, timeout: 300000 });
-        if (!signal.aborted) aceitarLote(data);
+        await enviarFonte(atual.id, fonte, local.file, signal);
       } catch {
         if (signal.aborted) return;
         // The server may have accepted the file even if its response was lost.
@@ -227,8 +286,20 @@ export default function AtendimentoAssistenteLote(props: Props) {
       throw new Error(`Envio pendente de ${falhas.length || refreshed.arquivos.filter((item) => item.status === "pending").length} arquivo(s). Selecione os arquivos indicados e retome o envio.`);
     }
     const { data } = await api.post<AssistenteLote>(`${base}/${atual.id}/iniciar`, {}, { signal, timeout: 30000 });
-    if (!signal.aborted) aceitarLote(data);
+    if (!signal.aborted) {
+      aceitarLote(data);
+      manifest.current = null;
+    }
   });
+
+  useImperativeHandle(props.acoesRef, () => ({
+    iniciarComFontes(files, modo) {
+      if (loading || activeOperation.current) return false;
+      painel.current?.scrollIntoView?.({ block: "nearest" });
+      enviar(files, modo);
+      return true;
+    },
+  }));
 
   const selecionarFontePendente = (fonte: FonteLote, file: File) => {
     if (file.name !== fonte.nome || file.size !== fonte.tamanho) {
@@ -344,18 +415,19 @@ export default function AtendimentoAssistenteLote(props: Props) {
   });
   const bloqueado = busy || disabled || loading;
   const pendingUpload = lote?.status === "uploading";
+  const substituicaoPendente = Boolean(manifest.current && lote?.modo === "transcricao" && lote.status === "completed");
   const statusText = lote ? {
     uploading: "Enviando fontes do conjunto",
     queued: "Conjunto na fila de processamento",
-    processing: "Analisando áudios e exames",
+    processing: lote.modo === "transcricao" ? "Transcrevendo áudio" : "Analisando áudios e exames",
     failed: "Conjunto aguardando retomada",
-    completed: lote.resultado?.bloqueado_integracao || !lote.resultado ? "Leitura concluída — identificação aguardando revisão" : "Análise conjunta concluída",
+    completed: lote.modo === "transcricao" ? "Transcrição concluída" : lote.resultado?.bloqueado_integracao || !lote.resultado ? "Leitura concluída — identificação aguardando revisão" : "Análise conjunta concluída",
   }[lote.status] : "";
 
-  return <section aria-label="Análise conjunta de áudios e exames" className="mt-4 space-y-3 rounded-2xl border border-teal-200 bg-teal-50 p-4">
+  return <section ref={painel} aria-label="Análise conjunta de áudios e exames" className="mt-4 space-y-3 rounded-2xl border border-teal-200 bg-teal-50 p-4">
     <h4 className="font-semibold text-teal-950">Analisar áudios e exames em conjunto</h4>
-    <p className="text-sm text-slate-700">Selecione os áudios e PDFs do mesmo paciente. Uma única solicitação transcreve os áudios, lê os exames e cruza as fontes com o atendimento salvo. O texto já preenchido abaixo também entra na análise.</p>
-    <p className="text-xs text-slate-600">Até 5 áudios de 24 MB e 5 exames de 10 MB cada, com 20 MB de exames no total. Os arquivos e o resultado do conjunto ficam disponíveis por 24 horas para retomada e revisão.</p>
+    <p className="text-sm text-slate-700">Selecione os áudios, fotos ou PDFs do mesmo paciente. Uma única solicitação transcreve os áudios, lê os exames e cruza as fontes com o atendimento salvo. O texto já preenchido abaixo também entra na análise.</p>
+    <p className="text-xs text-slate-600">Até 5 áudios de 60 MB e 70 minutos cada, e até 15 exames de 10 MB cada, com 60 MB de exames no total. Os arquivos e o resultado do conjunto ficam disponíveis por 24 horas para retomada e revisão.</p>
     {loading ? <p role="status">Recuperando conjunto…</p> : null}
     {!lote || pendingUpload ? <label className="block text-sm font-medium text-slate-800">
       {pendingUpload ? "Selecionar novamente arquivos pendentes" : "Áudios e PDFs do conjunto"}
@@ -370,7 +442,7 @@ export default function AtendimentoAssistenteLote(props: Props) {
       <button type="button" className="shrink-0 text-red-700 disabled:opacity-50" disabled={bloqueado || Boolean(manifest.current)} onClick={() => setArquivos((current) => current.filter((item) => item.id !== id))} aria-label={`Retirar ${file.name} do conjunto`}>Retirar</button>
     </li>)}</ol> : null}
     {lote ? <>
-      {lote.status === "completed" ? <p className="text-sm text-slate-700">Confira os trechos já salvos no prontuário antes de incluir novamente. A revisão do conjunto fica disponível abaixo ao abrir o resultado.</p> : null}
+      {lote.status === "completed" && lote.modo !== "transcricao" ? <p className="text-sm text-slate-700">Confira os trechos já salvos no prontuário antes de incluir novamente. A revisão do conjunto fica disponível abaixo ao abrir o resultado.</p> : null}
       <p role="status" className="font-medium text-teal-950">{statusText}</p>
       <ol className="space-y-2">{lote.arquivos.map((fonte, index) => <li key={fonte.id} className="rounded-lg bg-white p-2 text-sm">
         <span className="break-all">{index + 1}. {fonte.nome} — {STATUS_FONTE_LOTE[fonte.status]}</span>
@@ -410,8 +482,10 @@ export default function AtendimentoAssistenteLote(props: Props) {
       {avisoRaca ? <p role="status" className="text-sm text-teal-900">{avisoRaca}</p> : null}
     </> : null}
     <div className="flex flex-wrap gap-2">
-      {!lote || pendingUpload || lote.status === "failed" ? <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={bloqueado || !habilitado || !consentimento || (!lote && !arquivos.length)} onClick={enviar}>{busy ? "Preparando conjunto…" : lote?.status === "failed" ? lote.arquivos.every((fonte) => fonte.status === "completed") ? "Retomar análise do conjunto" : "Retomar arquivos que falharam" : pendingUpload ? "Retomar envio dos arquivos" : "Analisar conjunto"}</button> : null}
+      {!lote || pendingUpload || lote.status === "failed" || substituicaoPendente ? <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={bloqueado || !habilitado || !consentimento || (!lote && !arquivos.length)} onClick={() => enviar()}>{busy ? "Preparando conjunto…" : lote?.status === "failed" ? lote.arquivos.every((fonte) => fonte.status === "completed") ? "Retomar análise do conjunto" : "Retomar arquivos que falharam" : pendingUpload || substituicaoPendente ? "Retomar envio dos arquivos" : "Analisar conjunto"}</button> : null}
       <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => void executar(async (signal) => { await consultar(signal, lote?.id); })}>Consultar progresso</button>
+      {lote?.status === "completed" && lote.modo === "transcricao" && lote.transcricao && !substituicaoPendente
+        ? <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => onReview(lote)}>Usar transcrição</button> : null}
       {lote?.status === "completed" && lote.resultado ? <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => onReview(lote)}>Abrir revisão do conjunto</button> : null}
       {lote || manifest.current ? <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => setConfirmarNovo(true)}>Preparar novo conjunto</button> : null}
     </div>

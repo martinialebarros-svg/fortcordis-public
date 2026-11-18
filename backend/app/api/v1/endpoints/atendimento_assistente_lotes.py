@@ -2,7 +2,7 @@
 from uuid import UUID
 from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from starlette.concurrency import run_in_threadpool
@@ -14,7 +14,8 @@ from app.models.atendimento_assistente_lote import AtendimentoAssistenteLote as 
 from app.models.user import User
 from app.schemas.atendimento_assistente_lote import LoteEntrada, RevisaoRacaEntrada, RevogacaoRevisaoRacaEntrada
 from app.services import atendimento_assistente_lotes as service
-from app.services.atendimento_assistente import AssistenteError, AUDIO_MAX_BYTES
+from app.services.atendimento_assistente import AssistenteError
+from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_PART_BYTES, MAX_EXAME_BYTES
 
 def _private_response(response: Response):
     response.headers["Cache-Control"] = "private, no-store"
@@ -56,20 +57,33 @@ def obter_lote(atendimento_id: int, lote_id: UUID, db: Session = Depends(get_db)
 
 
 @router.put("/{atendimento_id}/assistente/lotes/{lote_id}/arquivos/{arquivo_id}")
-async def enviar_arquivo(atendimento_id: int, lote_id: UUID, arquivo_id: UUID, arquivo: UploadFile = File(...), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+async def enviar_arquivo(atendimento_id: int, lote_id: UUID, arquivo_id: UUID, arquivo: UploadFile = File(...), deslocamento: int | None = Query(None, ge=0), sha256: str | None = Header(None, alias="X-Audio-Sha256", pattern=r"^[a-f0-9]{64}$"), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Authenticate before buffering bytes. Release the lookup transaction while receiving.
-    service.get_job(db, atendimento_id, current_user.id, str(lote_id))
+    job = service.get_job(db, atendimento_id, current_user.id, str(lote_id))
+    item = db.get(Arquivo, (job.id, str(arquivo_id)))
+    if not item:
+        await arquivo.close()
+        raise HTTPException(404, "Arquivo não encontrado neste conjunto.")
+    if (deslocamento is None) != (sha256 is None) or (deslocamento is not None and item.tipo != "audio"):
+        await arquivo.close()
+        raise HTTPException(422, "Informe a posição e o identificador do áudio para enviar uma parte.")
+    limite = min(item.tamanho, MAX_AUDIO_PART_BYTES if deslocamento is not None
+                 else MAX_AUDIO_BYTES if item.tipo == "audio" else MAX_EXAME_BYTES)
     user_id = current_user.id
     db.rollback()
     try:
-        content = await arquivo.read(AUDIO_MAX_BYTES + 1)
+        content = await arquivo.read(limite + 1)
     finally:
         await arquivo.close()
-    if len(content) > AUDIO_MAX_BYTES:
+    if len(content) > limite:
         raise HTTPException(413, "O arquivo excede o limite de envio.")
     def store():
         job = service.get_job(db, atendimento_id, user_id, str(lote_id), lock=True)
-        return service.serialize(db, service.upload_file(db, job, str(arquivo_id), content), current_user)
+        if deslocamento is not None and sha256 is not None:
+            job = service.upload_audio_part(db, job, str(arquivo_id), content, deslocamento, sha256)
+        else:
+            job = service.upload_file(db, job, str(arquivo_id), content)
+        return service.serialize(db, job, current_user)
     return await run_in_threadpool(store)
 
 

@@ -1,0 +1,11 @@
+# Consulta longa e exames no Atendimento
+
+- O gravador mantém uma única captura por até 65 minutos, com cópia original recuperável conforme a preferência já existente. A configuração solicita 48 kbit/s ao navegador. O tamanho real depende do codificador. A fila recebe um áudio de até 70 minutos e 60 MB. Cada trecho enviado ao provedor tem até oito minutos. Originais maiores que 24 MB são enviados em partes de até 8 MB. A fila confirma a posição recebida e só libera o áudio inteiro após conferir o SHA-256.
+- Áudios importados sem duração local, gravações acima de 30 minutos e arquivos acima de 24 MB usam a fila em **Transcrever áudio**. A finalidade de transcrição isolada não dispara análise clínica. A interface recupera o progresso e oferece **Usar transcrição** ao concluir. O texto é acrescentado ao campo de revisão com prevenção de duplicação. Uma falha do áudio pode exigir reprocessar aquele original, inclusive seus trechos.
+- **Organizar e sugerir para revisão** usa a fila quando há exames selecionados. Envia as próprias fotos ou PDFs já escolhidos junto com o texto existente e guarda cópias temporárias conforme a regra de 24 horas. A rota direta continua disponível para texto sem arquivos. A avaliação médica, as provas por fonte, a verificação da identidade e a aprovação antes de incorporar permanecem obrigatórias.
+- Um lote aceita até 15 exames, no máximo 10 MiB cada e 60 MiB somados, além do limite existente de cinco áudios. Cada exame é validado e lido separadamente. Uma falha documental ou de síntese pode ser retomada preservando as leituras concluídas. Os 15 documentos podem manter observações e achados com referência ao original.
+- O modo padrão mantém compatibilidade com lotes anteriores e com pedidos de análise já gravados. O novo modo fica armazenado no contexto privado do lote, sem migração. A autorização do solicitante e a identidade do paciente são verificadas também em processamento e retomada. Transcrição isolada não depende de campos de anamnese imutáveis.
+
+- Consultar o progresso não cria arquivos ou diretórios. Lotes anteriores sem campo de modo continuam sendo apresentados como análise.
+
+A homologação em Stage verifica a igualdade do original recebido, a leitura de cada fonte e a síntese entregue para revisão.

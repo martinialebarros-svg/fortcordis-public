@@ -171,11 +171,12 @@ class LoteProviderTests(unittest.TestCase):
         self.assertEqual(args["reasoning"], {"effort": settings.ATENDIMENTO_IA_REASONING_EFFORT})
 
     def test_combined_findings_are_never_truncated_to_single_request_limit(self):
-        exams = [cached_exam(i) for i in range(1, 6)]
+        exams = [cached_exam(i) for i in range(1, 16)]
         for item in exams:
             item["analise"]["achados_exames"] *= 100
         result = service.sintetizar_lote(transcript=TRANSCRIPT, context=CONTEXT, exames=exams, user_id=8)
-        self.assertEqual(len(result["achados_exames"]), 500)
+        self.assertEqual(len(result["achados_exames"]), 1500)
+        self.assertEqual(len(result["fontes"]), 15)
 
     def test_synthesis_reconciles_global_gaps_without_promoting_isolated_document_notes(self):
         exam = cached_exam()

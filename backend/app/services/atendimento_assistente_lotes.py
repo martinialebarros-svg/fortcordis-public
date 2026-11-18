@@ -23,6 +23,7 @@ from app.models.user import User
 from app.db.database import SessionLocal
 from app.models.atendimento_assistente_lote import AtendimentoAssistenteLote as Lote, AtendimentoAssistenteLoteArquivo as Arquivo
 from app.schemas.atendimento_assistente_lote import LoteEntrada
+from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_PART_BYTES, MAX_EXAMES
 from app.services.atendimento_assistente import AssistenteError, require_enabled, validar_audio, validar_arquivo
 from app.services.atendimento_assistente_identidade import (
     DECISAO_RACA_PENDENTE, impedimento_revisao_raca, revisao_raca_aplicavel,
@@ -76,8 +77,20 @@ def _validate_patient(db, job):
     return context
 
 
+def _stored_context(job):
+    context = json.loads(job.context_json)
+    mode = context.pop("_modo_assistente", "analise")
+    return context, mode
+
+
+def _job_context(context, mode):
+    return _json({**context, "_modo_assistente": mode} if mode == "transcricao" else context)
+
+
 def _validate_snapshot(db, job):
-    if _json(_validate_patient(db, job)) != job.context_json:
+    context = _validate_patient(db, job)
+    saved, mode = _stored_context(job)
+    if mode == "analise" and context != saved:
         raise HTTPException(409, "O atendimento salvo mudou durante a análise. Prepare um novo conjunto com o contexto atualizado.")
 
 
@@ -108,7 +121,7 @@ def _review_state(job):
         state = json.loads(job.revisoes_identidade_json)
         if (not isinstance(state, dict) or set(state) != {"version", "revisoes", "solicitacoes"}
                 or state["version"] != 1 or not isinstance(state["revisoes"], dict)
-                or len(state["revisoes"]) > 5 or not isinstance(state["solicitacoes"], list)
+                or len(state["revisoes"]) > MAX_EXAMES or not isinstance(state["solicitacoes"], list)
                 or len(state["solicitacoes"]) > MAX_REVIEW_REQUESTS
                 or not all(isinstance(item, dict) for item in state["solicitacoes"])):
             raise ValueError()
@@ -347,11 +360,13 @@ def serialize(db, job, actor=None):
         "id": job.id, "atendimento_id": job.atendimento_id, "paciente_id": job.paciente_id,
         "status": "failed" if job.status == "deleting" else job.status, "erro": invalid_review or job.erro,
         "expires_at": job.expires_at.isoformat() + "Z",
-        "arquivos": [{"id": f.id, "nome": f.nome, "tipo": f.tipo, "tamanho": f.tamanho, "status": f.status, "erro": f.erro} for f in files],
+        "arquivos": [{"id": f.id, "nome": f.nome, "tipo": f.tipo, "tamanho": f.tamanho, "status": f.status, "erro": f.erro,
+                       **(_upload_progress(job.id, f) if f.tipo == "audio" and f.status == "pending" else {})} for f in files],
         # A completed job does not make an old manual authorization permanently valid.
         # Read invalidation is projection-only: keep originals and stored history intact.
         "resultado": json.loads(job.resultado_json) if job.resultado_json and job.status != "deleting" and not invalid_review else None,
         "transcricao": "\n\n".join(t.strip() for t in texts if t.strip()),
+        "modo": _stored_context(job)[1],
         "revisoes_transcricao": transcript_reviews,
         "revisao_raca": race_review,
     }
@@ -359,6 +374,8 @@ def serialize(db, job, actor=None):
 
 def create_job(db, context, usuario_id, manifest: LoteEntrada):
     payload = manifest.model_dump(mode="json", exclude={"consentimento"})
+    if manifest.modo == "analise":
+        payload.pop("modo")  # Preserve idempotency for existing manifests.
     fingerprint = hashlib.sha256(_json(payload).encode()).hexdigest()
     request_id = str(manifest.request_id)
     previous = db.query(Lote).filter(Lote.usuario_id == usuario_id, Lote.request_id == request_id).first()
@@ -369,7 +386,7 @@ def create_job(db, context, usuario_id, manifest: LoteEntrada):
     now = datetime.utcnow()
     job = Lote(id=str(uuid4()), request_id=request_id, usuario_id=usuario_id,
                atendimento_id=context["atendimento_id"], paciente_id=context["paciente"]["id"],
-               manifest_hash=fingerprint, context_json=_json(context), transcricao=manifest.transcricao.strip(),
+               manifest_hash=fingerprint, context_json=_job_context(context, manifest.modo), transcricao=manifest.transcricao.strip(),
                status="uploading", created_at=now, expires_at=now + timedelta(hours=RETENTION_HOURS))
     db.add(job)
     for order, item in enumerate(manifest.arquivos):
@@ -388,12 +405,72 @@ def create_job(db, context, usuario_id, manifest: LoteEntrada):
     return job
 
 
-def storage_root():
+def storage_root(*, create=True):
     # Deliberately outside UPLOAD_DIR, which may be publicly served by Nginx.
     path = Path(__file__).resolve().parents[2] / "generated" / "atendimento_assistente_lotes"
-    path.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(path, 0o700)
+    if create:
+        path.mkdir(mode=0o700, parents=True, exist_ok=True)
+        os.chmod(path, 0o700)
     return path
+
+
+def _audio_partial(job_id, file_id):
+    return next(iter((storage_root(create=False) / job_id).glob(f"parte-{file_id}-*")), None)
+
+
+def _upload_progress(job_id, item):
+    part = _audio_partial(job_id, item.id)
+    if part is None:
+        return {}
+    try:
+        return {"bytes_recebidos": part.stat().st_size, "upload_sha256": part.name.split("-")[-1]}
+    except FileNotFoundError:
+        return {}
+
+
+def upload_audio_part(db, job, file_id, content, offset, expected_hash):
+    item = db.get(Arquivo, (job.id, file_id))
+    if not item or item.tipo != "audio":
+        raise HTTPException(404, "Áudio não encontrado neste conjunto.")
+    if item.sha256:
+        if item.sha256 != expected_hash:
+            raise HTTPException(409, "O conteúdo difere do arquivo recebido.")
+        return job
+    if job.status != "uploading":
+        raise HTTPException(409, "O conjunto já foi iniciado.")
+    if not content or len(content) > MAX_AUDIO_PART_BYTES or offset + len(content) > item.tamanho:
+        raise HTTPException(413, "A parte excede o tamanho do áudio selecionado.")
+
+    directory = storage_root() / job.id
+    directory.mkdir(mode=0o700, exist_ok=True)
+    target = directory / f"parte-{file_id}-{expected_hash}"
+    existing = _audio_partial(job.id, file_id)
+    if existing and existing != target:
+        raise HTTPException(409, "Selecione o mesmo áudio original para continuar o envio.")
+    received = target.stat().st_size if target.exists() else 0
+    if offset != received:
+        raise HTTPException(409, "A posição do envio mudou. Consulte o progresso e retome.")
+    if received + len(content) == item.tamanho:
+        # Leave only a confirmed prefix on disk until the usual upload commits.
+        original = (target.read_bytes() if received else b"") + content
+        if hashlib.sha256(original).hexdigest() != expected_hash:
+            target.unlink(missing_ok=True)
+            raise HTTPException(422, "O áudio recebido não corresponde ao original. Retome o envio.")
+        saved = upload_file(db, job, file_id, original)
+        target.unlink(missing_ok=True)
+        return saved
+
+    fd = os.open(target, os.O_WRONLY | os.O_APPEND | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    with os.fdopen(fd, "ab", buffering=0) as stream:
+        try:
+            if stream.write(content) != len(content):
+                raise OSError("short_write")
+            os.fsync(stream.fileno())
+        except OSError:
+            stream.truncate(received)
+            raise
+    db.commit()
+    return job
 
 
 def upload_file(db, job, file_id, content):
@@ -411,7 +488,7 @@ def upload_file(db, job, file_id, content):
         raise HTTPException(422, "O tamanho recebido difere do arquivo selecionado. Tente enviar este arquivo novamente.")
     try:
         if item.tipo == "audio":
-            validar_audio(item.nome, item.mime, content)
+            validar_audio(item.nome, item.mime, content, max_bytes=MAX_AUDIO_BYTES)
         else:
             validar_arquivo(item.nome, item.mime, content, item.ordem + 1)
     except AssistenteError as exc:
@@ -449,14 +526,15 @@ def start_job(db, job, *, retry=False):
     if any(not item.sha256 for item in files):
         raise HTTPException(409, "Envie todos os arquivos antes de iniciar a análise.")
     context = _validate_patient(db, job)
-    if retry and _json(context) != job.context_json:
+    saved, mode = _stored_context(job)
+    if retry and mode == "analise" and context != saved:
         raise HTTPException(409, "O atendimento salvo mudou. Prepare um novo conjunto com o contexto atualizado.")
     if job.revisoes_identidade_json:
         reviews = _reviews_for_synthesis(db, job, files)
         if reviews and _has_unreviewed_identity(files, reviews, context):
             raise HTTPException(409, "Há identificações pendentes. Confira os documentos antes de continuar a análise.")
     if not retry:
-        job.context_json = _json(context)
+        job.context_json = _job_context(context, mode)
     for item in files:
         if item.status == "failed":
             item.status, item.erro = "uploaded", None
@@ -544,7 +622,8 @@ def process_job(job_id, token):
                 return
             _authorize_actor(db, job)
             _validate_snapshot(db, job)
-            context, user_id = json.loads(job.context_json), job.usuario_id
+            context, mode = _stored_context(job)
+            user_id = job.usuario_id
             ids = [item.id for item in _files(db, job_id)]
             db.rollback()
         for file_id in ids:
@@ -586,6 +665,12 @@ def process_job(job_id, token):
             files = _files(db, job_id)
             if any(item.status != "completed" for item in files):
                 job.status, job.erro = "failed", "Há arquivos pendentes. Retome os que falharam para analisar o conjunto completo."
+                db.commit()
+                return
+            if mode == "transcricao":
+                _authorize_actor(db, job)
+                _validate_snapshot(db, job)
+                job.status, job.erro = "completed", None
                 db.commit()
                 return
             transcript = serialize(db, job)["transcricao"]

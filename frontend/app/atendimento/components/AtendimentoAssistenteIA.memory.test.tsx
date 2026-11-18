@@ -47,13 +47,20 @@ async function prepararRevisao() {
   fireEvent.change(screen.getByLabelText("Transcrição para revisão"), { target: { value: transcript } });
   const file = new File(["%PDF-synthetic"], "exame-sintetico.pdf", { type: "application/pdf" });
   fireEvent.change(screen.getByLabelText("Fotografias ou PDFs dos exames"), { target: { files: [file] } });
-  fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
+  const batch = {
+    id: "lote-ficticio", atendimento_id: 1, paciente_id: 11, status: "completed",
+    arquivos: [], resultado, transcricao: transcript,
+  };
+  vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? batch : status }));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Consultar progresso" })).toBeEnabled());
+  fireEvent.click(screen.getByRole("button", { name: "Consultar progresso" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Abrir revisão do conjunto" }));
   await screen.findByLabelText("Anamnese");
   fireEvent.change(screen.getByLabelText("Anamnese"), { target: { value: "Tutor nega desmaios; tosse confirmada na revisão." } });
   const checks = screen.getAllByLabelText(/Conferi este trecho com a fonte/);
   fireEvent.click(checks[0]); fireEvent.click(checks[1]);
   fireEvent.click(screen.getAllByRole("button", { name: "Adicionar ao atendimento" })[0]);
-  expect(view.onApplyFields).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(view.onApplyFields).toHaveBeenCalledTimes(1));
   return { ...view, file };
 }
 
@@ -73,9 +80,9 @@ describe("rascunho de IA em memória após navegação", () => {
     const checks = screen.getAllByLabelText(/Conferi este trecho com a fonte/);
     expect((checks[0] as HTMLInputElement).checked).toBe(true);
     expect((checks[1] as HTMLInputElement).checked).toBe(true);
-    expect(nextApply).not.toHaveBeenCalled(); expect(api.post).toHaveBeenCalledTimes(1);
+    expect(nextApply).not.toHaveBeenCalled(); expect(api.post).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Adicionar ao atendimento" }));
-    expect(nextApply).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(nextApply).toHaveBeenCalledTimes(1));
     expect(nextApply).toHaveBeenCalledWith([{ campo: "queixa_principal", texto: "Tosse relatada pelo tutor." }]);
     expect(screen.getAllByRole("button", { name: "Adicionado ao atendimento" })).toHaveLength(2);
   });
