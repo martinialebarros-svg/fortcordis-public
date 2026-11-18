@@ -2,7 +2,10 @@ import type { ClinicalFieldKey } from "./atendimento-clinical-notes";
 
 // Decimal bytes leave headroom below the provider's documented 25 MB ceiling.
 export const ASSISTENTE_AUDIO_MAX_BYTES = 24_000_000;
-export const ASSISTENTE_AUDIO_MAX_SECONDS = 30 * 60;
+export const ASSISTENTE_AUDIO_MAX_SECONDS = 65 * 60;
+export const ASSISTENTE_LOTE_AUDIO_MAX_BYTES = 60_000_000;
+export const ASSISTENTE_LOTE_EXAMES_MAX = 15;
+export const ASSISTENTE_LOTE_EXAMES_TOTAL_BYTES = 60 * 1024 * 1024;
 export const ASSISTENTE_AUDIO_ACCEPT = ".mp3,.mp4,.mpeg,.mpga,.m4a,.wav,.webm";
 export const ASSISTENTE_FILE_ACCEPT = ".jpg,.jpeg,.png,.webp,.pdf";
 export const ASSISTENTE_CAMPO_LABELS: Partial<Record<ClinicalFieldKey, string>> = {
@@ -72,13 +75,14 @@ export interface AssistenteIAResultado {
 
 export type AssistenteCampoRevisado = { campo: ClinicalFieldKey; texto: string };
 
-export function validarArquivosAssistente(files: File[], limites?: AssistenteIAStatus["limites"]): string | null {
-  if (files.length > (limites?.arquivos ?? 5)) return "Selecione no máximo cinco arquivos por análise.";
+export function validarArquivosAssistente(files: File[], limites?: Pick<NonNullable<AssistenteIAStatus["limites"]>, "arquivos" | "arquivo_bytes" | "total_arquivos_bytes">): string | null {
+  const quantidade = limites?.arquivos ?? 5;
+  if (files.length > quantidade) return `Selecione no máximo ${quantidade} arquivos por análise.`;
   const maxArquivo = limites?.arquivo_bytes ?? 10 * 1024 * 1024;
   const maxTotal = limites?.total_arquivos_bytes ?? 20 * 1024 * 1024;
   if (files.some((file) => !/\.(jpe?g|png|webp|pdf)$/i.test(file.name))) return "Use fotografias JPG, PNG, WebP ou documentos PDF.";
   if (files.some((file) => !file.size || file.size > maxArquivo)) return "Cada arquivo precisa ter conteúdo e até 10 MB.";
-  if (files.reduce((total, file) => total + file.size, 0) > maxTotal) return "O conjunto de arquivos deve ter até 20 MB.";
+  if (files.reduce((total, file) => total + file.size, 0) > maxTotal) return `O conjunto de arquivos deve ter até ${maxTotal / (1024 * 1024)} MB.`;
   return null;
 }
 
@@ -98,7 +102,7 @@ export function extensaoAudio(mime: string): string {
 }
 
 export function limiteAudioAssistente(maxBytes = ASSISTENTE_AUDIO_MAX_BYTES): number {
-  return Number.isFinite(maxBytes) && maxBytes > 0 ? Math.min(maxBytes, ASSISTENTE_AUDIO_MAX_BYTES) : ASSISTENTE_AUDIO_MAX_BYTES;
+  return Number.isFinite(maxBytes) && maxBytes > 0 ? Math.min(maxBytes, ASSISTENTE_LOTE_AUDIO_MAX_BYTES) : ASSISTENTE_AUDIO_MAX_BYTES;
 }
 
 export function validarAudioParaTranscricao(file: Pick<File, "name" | "size">, maxBytes = ASSISTENTE_AUDIO_MAX_BYTES): string | null {

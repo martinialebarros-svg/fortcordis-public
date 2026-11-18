@@ -27,7 +27,7 @@ beforeEach(() => {
   vi.mocked(api.post).mockResolvedValue({ data: { texto: original, modelo: "gpt-transcribe", avisos: [], revisao_transcricao: revisao } });
   vi.mocked(useAtendimentoAudio).mockReturnValue({
     audio: new File(["synthetic-audio"], "consulta-ficticia.webm", { type: "audio/webm" }),
-    gravando: false, iniciando: false, carregandoBackup: false, seconds: 0, nivel: 0, aviso: "", erro: "", manterCopia: false,
+    gravando: false, iniciando: false, carregandoBackup: false, seconds: 60, nivel: 0, aviso: "", erro: "", manterCopia: false,
     setManterCopia: vi.fn(), iniciar: vi.fn(), parar: vi.fn(), importar: vi.fn(), descartar: vi.fn(),
   });
   const OriginalURL = URL;

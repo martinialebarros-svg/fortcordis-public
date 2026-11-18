@@ -1,3 +1,4 @@
+import { ASSISTENTE_LOTE_AUDIO_MAX_BYTES, ASSISTENTE_LOTE_EXAMES_MAX, ASSISTENTE_LOTE_EXAMES_TOTAL_BYTES } from "./atendimento-assistente-ia";
 import {
   validarArquivosAssistente, validarAudioParaTranscricao,
   type AssistenteIAResultado, type AssistenteTranscricaoFonteRevisao,
@@ -10,6 +11,8 @@ export interface FonteLote {
   tipo: TipoFonteLote;
   tamanho: number;
   mime?: string;
+  bytes_recebidos?: number;
+  upload_sha256?: string;
   status: "pending" | "uploaded" | "processing" | "failed" | "completed";
   erro: string | null;
 }
@@ -23,6 +26,7 @@ export interface AssistenteLote {
   arquivos: FonteLote[];
   resultado: AssistenteIAResultado | null;
   transcricao: string | null;
+  modo?: ModoAssistenteLote;
   revisoes_transcricao?: AssistenteTranscricaoFonteRevisao[];
   revisao_raca?: {
     token: string;
@@ -43,6 +47,8 @@ export interface AssistenteLote {
   };
 }
 
+export type ModoAssistenteLote = "analise" | "transcricao";
+
 export interface ArquivoLoteLocal {
   id: string;
   file: File;
@@ -58,10 +64,14 @@ export function validarArquivosLote(files: File[]): string | null {
   const exames = files.filter((file) => tipoArquivoLote(file) === "exame");
   if (audios.length > 5) return "Selecione até cinco áudios por conjunto.";
   for (const audio of audios) {
-    const error = validarAudioParaTranscricao(audio);
+    const error = validarAudioParaTranscricao(audio, ASSISTENTE_LOTE_AUDIO_MAX_BYTES);
     if (error) return `${audio.name}: ${error}`;
   }
-  return validarArquivosAssistente(exames);
+  return validarArquivosAssistente(exames, {
+    arquivos: ASSISTENTE_LOTE_EXAMES_MAX,
+    arquivo_bytes: 10 * 1024 * 1024,
+    total_arquivos_bytes: ASSISTENTE_LOTE_EXAMES_TOTAL_BYTES,
+  });
 }
 
 export const STATUS_FONTE_LOTE: Record<FonteLote["status"], string> = {
