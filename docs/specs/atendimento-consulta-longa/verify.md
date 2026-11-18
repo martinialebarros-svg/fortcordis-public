@@ -10,3 +10,5 @@
 | Envio de original acima de 30 MiB e análise autenticada em Stage | pendente | A validação local não acionou provedor externo. Homologar nos vhosts ativos com material fictício e registrar tempos e resultado antes de promover. |
 
 195 testes de frontend e 89 de backend passaram. Três testes de integração com PostgreSQL ficaram fora do ambiente local. Passaram também a compilação do frontend, o lint das alterações, o guardrail SDD e a sintaxe do provisionador. Stage e produção não foram alterados.
+
+A suíte ampla de Stage identificou uma simulação de lote legado sem contexto persistido. O teste foi ajustado para representar o registro real, sem campo de modo no contexto. A consulta do progresso foi mantida somente leitura.

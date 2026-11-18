@@ -249,7 +249,7 @@ class BatchSerializationTests(unittest.TestCase):
                  SimpleNamespace(id="failed-audio", nome="failed.wav", tipo="audio", tamanho=10,
                                  status="failed", erro="erro", resultado_json=None)]
         from datetime import datetime
-        job = SimpleNamespace(id="batch", atendimento_id=1, paciente_id=2, status="completed",
+        job = SimpleNamespace(context_json="{}", id="batch", atendimento_id=1, paciente_id=2, status="completed",
                               erro=None, expires_at=datetime(2030, 1, 1), resultado_json=None, transcricao="Manual.")
         with patch.object(jobs, "_files", return_value=files), \
                 patch.object(jobs, "_serialize_race_review", return_value=(None, None)):

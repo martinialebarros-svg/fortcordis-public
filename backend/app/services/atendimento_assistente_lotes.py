@@ -405,16 +405,17 @@ def create_job(db, context, usuario_id, manifest: LoteEntrada):
     return job
 
 
-def storage_root():
+def storage_root(*, create=True):
     # Deliberately outside UPLOAD_DIR, which may be publicly served by Nginx.
     path = Path(__file__).resolve().parents[2] / "generated" / "atendimento_assistente_lotes"
-    path.mkdir(mode=0o700, parents=True, exist_ok=True)
-    os.chmod(path, 0o700)
+    if create:
+        path.mkdir(mode=0o700, parents=True, exist_ok=True)
+        os.chmod(path, 0o700)
     return path
 
 
 def _audio_partial(job_id, file_id):
-    return next(iter((storage_root() / job_id).glob(f"parte-{file_id}-*")), None)
+    return next(iter((storage_root(create=False) / job_id).glob(f"parte-{file_id}-*")), None)
 
 
 def _upload_progress(job_id, item):
