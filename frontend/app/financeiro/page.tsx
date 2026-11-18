@@ -84,6 +84,9 @@ interface OrdemServico {
   valor_servico: number;
   desconto: number;
   valor_final: number;
+  valor_recebido?: number;
+  valor_em_aberto?: number;
+  recebimento_parcial?: boolean;
   status: string;
   observacoes?: string | null;
   created_at: string;
@@ -94,6 +97,14 @@ interface PagamentoRecebimentoItem {
   forma_codigo: string;
   valor: string;
 }
+
+const valorEmAbertoOS = (os: OrdemServico): number => {
+  const saldo = os.valor_em_aberto;
+  return Number(Number(saldo ?? os.valor_final ?? 0).toFixed(2));
+};
+
+const statusExibidoOS = (os: OrdemServico): string =>
+  os.status === "Pendente" && Number(os.valor_recebido || 0) > 0 ? "Parcial" : os.status;
 
 interface ClinicaOption {
   id: number;
@@ -968,6 +979,8 @@ export default function FinanceiroPage() {
   };
 
   const gerarPagamentoId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const gerarRecebimentoId = () =>
+    globalThis.crypto?.randomUUID?.() || `receb-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
 
   const parseMoneyValue = (value: string): number => {
     const normalizado = String(value || "").replace(",", ".").trim();
@@ -1037,6 +1050,7 @@ export default function FinanceiroPage() {
       case 'Recebido':
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'Pendente':
+      case 'Parcial':
         return <Clock className="w-4 h-4 text-yellow-500" />;
       case 'Cancelado':
         return <XCircle className="w-4 h-4 text-red-500" />;
@@ -1051,6 +1065,7 @@ export default function FinanceiroPage() {
       case 'Recebido':
         return 'bg-green-100 text-green-800';
       case 'Pendente':
+      case 'Parcial':
         return 'bg-yellow-100 text-yellow-800';
       case 'Cancelado':
         return 'bg-red-100 text-red-800';
@@ -1127,7 +1142,7 @@ export default function FinanceiroPage() {
     const totalBruto = linhas.reduce((acc, item) => acc + item.valor, 0);
     const totalTaxa = linhas.reduce((acc, item) => acc + item.taxa, 0);
     const totalLiquido = linhas.reduce((acc, item) => acc + item.liquido, 0);
-    const valorOS = Number(modalReceberOS?.valor_final || 0);
+    const valorOS = modalReceberOS ? valorEmAbertoOS(modalReceberOS) : 0;
     const limiteCredito = Math.max(0, Number(saldoCreditoClienteOS || 0));
     const creditoSolicitado = parseMoneyValue(valorCreditoUtilizadoOS);
     const creditoUtilizado = usarCreditoClienteOS
@@ -1151,6 +1166,7 @@ export default function FinanceiroPage() {
   }, [
     formasPagamentoDisponiveis,
     modalReceberOS?.valor_final,
+    modalReceberOS?.valor_em_aberto,
     pagamentosRecebimentoOS,
     saldoCreditoClienteOS,
     usarCreditoClienteOS,
@@ -1196,7 +1212,7 @@ export default function FinanceiroPage() {
     const totalBruto = linhas.reduce((acc, item) => acc + item.valor, 0);
     const totalTaxa = linhas.reduce((acc, item) => acc + item.taxa, 0);
     const totalLiquido = linhas.reduce((acc, item) => acc + item.liquido, 0);
-    const valorOS = ordensRecebimentoLote.reduce((acc, os) => acc + Number(os.valor_final || 0), 0);
+    const valorOS = ordensRecebimentoLote.reduce((acc, os) => acc + valorEmAbertoOS(os), 0);
     const diferenca = Number((totalBruto - valorOS).toFixed(2));
     return {
       linhas,
@@ -1390,7 +1406,7 @@ export default function FinanceiroPage() {
       {
         id: gerarPagamentoId(),
         forma_codigo: codigo,
-        valor: toMoneyInput(Number(os.valor_final || 0)),
+        valor: toMoneyInput(valorEmAbertoOS(os)),
       },
     ]);
     setDataRecebimentoOS(hojeLocalISO());
@@ -1436,7 +1452,7 @@ export default function FinanceiroPage() {
 
     const total = idsPendentes.reduce((acc, id) => {
       const os = ordensServico.find((item) => item.id === id);
-      return acc + Number(os?.valor_final || 0);
+      return acc + (os ? valorEmAbertoOS(os) : 0);
     }, 0);
 
     setModalReceberLoteOS(idsPendentes.map((id) => ({ ...ordensServico.find((os) => os.id === id)! })));
@@ -1600,16 +1616,19 @@ export default function FinanceiroPage() {
         alert("Informe ao menos um pagamento com valor maior que zero ou utilize credito disponivel.");
         return;
       }
-      await api.patch(`/ordens-servico/${modalReceberOS.id}/receber`, {
+      const response = await api.patch(`/ordens-servico/${modalReceberOS.id}/receber`, {
         pagamentos: pagamentosPayload,
         data_recebimento: dataRecebimentoOS || null,
         valor_final_esperado: Number(Number(modalReceberOS.valor_final || 0).toFixed(2)),
+        saldo_em_aberto_esperado: valorEmAbertoOS(modalReceberOS).toFixed(2),
+        idempotency_key: gerarRecebimentoId(),
         valor_credito_utilizado: Number(creditoUtilizado.toFixed(2)),
         destino_credito_excedente: destinoCreditoExcedenteOS,
       });
+      const baixaParcial = Boolean(response.data?.baixa_parcial);
 
       let avisoRecibo = "";
-      if (enviarReciboPdfWhatsAppAposRecebimento) {
+      if (enviarReciboPdfWhatsAppAposRecebimento && !baixaParcial) {
         try {
           await api.post(`/ordens-servico/${modalReceberOS.id}/whatsapp/recibo-pdf`, {
             idempotency_key: criarIdempotencyKeyWhatsApp("recibo-pdf", modalReceberOS.id),
@@ -1630,7 +1649,9 @@ export default function FinanceiroPage() {
       setValorCreditoUtilizadoOS("0.00");
       setEnviarReciboPdfWhatsAppAposRecebimento(false);
       alert(
-        avisoRecibo
+        baixaParcial
+          ? `Baixa parcial registrada. Saldo em aberto: ${formatarValor(Number(response.data?.saldo_em_aberto || 0))}.`
+          : avisoRecibo
           ? `Recebimento registrado com sucesso.\n\nAviso do WhatsApp: ${avisoRecibo}`
           : enviarReciboPdfWhatsAppAposRecebimento
             ? "Recebimento registrado e recibo PDF enviado pelo WhatsApp!"
@@ -1672,12 +1693,8 @@ export default function FinanceiroPage() {
       setErroRecebimentoLoteOS("Informe no maximo 20 pagamentos por recebimento em lote.");
       return;
     }
-    if (resumoPagamentoLoteOS.faltante > 0) {
-      setErroRecebimentoLoteOS(`Falta cobrir ${formatarValor(resumoPagamentoLoteOS.faltante)} para receber as OS selecionadas.`);
-      return;
-    }
     if (resumoPagamentoLoteOS.excedente > 0) {
-      setErroRecebimentoLoteOS("A baixa em lote precisa bater exatamente com o total das OS selecionadas. Ajuste o valor informado.");
+      setErroRecebimentoLoteOS("O valor informado nao pode exceder o saldo das OS selecionadas.");
       return;
     }
 
@@ -1698,23 +1715,38 @@ export default function FinanceiroPage() {
     setErroRecebimentoLoteOS("");
     try {
       let idsRecebidas: number[];
+      let baixaParcial = false;
+      let saldoEmAberto = 0;
       try {
-        const response = await api.patch<{ os_ids: number[]; mensagem: string }>("/ordens-servico/receber-lote", {
+        const response = await api.patch<{
+          os_ids: number[];
+          os_ids_pagas: number[];
+          os_ids_parciais: number[];
+          baixa_parcial: boolean;
+          valor_recebido: number;
+          saldo_em_aberto: number;
+          mensagem: string;
+        }>("/ordens-servico/receber-lote", {
           ordens: ordensRecebimentoLote.map((os) => ({
             os_id: os.id,
             valor_final_esperado: Number(os.valor_final).toFixed(2),
+            saldo_em_aberto_esperado: valorEmAbertoOS(os).toFixed(2),
           })),
           pagamentos: pagamentosPayload,
           data_recebimento: dataRecebimentoOS || null,
+          idempotency_key: gerarRecebimentoId(),
         });
         idsRecebidas = response.data?.os_ids;
-        const selecaoCompleta = Array.isArray(idsRecebidas)
-          && idsRecebidas.length === idsSelecionadas.length
-          && new Set(idsRecebidas).size === idsSelecionadas.length
-          && idsRecebidas.every((id) => idsSelecionadas.includes(id));
-        if (!selecaoCompleta) {
+        baixaParcial = Boolean(response.data?.baixa_parcial);
+        saldoEmAberto = Number(response.data?.saldo_em_aberto || 0);
+        const respostaCoerente = Array.isArray(idsRecebidas)
+          && idsRecebidas.length > 0
+          && new Set(idsRecebidas).size === idsRecebidas.length
+          && idsRecebidas.every((id) => idsSelecionadas.includes(id))
+          && (baixaParcial || idsRecebidas.length === idsSelecionadas.length);
+        if (!respostaCoerente) {
           setLoteExigeRevisao(true);
-          setErroRecebimentoLoteOS(`Nao foi possivel confirmar o recebimento de todas as OS. O recibo nao foi solicitado. ${orientarRevisao}`);
+          setErroRecebimentoLoteOS(`Nao foi possivel confirmar o recebimento de todas as OS ou o rateio parcial. O recibo nao foi solicitado. ${orientarRevisao}`);
           await atualizarListaAposLote();
           return;
         }
@@ -1734,7 +1766,7 @@ export default function FinanceiroPage() {
       }
 
       let avisoRecibo = "";
-      if (enviarReciboLote) {
+      if (enviarReciboLote && !baixaParcial) {
         try {
           if (idsRecebidas.length === 1) {
             await api.post(`/ordens-servico/${idsRecebidas[0]}/whatsapp/recibo-pdf`, {
@@ -1758,7 +1790,9 @@ export default function FinanceiroPage() {
       setOsSelecionadasBaixa([]);
       setEnviarReciboPdfWhatsAppAposRecebimento(false);
       await atualizarListaAposLote();
-      alert(avisoRecibo
+      alert(baixaParcial
+        ? `Baixa parcial de ${formatarValor(resumoPagamentoLoteOS.totalBruto)} registrada. Saldo restante: ${formatarValor(saldoEmAberto)}.`
+        : avisoRecibo
         ? `Baixa em lote registrada com sucesso.\n\nAviso do WhatsApp: ${avisoRecibo}`
         : enviarReciboLote
           ? "Baixa em lote registrada e recibo PDF consolidado enviado pelo WhatsApp!"
@@ -1900,7 +1934,7 @@ export default function FinanceiroPage() {
     () =>
       ordensServico
         .filter((os) => osSelecionadasBaixa.includes(os.id) && os.status === "Pendente")
-        .reduce((acc, os) => acc + Number(os.valor_final || 0), 0),
+        .reduce((acc, os) => acc + valorEmAbertoOS(os), 0),
     [ordensServico, osSelecionadasBaixa]
   );
 
@@ -2015,7 +2049,7 @@ export default function FinanceiroPage() {
 
       const grupo = mapa.get(destinatario.chave)!;
       if (os.status === "Pendente") {
-        grupo.total_pendente += Number(os.valor_final || 0);
+        grupo.total_pendente += valorEmAbertoOS(os);
         grupo.quantidade_os += 1;
       }
       grupo.quantidade_total += 1;
@@ -2065,7 +2099,7 @@ export default function FinanceiroPage() {
 
   const montarMensagemCompartilhamentoRecibo = (ids: number[], agrupar: boolean) => {
     const selecionadas = ordensServico.filter((os) => ids.includes(os.id));
-    const total = selecionadas.reduce((acc, item) => acc + Number(item.valor_final || 0), 0);
+    const total = selecionadas.reduce((acc, item) => acc + Number(item.valor_recebido ?? item.valor_final ?? 0), 0);
     const primeiraOS = selecionadas[0];
     const destinatarios = Array.from(
       new Map(selecionadas.map((os) => {
@@ -2083,7 +2117,7 @@ export default function FinanceiroPage() {
     const listaOS = selecionadas
       .map(
         (os, index) =>
-          `${index + 1}. OS ${os.numero_os} | ${os.paciente || "Paciente"} | ${formatarValor(Number(os.valor_final || 0))}`
+          `${index + 1}. OS ${os.numero_os} | ${os.paciente || "Paciente"} | ${formatarValor(Number(os.valor_recebido ?? os.valor_final ?? 0))}`
       )
       .join("\n");
 
@@ -2098,7 +2132,7 @@ export default function FinanceiroPage() {
       .replace(/{{\s*data\s*}}/gi, dataHoje)
       .replace(/{{\s*os_numero\s*}}/gi, primeiraOS?.numero_os || "-")
       .replace(/{{\s*paciente\s*}}/gi, primeiraOS?.paciente || "Nao informado")
-      .replace(/{{\s*valor_recebido\s*}}/gi, formatarValor(Number(primeiraOS?.valor_final || 0)))
+      .replace(/{{\s*valor_recebido\s*}}/gi, formatarValor(Number(primeiraOS?.valor_recebido ?? primeiraOS?.valor_final ?? 0)))
       .replace(/{{\s*total_recebido\s*}}/gi, formatarValor(total))
       .replace(/{{\s*quantidade_os\s*}}/gi, String(selecionadas.length))
       .replace(/{{\s*lista_os\s*}}/gi, listaOS || "1. Nenhuma OS selecionada.");
@@ -2260,7 +2294,7 @@ export default function FinanceiroPage() {
     return ordensPendentes.map(
       (os, index) =>
         `${index + 1}. OS ${os.numero_os} | ${formatarData(os.data_atendimento)} | ${os.servico || "Servico"} | ` +
-        `Tutor: ${os.tutor || "Nao informado"} | Pet: ${os.paciente || "Nao informado"} | ${formatarValor(os.valor_final)}`
+        `Tutor: ${os.tutor || "Nao informado"} | Pet: ${os.paciente || "Nao informado"} | ${formatarValor(valorEmAbertoOS(os))}`
     );
   };
 
@@ -3412,9 +3446,9 @@ export default function FinanceiroPage() {
                                             <span className="text-sm font-semibold text-gray-900">
                                               {formatarDataHoraCurta(os.data_atendimento)}
                                             </span>
-                                            <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(os.status)}`}>
-                                              {getStatusIcon(os.status)}
-                                              <span className="ml-1">{os.status}</span>
+                                            <span className={`rounded-full px-2 py-0.5 text-xs ${getStatusColor(statusExibidoOS(os))}`}>
+                                              {getStatusIcon(statusExibidoOS(os))}
+                                              <span className="ml-1">{statusExibidoOS(os)}</span>
                                             </span>
                                             <span className="rounded bg-blue-100 px-2 py-0.5 text-xs text-blue-700">
                                               {os.tipo_horario === "plantao" ? "Plantao" : "Comercial"}
@@ -3432,7 +3466,10 @@ export default function FinanceiroPage() {
                                         </div>
                                         <div className="flex items-center gap-3 lg:ml-2">
                                           <div className="min-w-[120px] text-right">
-                                            <p className="font-bold text-gray-900">{formatarValor(os.valor_final)}</p>
+                                            <p className="font-bold text-gray-900">{formatarValor(valorEmAbertoOS(os))}</p>
+                                            {Number(os.valor_recebido || 0) > 0 && (
+                                              <p className="text-xs text-emerald-700">Recebido: {formatarValor(Number(os.valor_recebido || 0))}</p>
+                                            )}
                                             {(os.desconto || 0) > 0 && (
                                               <p className="text-xs text-gray-400">Desc: {formatarValor(os.desconto)}</p>
                                             )}
@@ -3447,6 +3484,7 @@ export default function FinanceiroPage() {
                                             </button>
                                             <button
                                               onClick={() => handleEditarOS(os)}
+                                              disabled={Number(os.valor_recebido || 0) > 0}
                                               className="flex items-center gap-1 rounded-lg bg-blue-100 px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-200"
                                             >
                                               <Edit className="h-4 w-4" />
@@ -3454,14 +3492,26 @@ export default function FinanceiroPage() {
                                             </button>
                                             <button
                                               onClick={() => void abrirAjusteValorOS(os)}
+                                              disabled={Number(os.valor_recebido || 0) > 0}
                                               aria-label={`Ajustar valor da OS ${os.numero_os}`}
                                               className="flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-sm text-amber-800 hover:bg-amber-200"
                                             >
                                               <DollarSign className="h-4 w-4" />
                                               Ajustar valor
                                             </button>
+                                            {Number(os.valor_recebido || 0) > 0 && (
+                                              <button
+                                                onClick={() => abrirDesfazerRecebimentoOS(os)}
+                                                className="flex items-center gap-1 rounded-lg bg-amber-100 px-3 py-1.5 text-sm text-amber-800 hover:bg-amber-200"
+                                                title="Desfazer todos os recebimentos desta OS"
+                                              >
+                                                <Undo2 className="h-4 w-4" />
+                                                Desfazer
+                                              </button>
+                                            )}
                                             <button
                                               onClick={() => handleExcluirOS(os)}
+                                              disabled={Number(os.valor_recebido || 0) > 0}
                                               className="rounded p-1.5 text-red-600 hover:bg-red-50"
                                               aria-label={`Excluir OS ${os.numero_os}`}
                                             >
@@ -3730,9 +3780,9 @@ export default function FinanceiroPage() {
                               ? `Responsável: ${os.destinatario_nome || "Veterinário não informado"}`
                               : os.clinica || "Clinica nao informada"}
                           </span>
-                          <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(os.status)}`}>
-                            {getStatusIcon(os.status)}
-                            <span className="ml-1">{os.status}</span>
+                          <span className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(statusExibidoOS(os))}`}>
+                            {getStatusIcon(statusExibidoOS(os))}
+                            <span className="ml-1">{statusExibidoOS(os)}</span>
                           </span>
                           <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
                             {os.tipo_horario === "plantao" ? "Plantao" : "Comercial"}
@@ -3755,7 +3805,10 @@ export default function FinanceiroPage() {
 
                       <div className="flex items-center gap-3 lg:ml-2">
                         <div className="text-right min-w-[120px]">
-                          <p className="font-bold text-gray-900">{formatarValor(os.valor_final)}</p>
+                          <p className="font-bold text-gray-900">{formatarValor(valorEmAbertoOS(os))}</p>
+                          {Number(os.valor_recebido || 0) > 0 && (
+                            <p className="text-xs text-emerald-700">Recebido: {formatarValor(Number(os.valor_recebido || 0))}</p>
+                          )}
                           {(os.desconto || 0) > 0 && (
                             <p className="text-xs text-gray-400">Desc: {formatarValor(os.desconto)}</p>
                           )}
@@ -3772,7 +3825,7 @@ export default function FinanceiroPage() {
                               Receber
                             </button>
                           )}
-                          {os.status === "Pago" && (
+                          {(os.status === "Pago" || Number(os.valor_recebido || 0) > 0) && (
                             <button
                               onClick={() => abrirPreviewRecibo([os.id], false)}
                               className="px-3 py-1.5 text-sm bg-white border border-blue-200 text-blue-700 hover:bg-blue-50 rounded-lg flex items-center gap-1"
@@ -3827,7 +3880,7 @@ export default function FinanceiroPage() {
                             <button
                               onClick={() => abrirDesfazerRecebimentoOS(os)}
                               className="px-3 py-1.5 text-sm bg-amber-100 text-amber-700 hover:bg-amber-200 rounded-lg flex items-center gap-1"
-                              title="Desfazer recebimento"
+                              title={os.status === "Pago" ? "Desfazer recebimento" : "Desfazer todos os recebimentos desta OS"}
                             >
                               <Undo2 className="w-4 h-4" />
                               Desfazer
@@ -3835,13 +3888,14 @@ export default function FinanceiroPage() {
                           )}
                           <button
                             onClick={() => handleEditarOS(os)}
+                            disabled={Number(os.valor_recebido || 0) > 0}
                             className="px-3 py-1.5 text-sm bg-blue-100 text-blue-700 hover:bg-blue-200 rounded-lg flex items-center gap-1"
                             title="Editar OS"
                           >
                             <Edit className="w-4 h-4" />
                             Editar
                           </button>
-                          {os.status === "Pendente" && (
+                          {os.status === "Pendente" && Number(os.valor_recebido || 0) <= 0 && (
                             <button
                               onClick={() => void abrirAjusteValorOS(os)}
                               aria-label={`Ajustar valor da OS ${os.numero_os}`}
@@ -3853,7 +3907,7 @@ export default function FinanceiroPage() {
                           )}
                           {(!os.laudo_id || os.status !== "Cancelado") && <button
                             onClick={() => handleExcluirOS(os)}
-                            disabled={Boolean(os.laudo_id) && os.status !== "Pendente"}
+                            disabled={Number(os.valor_recebido || 0) > 0 || (Boolean(os.laudo_id) && os.status !== "Pendente")}
                             className="p-1.5 text-red-600 hover:bg-red-50 rounded disabled:opacity-50 disabled:cursor-not-allowed"
                             title={os.laudo_id
                               ? os.status === "Pago" ? "Desfaca o recebimento antes de cancelar esta OS" : "Cancelar OS"
@@ -4294,6 +4348,7 @@ export default function FinanceiroPage() {
               <h3 id="receber-lote-titulo" className="text-lg font-semibold text-gray-900">Receber OS em lote</h3>
               <p className="text-sm text-gray-500 mt-1">
                 {ordensRecebimentoLote.length} OS selecionada(s) para este lote
+                <span className="block">O valor pode quitar todo ou parte do saldo.</span>
               </p>
             </div>
 
@@ -4309,7 +4364,7 @@ export default function FinanceiroPage() {
                       <span>
                         OS {os.numero_os} - {os.paciente || "Paciente nao informado"}
                       </span>
-                      <span className="font-medium">{formatarValor(Number(os.valor_final || 0))}</span>
+                      <span className="font-medium">{formatarValor(valorEmAbertoOS(os))}</span>
                     </div>
                   ))}
                 </div>
@@ -4385,7 +4440,7 @@ export default function FinanceiroPage() {
                   <input
                     type="checkbox"
                     checked={enviarReciboPdfWhatsAppAposRecebimento}
-                    disabled={!permiteReciboWhatsAppLote}
+                    disabled={!permiteReciboWhatsAppLote || resumoPagamentoLoteOS.faltante > 0}
                     onChange={(event) => setEnviarReciboPdfWhatsAppAposRecebimento(event.target.checked)}
                     className="mt-0.5"
                   />
@@ -4401,6 +4456,11 @@ export default function FinanceiroPage() {
                     Para enviar um único recibo, selecione somente OS do mesmo destinatário.
                   </p>
                 )}
+                {resumoPagamentoLoteOS.faltante > 0 && (
+                  <p className="mt-2 text-xs text-amber-800">
+                    O recibo consolidado pelo WhatsApp fica disponivel quando as OS forem integralmente quitadas.
+                  </p>
+                )}
                 {ordensRecebimentoLote.length > 20 && (
                   <p className="mt-2 text-xs text-amber-800">
                     O envio de recibo consolidado pelo WhatsApp permite no maximo 20 OS por vez.
@@ -4410,7 +4470,7 @@ export default function FinanceiroPage() {
 
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
                 <div className="flex justify-between">
-                  <span>Total das OS</span>
+                  <span>Saldo em aberto selecionado</span>
                   <strong>{formatarValor(resumoPagamentoLoteOS.valorOS || 0)}</strong>
                 </div>
                 <div className="mt-1 flex justify-between">
@@ -4422,8 +4482,8 @@ export default function FinanceiroPage() {
                   <strong>{formatarValor(resumoPagamentoLoteOS.totalTaxa || 0)}</strong>
                 </div>
                 {resumoPagamentoLoteOS.faltante > 0 && (
-                  <p className="mt-1 text-red-700">
-                    Falta cobrir {formatarValor(resumoPagamentoLoteOS.faltante)}.
+                  <p className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-amber-800">
+                    Baixa parcial: permanecerao {formatarValor(resumoPagamentoLoteOS.faltante)} em aberto. O valor sera aplicado primeiro nas OS mais antigas.
                   </p>
                 )}
                 {resumoPagamentoLoteOS.excedente > 0 && (
@@ -4460,14 +4520,18 @@ export default function FinanceiroPage() {
                   disabled={
                     recebendoLoteOS ||
                     loteExigeRevisao ||
-                    resumoPagamentoLoteOS.faltante > 0 ||
                     resumoPagamentoLoteOS.excedente > 0 ||
+                    resumoPagamentoLoteOS.totalBruto <= 0 ||
                     ordensRecebimentoLote.length === 0
                   }
                   className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  {recebendoLoteOS ? "Recebendo..." : "Confirmar baixa em lote"}
+                  {recebendoLoteOS
+                    ? "Recebendo..."
+                    : resumoPagamentoLoteOS.faltante > 0
+                      ? "Confirmar baixa parcial"
+                      : "Confirmar baixa em lote"}
                 </button>
               </div>
             </div>
@@ -4489,8 +4553,18 @@ export default function FinanceiroPage() {
 	            <div className="min-h-0 flex-1 overflow-y-auto p-6 space-y-4">
 	              <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Valor:</span>
+                  <span className="text-gray-600">Valor original:</span>
                   <span className="font-medium">{formatarValor(modalReceberOS.valor_final)}</span>
+                </div>
+                {Number(modalReceberOS.valor_recebido || 0) > 0 && (
+                  <div className="flex justify-between text-sm mt-1">
+                    <span className="text-gray-600">Ja recebido:</span>
+                    <span className="font-medium">{formatarValor(Number(modalReceberOS.valor_recebido || 0))}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm mt-1">
+                  <span className="text-gray-600">Saldo em aberto:</span>
+                  <span className="font-semibold text-amber-800">{formatarValor(valorEmAbertoOS(modalReceberOS))}</span>
                 </div>
                 <div className="flex justify-between text-sm mt-1">
                   <span className="text-gray-600">Clinica:</span>
@@ -4601,6 +4675,7 @@ export default function FinanceiroPage() {
                   <input
                     type="checkbox"
                     checked={enviarReciboPdfWhatsAppAposRecebimento}
+                    disabled={resumoPagamentoOS.faltante > 0}
                     onChange={(event) => setEnviarReciboPdfWhatsAppAposRecebimento(event.target.checked)}
                     className="mt-0.5"
                   />
@@ -4611,6 +4686,11 @@ export default function FinanceiroPage() {
                     </span>
                   </span>
                 </label>
+                {resumoPagamentoOS.faltante > 0 && (
+                  <p className="mt-2 text-xs text-amber-800">
+                    O envio do recibo fica disponivel quando esta OS for integralmente quitada.
+                  </p>
+                )}
               </div>
 
               {!carregandoSaldoCreditoClienteOS && saldoCreditoClienteOS > 0 && (
@@ -4678,7 +4758,7 @@ export default function FinanceiroPage() {
 
 	              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
 	                <div className="flex justify-between">
-	                  <span>Valor da OS</span>
+                  <span>Saldo em aberto</span>
 	                  <strong>{formatarValor(resumoPagamentoOS.valorOS || 0)}</strong>
 	                </div>
 	                <div className="flex justify-between">
@@ -4698,8 +4778,8 @@ export default function FinanceiroPage() {
 	                  <strong>{formatarValor(resumoPagamentoOS.totalTaxa || 0)}</strong>
 	                </div>
 	                {resumoPagamentoOS.faltante > 0 && (
-	                  <p className="mt-1 text-red-700">
-	                    Falta cobrir {formatarValor(resumoPagamentoOS.faltante)} para atingir o valor da OS.
+	                  <p className="mt-2 rounded border border-amber-200 bg-amber-50 p-2 text-amber-800">
+	                    Baixa parcial: permanecerao {formatarValor(resumoPagamentoOS.faltante)} em aberto nesta OS.
 	                  </p>
 	                )}
 	                {resumoPagamentoOS.excedente > 0 && (
@@ -4728,11 +4808,11 @@ export default function FinanceiroPage() {
               </button>
 	              <button
 	                onClick={confirmarRecebimentoOS}
-                    disabled={baixandoCredito || carregandoFormasPagamento || resumoPagamentoOS.faltante > 0}
+                    disabled={baixandoCredito || carregandoFormasPagamento || resumoPagamentoOS.totalCoberto <= 0}
 	                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-60"
 	              >
 	                <CheckCircle className="w-4 h-4" />
-	                Confirmar Recebimento
+	                {resumoPagamentoOS.faltante > 0 ? "Confirmar baixa parcial" : "Confirmar Recebimento"}
               </button>
             </div>
           </div>

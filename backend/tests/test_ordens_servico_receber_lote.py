@@ -230,6 +230,144 @@ class RecebimentoLoteTest(unittest.TestCase):
             self.assertEqual(raised.exception.status_code, 422)
             self._verificar_sem_recebimento()
 
+    def test_baixa_parcial_mantem_saldo_aberto_e_aceita_quitacao_posterior(self):
+        self._criar_ordens(["1000.00"])
+        primeira = self._dados(
+            ordens=[{
+                "os_id": self.ids[0],
+                "valor_final_esperado": "1000.00",
+                "saldo_em_aberto_esperado": "1000.00",
+            }],
+            pagamentos=[{"forma_pagamento": "pix", "valor": "300.00"}],
+            idempotency_key="parcial-clinica-300",
+        )
+        resposta = self._receber(primeira)
+        self.assertTrue(resposta["baixa_parcial"])
+        self.assertEqual(resposta["valor_recebido"], 300.0)
+        self.assertEqual(resposta["saldo_em_aberto"], 700.0)
+        self.assertEqual(resposta["os_ids_parciais"], self.ids)
+        with self.Session() as db:
+            ordem = db.get(OrdemServico, self.ids[0])
+            self.assertEqual(ordem.status, "Pendente")
+            self.assertEqual(ordens_servico._saldo_em_aberto_os(db, ordem), Decimal("700.00"))
+            self.assertEqual(db.query(Transacao).count(), 1)
+            lista = ordens_servico.listar_ordens(
+                incluir_resumo=True, tipo_horario=None, db=db, current_user=self.user,
+            )
+            self.assertEqual(lista["items"][0]["valor_recebido"], 300.0)
+            self.assertEqual(lista["items"][0]["valor_em_aberto"], 700.0)
+            self.assertTrue(lista["items"][0]["recebimento_parcial"])
+            self.assertEqual(lista["resumo"]["valor_pendente"], 700.0)
+            self.assertEqual(lista["resumo"]["valor_recebido"], 300.0)
+            grupos = ordens_servico.listar_grupos_cobranca(
+                tipo_horario=None, skip=0, limit=50, db=db, current_user=self.user,
+            )
+            self.assertEqual(grupos["total_pendente"], 700.0)
+
+        segunda = self._dados(
+            ordens=[{
+                "os_id": self.ids[0],
+                "valor_final_esperado": "1000.00",
+                "saldo_em_aberto_esperado": "700.00",
+            }],
+            pagamentos=[{"forma_pagamento": "pix", "valor": "700.00"}],
+            idempotency_key="parcial-clinica-700",
+        )
+        resposta = self._receber(segunda)
+        self.assertFalse(resposta["baixa_parcial"])
+        self.assertEqual(resposta["saldo_em_aberto"], 0.0)
+        self.assertEqual(resposta["os_ids_pagas"], self.ids)
+        with self.Session() as db:
+            self.assertEqual(db.get(OrdemServico, self.ids[0]).status, "Pago")
+            self.assertEqual(db.query(Transacao).count(), 2)
+
+    def test_baixa_parcial_individual_usa_saldo_atual_na_quitacao_legacy(self):
+        self._criar_ordens(["1000.00"])
+        primeira = ordens_servico.receber_ordem(
+            self.ids[0],
+            ordens_servico.OrdemServicoReceberInput(
+                pagamentos=[{"forma_pagamento": "pix", "valor": "300.00"}],
+                valor_final_esperado="1000.00",
+                saldo_em_aberto_esperado="1000.00",
+                idempotency_key="individual-parcial-300",
+            ),
+            self.request, db=self.db, current_user=self.user,
+        )
+        self.assertTrue(primeira["baixa_parcial"])
+        self.assertEqual(primeira["saldo_em_aberto"], 700.0)
+
+        segunda = ordens_servico.receber_ordem(
+            self.ids[0],
+            ordens_servico.OrdemServicoReceberInput(
+                forma_pagamento="pix",
+                valor_final_esperado="1000.00",
+                saldo_em_aberto_esperado="700.00",
+                idempotency_key="individual-quita-700",
+            ),
+            self.request, db=self.db, current_user=self.user,
+        )
+        self.assertFalse(segunda["baixa_parcial"])
+        self.assertEqual(segunda["valor_bruto_total"], 700.0)
+        self.assertEqual(segunda["saldo_em_aberto"], 0.0)
+        with self.Session() as db:
+            self.assertEqual(db.get(OrdemServico, self.ids[0]).status, "Pago")
+            self.assertEqual(
+                sum(Decimal(str(item.valor_bruto)) for item in db.query(OrdemServicoPagamento)),
+                Decimal("1000.00"),
+            )
+
+    def test_baixa_parcial_prioriza_os_mais_antigas_sem_criar_credito(self):
+        self._criar_ordens(["200.00", "500.00", "300.00"])
+        dados = self._dados(
+            ordens=[{
+                "os_id": os_id,
+                "valor_final_esperado": valor,
+                "saldo_em_aberto_esperado": valor,
+            } for os_id, valor in zip(self.ids, self.valores)],
+            pagamentos=[{"forma_pagamento": "pix", "valor": "300.00"}],
+            idempotency_key="rateio-antigas-300",
+        )
+        resposta = self._receber(dados)
+        self.assertEqual(resposta["os_ids"], self.ids[:2])
+        self.assertEqual(resposta["os_ids_pagas"], self.ids[:1])
+        self.assertEqual(resposta["os_ids_parciais"], self.ids[1:2])
+        self.assertEqual(resposta["saldo_em_aberto"], 700.0)
+        with self.Session() as db:
+            ordens = db.query(OrdemServico).order_by(OrdemServico.id).all()
+            self.assertEqual([item.status for item in ordens], ["Pago", "Pendente", "Pendente"])
+            self.assertEqual(
+                [ordens_servico._saldo_em_aberto_os(db, item) for item in ordens],
+                [Decimal("0.00"), Decimal("400.00"), Decimal("300.00")],
+            )
+            self.assertEqual(db.query(CreditoFinanceiro).count(), 0)
+
+    def test_baixa_parcial_exige_mesma_clinica_e_chave_nao_reutilizada(self):
+        self._criar_ordens(["600.00", "400.00"])
+        self.db.get(OrdemServico, self.ids[1]).clinica_id = 2
+        self.db.commit()
+        base = {
+            "ordens": [{
+                "os_id": os_id,
+                "valor_final_esperado": valor,
+                "saldo_em_aberto_esperado": valor,
+            } for os_id, valor in zip(self.ids, self.valores)],
+            "pagamentos": [{"forma_pagamento": "pix", "valor": "300.00"}],
+            "idempotency_key": "parcial-clinicas-distintas",
+        }
+        with self.assertRaises(HTTPException) as raised:
+            self._receber(self._dados(**base))
+        self.assertEqual(raised.exception.status_code, 422)
+        self._verificar_sem_recebimento()
+
+        self.db.get(OrdemServico, self.ids[1]).clinica_id = 1
+        self.db.commit()
+        self._receber(self._dados(**base))
+        with self.assertRaises(HTTPException) as repeated:
+            self._receber(self._dados(**base))
+        self.assertEqual(repeated.exception.status_code, 409)
+        with self.Session() as db:
+            self.assertEqual(db.query(Transacao).count(), 1)
+
     def test_rateio_preserva_centavos_por_os_e_por_forma(self):
         self._criar_ordens(["0.01", "0.01", "0.01"])
         self._receber(self._dados(pagamentos=[

@@ -16,7 +16,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Image, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from sqlalchemy import String, and_, case, cast, func, or_, text as sql_text, update
+from sqlalchemy import String, and_, case, cast, func, inspect, or_, text as sql_text, update
 from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -96,6 +96,8 @@ class OrdemServicoReceberInput(BaseModel):
     data_recebimento: Optional[date] = None
     pagamentos: Optional[List[OrdemServicoPagamentoItemInput]] = None
     valor_final_esperado: Optional[Decimal] = None
+    saldo_em_aberto_esperado: Optional[Decimal] = Field(default=None, ge=0)
+    idempotency_key: Optional[str] = Field(default=None, min_length=8, max_length=128)
     desconto: Optional[float] = Field(default=None, ge=0)
     valor_credito_utilizado: float = Field(default=0, ge=0)
     destino_credito_excedente: str = Field(default="cliente", pattern="^(cliente|clinica|nenhum)$")
@@ -107,6 +109,7 @@ class OrdemServicoReceberLoteItemInput(BaseModel):
 
     os_id: int = Field(..., ge=1)
     valor_final_esperado: Decimal = Field(..., ge=0, max_digits=10, decimal_places=2)
+    saldo_em_aberto_esperado: Optional[Decimal] = Field(default=None, ge=0)
 
 
 class OrdemServicoPagamentoLoteItemInput(OrdemServicoPagamentoItemInput):
@@ -123,6 +126,7 @@ class OrdensServicoReceberLoteInput(BaseModel):
     ordens: List[OrdemServicoReceberLoteItemInput] = Field(..., min_length=1, max_length=200)
     pagamentos: List[OrdemServicoPagamentoLoteItemInput] = Field(..., min_length=1, max_length=20)
     data_recebimento: Optional[date] = None
+    idempotency_key: Optional[str] = Field(default=None, min_length=8, max_length=128)
 
 
 class OrdemServicoWhatsAppInput(BaseModel):
@@ -273,6 +277,7 @@ def _serialize_os(
     clinica_telefone: Optional[str] = None,
     clinica_email: Optional[str] = None,
     servico_nome: Optional[str] = None,
+    valor_recebido: Decimal = Decimal("0.00"),
 ) -> dict:
     origem_atendimento = str(getattr(os_data, "origem_atendimento", None) or "clinica_parceira").strip() or "clinica_parceira"
     clinica_label = (clinica_nome or "").strip()
@@ -309,6 +314,13 @@ def _serialize_os(
         destinatario_telefone = clinica_telefone_limpo
         destinatario_email = clinica_email_limpo
 
+    valor_total = _to_decimal(os_data.valor_final).quantize(CENTAVO)
+    recebido = (
+        valor_total
+        if os_data.status == "Pago"
+        else min(max(_to_decimal(valor_recebido), Decimal("0.00")), valor_total).quantize(CENTAVO)
+    )
+    saldo_em_aberto = max(Decimal("0.00"), valor_total - recebido).quantize(CENTAVO)
     return {
         "id": os_data.id,
         "numero_os": os_data.numero_os,
@@ -340,6 +352,9 @@ def _serialize_os(
         "valor_servico": float(os_data.valor_servico) if os_data.valor_servico else 0,
         "desconto": float(os_data.desconto) if os_data.desconto else 0,
         "valor_final": float(os_data.valor_final) if os_data.valor_final else 0,
+        "valor_recebido": float(recebido),
+        "valor_em_aberto": float(saldo_em_aberto),
+        "recebimento_parcial": recebido > 0 and saldo_em_aberto > 0,
         "status": os_data.status,
         "observacoes": os_data.observacoes,
         "created_at": str(os_data.created_at) if os_data.created_at else None,
@@ -387,7 +402,7 @@ def _find_os_with_names(db: Session, os_id: int):
     )
 
 
-def _serialize_os_row(row: Any) -> dict:
+def _serialize_os_row(row: Any, valor_recebido: Decimal = Decimal("0.00")) -> dict:
     (
         os_data,
         paciente_nome,
@@ -413,6 +428,80 @@ def _serialize_os_row(row: Any) -> dict:
         clinica_telefone=clinica_telefone,
         clinica_email=clinica_email,
         servico_nome=servico_nome,
+        valor_recebido=valor_recebido,
+    )
+
+
+def _valores_recebidos_ativos(db: Session, os_ids: List[int]) -> Dict[int, Decimal]:
+    """Soma somente pagamentos cujas transacoes continuam ativas."""
+    ids = sorted({int(os_id) for os_id in os_ids if os_id})
+    if not ids:
+        return {}
+    if not _tem_tabelas_recebimentos(db):
+        return {}
+    rows = (
+        db.query(
+            OrdemServicoPagamento.ordem_servico_id,
+            func.coalesce(func.sum(OrdemServicoPagamento.valor_bruto), 0),
+        )
+        .join(Transacao, Transacao.id == OrdemServicoPagamento.transacao_id)
+        .filter(
+            OrdemServicoPagamento.ordem_servico_id.in_(ids),
+            Transacao.tipo == "entrada",
+            Transacao.status.in_(["Recebido", "Pago"]),
+        )
+        .group_by(OrdemServicoPagamento.ordem_servico_id)
+        .all()
+    )
+    return {
+        int(os_id): _to_decimal(valor).quantize(CENTAVO)
+        for os_id, valor in rows
+    }
+
+
+def _valor_recebido_ativo(db: Session, os_id: int) -> Decimal:
+    return _valores_recebidos_ativos(db, [os_id]).get(int(os_id), Decimal("0.00"))
+
+
+def _saldo_em_aberto_os(db: Session, os_data: OrdemServico) -> Decimal:
+    if os_data.status != "Pendente":
+        return Decimal("0.00")
+    valor_total = _to_decimal(os_data.valor_final).quantize(CENTAVO)
+    recebido = _valor_recebido_ativo(db, os_data.id)
+    return max(Decimal("0.00"), valor_total - recebido).quantize(CENTAVO)
+
+
+def _tem_tabelas_recebimentos(db: Session) -> bool:
+    bind = db.get_bind()
+    if bind.dialect.name == "sqlite":
+        # Consulta direta ao driver evita acrescentar round-trips instrumentados
+        # aos endpoints; alguns bancos temporarios antigos criam so o recorte de OS.
+        driver = db.connection().connection.driver_connection
+        nomes = {
+            row[0]
+            for row in driver.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' "
+                "AND name IN ('ordens_servico_pagamentos', 'transacoes')"
+            ).fetchall()
+        }
+        return nomes == {"ordens_servico_pagamentos", "transacoes"}
+    inspector = inspect(bind)
+    return inspector.has_table("ordens_servico_pagamentos") and inspector.has_table("transacoes")
+
+
+def _recebimentos_ativos_por_os_subquery(db: Session):
+    return (
+        db.query(
+            OrdemServicoPagamento.ordem_servico_id.label("os_id"),
+            func.coalesce(func.sum(OrdemServicoPagamento.valor_bruto), 0).label("valor_recebido"),
+        )
+        .join(Transacao, Transacao.id == OrdemServicoPagamento.transacao_id)
+        .filter(
+            Transacao.tipo == "entrada",
+            Transacao.status.in_(["Recebido", "Pago"]),
+        )
+        .group_by(OrdemServicoPagamento.ordem_servico_id)
+        .subquery()
     )
 
 
@@ -1280,6 +1369,7 @@ def _carregar_contexto_whatsapp_os(
 
     return {
         "os": os_data,
+        "valor_em_aberto": _saldo_em_aberto_os(db, os_data),
         "paciente_nome": str(paciente_nome or "Paciente").strip() or "Paciente",
         "tutor_nome": str(tutor_nome or "Tutor nao informado").strip() or "Tutor nao informado",
         "servico_nome": str(servico_nome or "Servico nao informado").strip() or "Servico nao informado",
@@ -1291,6 +1381,7 @@ def _carregar_contexto_whatsapp_os(
 
 def _parametros_cobranca_individual(contexto: Dict[str, Any]) -> List[str]:
     os_data = contexto["os"]
+    valor_em_aberto = contexto.get("valor_em_aberto", os_data.valor_final)
     return [
         str(contexto["recipient_name"])[:120],
         str(os_data.numero_os or os_data.id)[:120],
@@ -1298,16 +1389,17 @@ def _parametros_cobranca_individual(contexto: Dict[str, Any]) -> List[str]:
         _formatar_data_ddmmaa(os_data.data_atendimento)[:120],
         str(contexto["tutor_nome"])[:120],
         str(contexto["paciente_nome"])[:120],
-        _formatar_moeda_brl(os_data.valor_final)[:120],
+        _formatar_moeda_brl(valor_em_aberto)[:120],
     ]
 
 
 def _detalhe_cobranca_agrupada(contexto: Dict[str, Any]) -> str:
     os_data = contexto["os"]
+    valor_em_aberto = contexto.get("valor_em_aberto", os_data.valor_final)
     return (
         f"OS {os_data.numero_os or os_data.id} | {_formatar_data_ddmmaa(os_data.data_atendimento)} | "
         f"{contexto['servico_nome']} | Tutor: {contexto['tutor_nome']} | Pet: {contexto['paciente_nome']} | "
-        f"{_formatar_moeda_brl(os_data.valor_final)}"
+        f"{_formatar_moeda_brl(valor_em_aberto)}"
     )
 
 
@@ -1449,7 +1541,7 @@ def enviar_cobranca_whatsapp_agrupada(
             status_code=422,
             detail="O detalhamento agrupado excede o limite do modelo. Reduza a quantidade de OS neste envio.",
         )
-    total = sum(float(item["os"].valor_final or 0) for item in contextos)
+    total = sum(float(item["valor_em_aberto"] or 0) for item in contextos)
     try:
         result = send_approved_utility_template(
             template_key="pendingPaymentReminderBulk",
@@ -1736,12 +1828,27 @@ def listar_grupos_cobranca(
         tipo_horario, data_inicio, data_fim, search,
     ).filter(or_(OrdemServico.status.is_(None), OrdemServico.status != "Cancelado"))
     chave, nome, tipo = _destinatario_cobranca_sql()
+    if _tem_tabelas_recebimentos(db):
+        recebimentos = _recebimentos_ativos_por_os_subquery(db)
+        query = query.outerjoin(recebimentos, recebimentos.c.os_id == OrdemServico.id)
+        saldo_em_aberto = case(
+            (
+                OrdemServico.status == "Pendente",
+                OrdemServico.valor_final - func.coalesce(recebimentos.c.valor_recebido, 0),
+            ),
+            else_=0,
+        )
+    else:
+        saldo_em_aberto = case(
+            (OrdemServico.status == "Pendente", OrdemServico.valor_final),
+            else_=0,
+        )
     grupos = query.with_entities(
         chave.label("chave"), func.min(nome).label("nome_destinatario"),
         func.min(tipo).label("tipo_destinatario"),
         func.count(OrdemServico.id).label("quantidade_total"),
-        func.sum(case((OrdemServico.status == "Pendente", 1), else_=0)).label("quantidade_os"),
-        func.coalesce(func.sum(case((OrdemServico.status == "Pendente", OrdemServico.valor_final), else_=0)), 0).label("total_pendente"),
+        func.sum(case((saldo_em_aberto > 0, 1), else_=0)).label("quantidade_os"),
+        func.coalesce(func.sum(saldo_em_aberto), 0).label("total_pendente"),
     ).group_by(chave).subquery()
     total, total_os, total_pendente, pendentes = db.query(
         func.count(), func.coalesce(func.sum(grupos.c.quantidade_total), 0),
@@ -1785,13 +1892,41 @@ def listar_ordens(
     resumo = None
     if incluir_resumo:
         # Aggregate the full filtered relation before offset/limit; never sum the page.
-        agregado = query.with_entities(
+        if _tem_tabelas_recebimentos(db):
+            recebimentos = _recebimentos_ativos_por_os_subquery(db)
+            query_resumo = query.outerjoin(recebimentos, recebimentos.c.os_id == OrdemServico.id)
+            saldo_em_aberto = case(
+                (
+                    OrdemServico.status == "Pendente",
+                    OrdemServico.valor_final - func.coalesce(recebimentos.c.valor_recebido, 0),
+                ),
+                else_=0,
+            )
+            valor_recebido_resumo = case(
+                (OrdemServico.status == "Pago", OrdemServico.valor_final),
+                (
+                    OrdemServico.status == "Pendente",
+                    func.coalesce(recebimentos.c.valor_recebido, 0),
+                ),
+                else_=0,
+            )
+        else:
+            query_resumo = query
+            saldo_em_aberto = case(
+                (OrdemServico.status == "Pendente", OrdemServico.valor_final),
+                else_=0,
+            )
+            valor_recebido_resumo = case(
+                (OrdemServico.status == "Pago", OrdemServico.valor_final),
+                else_=0,
+            )
+        agregado = query_resumo.with_entities(
             func.count(OrdemServico.id),
             func.coalesce(func.sum(case((OrdemServico.status == "Pendente", 1), else_=0)), 0),
             func.coalesce(func.sum(case((OrdemServico.status == "Pago", 1), else_=0)), 0),
             func.coalesce(func.sum(case((OrdemServico.status == "Cancelado", 1), else_=0)), 0),
-            func.coalesce(func.sum(case((OrdemServico.status == "Pendente", OrdemServico.valor_final), else_=0)), 0),
-            func.coalesce(func.sum(case((OrdemServico.status == "Pago", OrdemServico.valor_final), else_=0)), 0),
+            func.coalesce(func.sum(saldo_em_aberto), 0),
+            func.coalesce(func.sum(valor_recebido_resumo), 0),
         ).one()
         total = int(agregado[0])
         resumo = {
@@ -1810,7 +1945,11 @@ def listar_ordens(
         .all()
     )
 
-    items = [_serialize_os_row(row) for row in results]
+    recebidos = _valores_recebidos_ativos(db, [row[0].id for row in results])
+    items = [
+        _serialize_os_row(row, recebidos.get(row[0].id, Decimal("0.00")))
+        for row in results
+    ]
 
     response = {"total": total, "items": items}
     if resumo is not None:
@@ -1923,6 +2062,9 @@ def gerar_relatorio_pendencias_pdf(
             detail="Nao ha ordens para gerar relatorio com os filtros selecionados.",
         )
 
+    recebidos_pendencias = _valores_recebidos_ativos(
+        db, [row[0].id for row in resultados]
+    )
     itens_relatorio: List[Dict[str, Any]] = []
     for row in resultados:
         (
@@ -1975,7 +2117,13 @@ def gerar_relatorio_pendencias_pdf(
                 "destinatario_email": payload_os["destinatario_email"],
                 "servico": servico_nome or "",
                 "data_atendimento": os_data.data_atendimento,
-                "valor_final": float(os_data.valor_final or 0),
+                "valor_final": float(
+                    max(
+                        Decimal("0.00"),
+                        _to_decimal(os_data.valor_final)
+                        - recebidos_pendencias.get(os_data.id, Decimal("0.00")),
+                    )
+                ),
             }
         )
 
@@ -2378,16 +2526,31 @@ def receber_ordens_lote(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Confirma todas as OS em uma transacao, ou nao recebe nenhuma delas."""
+    """Recebe o valor informado, integral ou parcial, em uma unica transacao."""
     notificacoes = []
     try:
         ids_solicitados = [item.os_id for item in dados.ordens]
         if len(set(ids_solicitados)) != len(ids_solicitados):
             raise HTTPException(status_code=422, detail="O lote contem OS repetidas.")
         esperados = {item.os_id: item.valor_final_esperado for item in dados.ordens}
+        saldos_esperados = {
+            item.os_id: item.saldo_em_aberto_esperado for item in dados.ordens
+        }
+        recebimento_id = str(dados.idempotency_key or "").strip()
+        if recebimento_id:
+            repetida = (
+                db.query(Transacao.id)
+                .filter(Transacao.observacoes.like(f"%RECEBIMENTO_ID={recebimento_id}:%"))
+                .first()
+            )
+            if repetida:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Este recebimento ja foi registrado. Atualize a lista antes de tentar novamente.",
+                )
         # A mesma ordem de locks evita deadlock entre lotes sobrepostos.
         ordens = [_bloquear_os_para_escrita(db, os_id) for os_id in sorted(esperados)]
-        valores_os = []
+        saldos_os = []
         for os_id, ordem in zip(sorted(esperados), ordens):
             if not ordem or ordem.status != "Pendente":
                 raise HTTPException(
@@ -2401,17 +2564,84 @@ def receber_ordens_lote(
                     status_code=409,
                     detail=f"O valor da OS {os_id} mudou desde a conferencia. Recarregue o lote.",
                 )
-            valores_os.append(int(valor * 100))
-        pagamentos_por_os, taxas_por_os = _preparar_rateio_recebimento_lote(
-            db, valores_os, dados.pagamentos,
+            saldo = _saldo_em_aberto_os(db, ordem)
+            saldo_esperado = saldos_esperados[os_id]
+            if saldo_esperado is not None and saldo != saldo_esperado:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"O saldo da OS {os_id} mudou desde a conferencia. Recarregue o lote.",
+                )
+            if saldo <= 0:
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"A OS {os_id} nao possui saldo em aberto. Recarregue o lote.",
+                )
+            saldos_os.append(int(saldo * 100))
+
+        total_pagamentos = sum(int(item.valor * 100) for item in dados.pagamentos)
+        total_em_aberto = sum(saldos_os)
+        if total_pagamentos > total_em_aberto:
+            raise HTTPException(
+                status_code=422,
+                detail="O total dos pagamentos nao pode exceder o saldo em aberto das OS selecionadas.",
+            )
+        baixa_parcial = total_pagamentos < total_em_aberto
+        if baixa_parcial:
+            if not recebimento_id:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Informe a identificacao da baixa parcial para evitar lancamento duplicado.",
+                )
+            clinicas = {
+                ordem.clinica_id
+                for ordem in ordens
+                if ordem and ordem.responsavel_pagamento_tipo != "veterinario"
+            }
+            if (
+                len(clinicas) != 1
+                or None in clinicas
+                or any(ordem.responsavel_pagamento_tipo == "veterinario" for ordem in ordens)
+            ):
+                raise HTTPException(
+                    status_code=422,
+                    detail="A baixa parcial em lote exige OS da mesma clinica responsavel pelo pagamento.",
+                )
+
+        # Baixa a divida mais antiga primeiro e usa a ultima OS apenas ate o
+        # limite necessario. A ordem de locks continua canonica por id.
+        indices_por_antiguidade = sorted(
+            range(len(ordens)),
+            key=lambda indice: (
+                ordens[indice].data_atendimento or datetime.min,
+                ordens[indice].id,
+            ),
         )
+        alocacoes = [0] * len(ordens)
+        restante = total_pagamentos
+        for indice in indices_por_antiguidade:
+            alocacoes[indice] = min(saldos_os[indice], restante)
+            restante -= alocacoes[indice]
+            if restante == 0:
+                break
+        pagamentos_por_os, taxas_por_os = _preparar_rateio_recebimento_lote(
+            db, alocacoes, dados.pagamentos,
+        )
+        os_ids_recebidas = []
+        os_ids_pagas = []
+        os_ids_parciais = []
+        saldo_restante = Decimal("0.00")
         for indice, ordem in enumerate(ordens):
-            _, notificacao = _preparar_recebimento_ordem(
+            if alocacoes[indice] == 0:
+                saldo_restante += Decimal(saldos_os[indice]) / 100
+                continue
+            payload, notificacao = _preparar_recebimento_ordem(
                 _find_os_with_names(db, ordem.id),
                 OrdemServicoReceberInput(
                     pagamentos=pagamentos_por_os[indice],
                     data_recebimento=dados.data_recebimento,
                     valor_final_esperado=esperados[ordem.id],
+                    saldo_em_aberto_esperado=Decimal(saldos_os[indice]) / 100,
+                    idempotency_key=f"{recebimento_id}:{ordem.id}" if recebimento_id else None,
                     destino_credito_excedente="nenhum",
                 ),
                 request, db, current_user,
@@ -2419,12 +2649,32 @@ def receber_ordens_lote(
                 taxas_rateadas=taxas_por_os[indice],
             )
             notificacoes.append(notificacao)
+            os_ids_recebidas.append(ordem.id)
+            saldo_item = _to_decimal(payload["saldo_em_aberto"])
+            saldo_restante += saldo_item
+            if saldo_item == 0:
+                os_ids_pagas.append(ordem.id)
+            else:
+                os_ids_parciais.append(ordem.id)
         db.commit()
     except Exception:
         db.rollback()
         raise
     _notificar_recebimentos_confirmados(db, notificacoes)
-    return {"os_ids": ids_solicitados, "mensagem": "Todas as ordens do lote foram recebidas com sucesso."}
+    os_ids_recebidas_set = set(os_ids_recebidas)
+    return {
+        "os_ids": [os_id for os_id in ids_solicitados if os_id in os_ids_recebidas_set],
+        "os_ids_pagas": os_ids_pagas,
+        "os_ids_parciais": os_ids_parciais,
+        "baixa_parcial": baixa_parcial,
+        "valor_recebido": float(Decimal(total_pagamentos) / 100),
+        "saldo_em_aberto": float(saldo_restante.quantize(CENTAVO)),
+        "mensagem": (
+            "Baixa parcial registrada; o saldo restante continua em aberto."
+            if baixa_parcial
+            else "Todas as ordens do lote foram recebidas com sucesso."
+        ),
+    }
 
 
 @router.get("/{os_id}")
@@ -2438,7 +2688,7 @@ def obter_ordem(
     if not os_row:
         raise HTTPException(status_code=404, detail="Ordem de servico nao encontrada")
 
-    return _serialize_os_row(os_row)
+    return _serialize_os_row(os_row, _valor_recebido_ativo(db, os_id))
 
 
 @router.put("/{os_id}")
@@ -2456,10 +2706,11 @@ def atualizar_ordem(
 
     status_anterior = os_data.status
     valor_anterior = float(os_data.valor_final or 0)
+    valor_recebido_ativo = _valor_recebido_ativo(db, os_id)
 
     if os_data.laudo_id and os_data.status == "Cancelado" and dados.status not in {None, "Cancelado"}:
         raise HTTPException(409, "Uma OS cancelada de laudo nao pode ser reativada. Gere um novo envio se necessario.")
-    if os_data.status == "Pago" and dados.status == "Cancelado":
+    if (os_data.status == "Pago" or valor_recebido_ativo > 0) and dados.status == "Cancelado":
         raise HTTPException(409, "Desfaca o recebimento antes de cancelar a OS.")
 
     if os_data.laudo_id and os_data.status != "Cancelado" and (
@@ -2483,7 +2734,7 @@ def atualizar_ordem(
         ]
     )
 
-    if os_data.status == "Pago" and altera_preco:
+    if (os_data.status == "Pago" or valor_recebido_ativo > 0) and altera_preco:
         raise HTTPException(
             status_code=400,
             detail="OS ja recebida. Desfaca o recebimento antes de editar valores.",
@@ -2542,7 +2793,7 @@ def atualizar_ordem(
     db.commit()
 
     os_row = _find_os_with_names(db, os_id)
-    payload = _serialize_os_row(os_row)
+    payload = _serialize_os_row(os_row, valor_recebido_ativo)
     os_updated = os_row[0]
     payload["mensagem"] = "Ordem de servico atualizada com sucesso"
 
@@ -2750,18 +3001,39 @@ def _preparar_recebimento_ordem(
             )
 
     marker = f"OS_ID={os_data.id};TIPO=RECEBIMENTO_OS"
-    transacao_existente = (
-        db.query(Transacao)
+    transacao_inconsistente = (
+        db.query(Transacao.id)
+        .outerjoin(
+            OrdemServicoPagamento,
+            OrdemServicoPagamento.transacao_id == Transacao.id,
+        )
         .filter(
             Transacao.tipo == "entrada",
             Transacao.status.in_(["Recebido", "Pago"]),
             Transacao.observacoes.like(f"%{marker}%"),
+            OrdemServicoPagamento.id.is_(None),
         )
-        .order_by(Transacao.id.desc())
         .first()
     )
-    if transacao_existente:
-        raise HTTPException(status_code=409 if recebimento_lote else 400, detail="Ja existe recebimento ativo para esta OS.")
+    if transacao_inconsistente:
+        raise HTTPException(
+            status_code=409 if recebimento_lote else 400,
+            detail="Existe recebimento ativo sem rateio consistente para esta OS.",
+        )
+    recebimento_id = str(dados.idempotency_key or "").strip()
+    if recebimento_id:
+        transacao_repetida = (
+            db.query(Transacao.id)
+            .filter(
+                Transacao.observacoes.like(f"%RECEBIMENTO_ID={recebimento_id};%")
+            )
+            .first()
+        )
+        if transacao_repetida:
+            raise HTTPException(
+                status_code=409,
+                detail="Este recebimento ja foi registrado. Atualize a OS antes de tentar novamente.",
+            )
 
     now = datetime.now()
     valor_servico = round(float(os_data.valor_servico or 0), 2)
@@ -2782,6 +3054,24 @@ def _preparar_recebimento_ordem(
     valor_os = round(max(0.0, valor_servico - desconto_informado), 2)
     os_data.desconto = _to_decimal(desconto_informado)
     os_data.valor_final = _to_decimal(valor_os)
+    valor_recebido_antes = _valor_recebido_ativo(db, os_data.id)
+    saldo_em_aberto_antes = max(
+        Decimal("0.00"), _to_decimal(valor_os) - valor_recebido_antes
+    ).quantize(CENTAVO)
+    if dados.saldo_em_aberto_esperado is not None:
+        saldo_esperado = dados.saldo_em_aberto_esperado
+        if saldo_esperado != saldo_em_aberto_antes:
+            raise HTTPException(
+                status_code=409,
+                detail="O saldo em aberto da OS mudou desde a conferencia. Recarregue antes de receber.",
+            )
+    elif valor_recebido_antes > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="A OS possui recebimento parcial. Recarregue para conferir o saldo em aberto.",
+        )
+    if saldo_em_aberto_antes <= 0 and valor_os > 0:
+        raise HTTPException(status_code=409, detail="A OS nao possui saldo em aberto.")
     momento_recebimento_base = _montar_momento_recebimento(dados.data_recebimento, now)
     valor_credito_solicitado = round(float(dados.valor_credito_utilizado or 0), 2)
     os_do_veterinario = os_data.responsavel_pagamento_tipo == "veterinario"
@@ -2792,7 +3082,7 @@ def _preparar_recebimento_ordem(
         pagamentos_input = [
             OrdemServicoPagamentoItemInput(
                 forma_pagamento=dados.forma_pagamento or "dinheiro",
-                valor=valor_os,
+                valor=float(saldo_em_aberto_antes),
                 data_recebimento=dados.data_recebimento,
             )
         ]
@@ -2827,11 +3117,12 @@ def _preparar_recebimento_ordem(
                     f"({saldo_credito_disponivel:.2f})."
                 ),
             )
-        if valor_credito_utilizado > valor_os + 1e-9:
+        if valor_credito_utilizado > float(saldo_em_aberto_antes) + 1e-9:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Credito solicitado ({valor_credito_utilizado:.2f}) maior que o valor da OS ({valor_os:.2f})."
+                    f"Credito solicitado ({valor_credito_utilizado:.2f}) maior que o saldo da OS "
+                    f"({float(saldo_em_aberto_antes):.2f})."
                 ),
             )
 
@@ -2840,9 +3131,6 @@ def _preparar_recebimento_ordem(
             status_code=400,
             detail="Informe ao menos um pagamento ou utilize credito disponivel para receber a OS.",
         )
-
-    os_data.status = "Pago"
-    os_data.updated_at = now
 
     transacoes_criadas: List[Transacao] = []
     total_bruto = 0.0
@@ -2898,8 +3186,9 @@ def _preparar_recebimento_ordem(
         momento_recebimento_item = _montar_momento_recebimento(data_item, now)
         datas_recebimento.append(momento_recebimento_item)
 
+        marcador_recebimento = f";RECEBIMENTO_ID={recebimento_id}" if recebimento_id else ""
         observacao_item = (
-            f"{marker};ITEM={idx};OS_NUMERO={os_data.numero_os};SERVICO={servico_nome or ''};"
+            f"{marker}{marcador_recebimento};ITEM={idx};OS_NUMERO={os_data.numero_os};SERVICO={servico_nome or ''};"
             f"DATA_RECEBIMENTO={momento_recebimento_item.date().isoformat()};VALOR_BRUTO={valor_bruto:.2f};"
             f"TAXA={valor_taxa:.2f};VALOR_LIQUIDO={valor_liquido:.2f}"
         )
@@ -2962,14 +3251,25 @@ def _preparar_recebimento_ordem(
         transacoes_criadas.append(transacao)
 
     total_cobertura = round(total_bruto + valor_credito_utilizado, 2)
-    if round(total_cobertura + 1e-9, 2) < valor_os:
+    baixa_parcial = _to_decimal(total_cobertura) < saldo_em_aberto_antes
+    if baixa_parcial and valor_credito_utilizado > 0:
         raise HTTPException(
-            status_code=400,
+            status_code=422,
+            detail="Credito do cliente so pode ser usado quando o saldo da OS for integralmente quitado.",
+        )
+    if baixa_parcial and dados.saldo_em_aberto_esperado is None:
+        raise HTTPException(
+            status_code=422,
             detail=(
-                f"Total coberto ({total_cobertura:.2f}) menor que o valor da OS ({valor_os:.2f}). "
-                "Use pagamentos e/ou credito que cubram integralmente a ordem."
+                f"Total coberto ({total_cobertura:.2f}) menor que o saldo da OS "
+                f"({float(saldo_em_aberto_antes):.2f}). Informe o saldo conferido para registrar baixa parcial."
             ),
         )
+    if total_cobertura <= 0 and saldo_em_aberto_antes > 0:
+        raise HTTPException(status_code=422, detail="O valor recebido deve ser maior que zero.")
+
+    os_data.status = "Pendente" if baixa_parcial else "Pago"
+    os_data.updated_at = now
 
     credito_consumido: Optional[CreditoFinanceiro] = None
     if valor_credito_utilizado > 0:
@@ -2992,7 +3292,7 @@ def _preparar_recebimento_ordem(
         )
         db.add(credito_consumido)
 
-    excedente = round(total_cobertura - valor_os, 2)
+    excedente = round(total_cobertura - float(saldo_em_aberto_antes), 2)
     credito_gerado: Optional[CreditoFinanceiro] = None
     if excedente > 0:
         if os_do_veterinario:
@@ -3043,8 +3343,12 @@ def _preparar_recebimento_ordem(
         modulo="ordens_servico",
         entidade="ordem_servico",
         entidade_id=str(os_data.id),
-        acao="ORDEM_SERVICO_RECEBIDA",
-        descricao=f"OS {os_data.numero_os or os_data.id} marcada como paga",
+        acao=("ORDEM_SERVICO_RECEBIMENTO_PARCIAL" if baixa_parcial else "ORDEM_SERVICO_RECEBIDA"),
+        descricao=(
+            f"Baixa parcial registrada na OS {os_data.numero_os or os_data.id}"
+            if baixa_parcial
+            else f"OS {os_data.numero_os or os_data.id} marcada como paga"
+        ),
         detalhes_json=json.dumps({
             "numero_os": os_data.numero_os,
             "forma_pagamento_legacy": dados.forma_pagamento,
@@ -3053,6 +3357,8 @@ def _preparar_recebimento_ordem(
             "valor_servico": valor_servico,
             "desconto_aplicado": round(desconto_informado, 2),
             "valor_os": valor_os,
+            "valor_recebido_antes": float(valor_recebido_antes),
+            "saldo_em_aberto_antes": float(saldo_em_aberto_antes),
             "valor_bruto_total": round(total_bruto, 2),
             "valor_credito_utilizado": round(valor_credito_utilizado, 2),
             "saldo_credito_disponivel_antes": round(saldo_credito_disponivel, 2),
@@ -3062,18 +3368,24 @@ def _preparar_recebimento_ordem(
             "credito_consumido_id": credito_consumido.id if credito_consumido else None,
             "credito_id": credito_gerado.id if credito_gerado else None,
             "transacoes_ids": [item.id for item in transacoes_criadas],
+            "baixa_parcial": baixa_parcial,
+            "saldo_em_aberto_depois": round(
+                max(0.0, float(saldo_em_aberto_antes) - total_cobertura), 2
+            ),
+            "recebimento_id": recebimento_id or None,
         }, ensure_ascii=False),
         ip_origem=ip,
         rota=rota,
         metodo=metodo,
     ))
 
-    cancel_pending_os_payment_reminder(
-        db,
-        os_id=os_data.id,
-        reason="OS recebida; lembrete de pendencia cancelado.",
-        commit=False,
-    )
+    if os_data.status == "Pago":
+        cancel_pending_os_payment_reminder(
+            db,
+            os_id=os_data.id,
+            reason="OS recebida; lembrete de pendencia cancelado.",
+            commit=False,
+        )
 
     formas_recebimento = sorted(
         {
@@ -3105,7 +3417,11 @@ def _preparar_recebimento_ordem(
         },
     }
     payload = {
-        "mensagem": "Ordem de servico recebida com sucesso.",
+        "mensagem": (
+            "Baixa parcial registrada; o saldo restante continua em aberto."
+            if baixa_parcial
+            else "Ordem de servico recebida com sucesso."
+        ),
         "os_id": os_data.id,
         "status": os_data.status,
         "valor_servico": valor_servico,
@@ -3120,6 +3436,11 @@ def _preparar_recebimento_ordem(
         "credito_consumido_id": credito_consumido.id if credito_consumido else None,
         "credito_gerado_id": credito_gerado.id if credito_gerado else None,
         "credito_gerado_valor": excedente if excedente > 0 else 0,
+        "baixa_parcial": baixa_parcial,
+        "valor_recebido_acumulado": round(float(valor_recebido_antes) + total_cobertura, 2),
+        "saldo_em_aberto": round(
+            max(0.0, float(saldo_em_aberto_antes) - total_cobertura), 2
+        ),
     }
     return payload, notificacao
 
@@ -3168,8 +3489,9 @@ def desfazer_recebimento_ordem(
     os_data = _bloquear_os_para_escrita(db, os_id)
     if not os_data:
         raise HTTPException(status_code=404, detail="Ordem de servico nao encontrada")
-    if os_data.status != "Pago":
-        raise HTTPException(status_code=400, detail="Apenas OS com status Pago podem ser desfeitas.")
+    valor_recebido_ativo = _valor_recebido_ativo(db, os_id)
+    if os_data.status != "Pago" and valor_recebido_ativo <= 0:
+        raise HTTPException(status_code=400, detail="A OS nao possui recebimento ativo para desfazer.")
 
     creditos_do_recebimento = db.query(CreditoFinanceiro).filter(
         CreditoFinanceiro.ordem_servico_id == os_data.id,
@@ -3287,7 +3609,7 @@ def deletar_ordem(
     if not os_data:
         raise HTTPException(status_code=404, detail="Ordem de servico nao encontrada")
 
-    if os_data.status == "Pago":
+    if os_data.status == "Pago" or _valor_recebido_ativo(db, os_id) > 0:
         raise HTTPException(409, "Desfaca o recebimento antes de excluir a OS.")
 
     if os_data.laudo_id:
@@ -3365,6 +3687,7 @@ def ordens_pendentes_clinica(
         .order_by(OrdemServico.data_atendimento.desc())
         .all()
     )
+    recebidos = _valores_recebidos_ativos(db, [row[0].id for row in ordens])
 
     return {
         "total": len(ordens),
@@ -3377,6 +3700,11 @@ def ordens_pendentes_clinica(
                 "servico": servico_nome or "",
                 "data_atendimento": str(os_data.data_atendimento) if os_data.data_atendimento else None,
                 "valor_final": float(os_data.valor_final) if os_data.valor_final else 0,
+                "valor_recebido": float(recebidos.get(os_data.id, Decimal("0.00"))),
+                "valor_em_aberto": float(max(
+                    Decimal("0.00"),
+                    _to_decimal(os_data.valor_final) - recebidos.get(os_data.id, Decimal("0.00")),
+                )),
             }
             for os_data, paciente_nome, tutor_nome, servico_nome in ordens
         ],
@@ -3409,18 +3737,35 @@ def resumo_os(
     pagas = query.filter(OrdemServico.status == "Pago").count()
     canceladas = query.filter(OrdemServico.status == "Cancelado").count()
 
-    valor_total = (
-        db.query(func.sum(OrdemServico.valor_final))
-        .filter(OrdemServico.status == "Pago")
-        .scalar()
-        or 0
-    )
-    valor_pendente = (
-        db.query(func.sum(OrdemServico.valor_final))
-        .filter(OrdemServico.status == "Pendente")
-        .scalar()
-        or 0
-    )
+    if _tem_tabelas_recebimentos(db):
+        recebimentos = _recebimentos_ativos_por_os_subquery(db)
+        resumo_valores = query.outerjoin(
+            recebimentos, recebimentos.c.os_id == OrdemServico.id
+        ).with_entities(
+            func.coalesce(func.sum(case(
+                (OrdemServico.status == "Pago", OrdemServico.valor_final),
+                (
+                    OrdemServico.status == "Pendente",
+                    func.coalesce(recebimentos.c.valor_recebido, 0),
+                ),
+                else_=0,
+            )), 0),
+            func.coalesce(func.sum(case(
+                (
+                    OrdemServico.status == "Pendente",
+                    OrdemServico.valor_final - func.coalesce(recebimentos.c.valor_recebido, 0),
+                ),
+                else_=0,
+            )), 0),
+        ).one()
+        valor_total, valor_pendente = resumo_valores
+    else:
+        valor_total = query.with_entities(func.coalesce(func.sum(case(
+            (OrdemServico.status == "Pago", OrdemServico.valor_final), else_=0,
+        )), 0)).scalar()
+        valor_pendente = query.with_entities(func.coalesce(func.sum(case(
+            (OrdemServico.status == "Pendente", OrdemServico.valor_final), else_=0,
+        )), 0)).scalar()
 
     return {
         "total_os": pendentes + pagas + canceladas,
