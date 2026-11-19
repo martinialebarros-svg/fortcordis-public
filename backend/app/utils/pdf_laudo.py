@@ -830,8 +830,16 @@ def criar_tabela_medidas(titulo: str, parametros: List[Dict], dados: Dict[str, A
         
         data.append(row)
     
-    # Criar tabela
-    table = Table(data, colWidths=col_widths, repeatRows=2)
+    return _criar_tabela_quantitativa(data, col_widths)
+
+
+def _criar_tabela_quantitativa(data: list, col_widths: list, *, dividir_linhas: bool = False) -> Table:
+    # Priorizamos a quebra dentro da célula para evitar que uma observação
+    # longa repita o cabeçalho duas vezes na mesma página.
+    table = Table(
+        data, colWidths=col_widths, repeatRows=2,
+        splitByRow=not dividir_linhas, splitInRow=int(dividir_linhas),
+    )
     
     # Estilos base - cores do modelo original
     table_style = [
@@ -1111,34 +1119,61 @@ def criar_secao_probabilidade_hp(dados_pdf: Dict[str, Any]) -> List:
     )
     if not avaliacao["active"]:
         return []
+
     styles = create_pdf_styles()
-    elementos = [criar_titulo_secao("PROBABILIDADE DE HIPERTENSÃO PULMONAR"), Spacer(1, 2 * mm)]
-    elementos.append(Paragraph(_esc(avaliacao["summary"]), styles["Normal"]))
-    for texto in avaliacao["evidence"]:
-        elementos.append(Paragraph(_esc(texto), styles["Normal"]))
-    if avaliacao["active"]:
-        for site, label in HP_SITE_LABELS.items():
-            estado = "com sinais" if site in avaliacao["positive_sites"] else "sem sinais" if site in avaliacao["assessed_sites"] else "não avaliado"
-            elementos.append(Paragraph(_esc(f"{label}: {estado}."), styles["ReferenciaTexto"]))
-        metrics = avaliacao["metrics"]
-        suporte = []
-        for key, label, unit in (("ap_ao", "AP/Ao", ""), ("rpad", "RPAD", "%"), ("at_et", "TA/TE", ""), ("pr_early", "IP no início da diástole", " m/s")):
-            if metrics[key] is not None:
-                suporte.append(f"{label}: {metrics[key]:.2f}{unit}")
-        if suporte:
-            rotulo = "Métricas de suporte: " if avaliacao["applicable"] else "Métricas descritivas: "
-            elementos.append(Paragraph(_esc(rotulo + "; ".join(suporte) + "."), styles["ReferenciaTexto"]))
-    for texto in [*avaliacao["missing"], *avaliacao["notes"]]:
-        elementos.append(Paragraph(_esc(texto), styles["ReferenciaTexto"]))
+    data = [
+        [Paragraph("Avaliação de hipertensão pulmonar", styles["TabelaTitulo"]), ""],
+        [Paragraph(coluna, styles["TabelaHeader"]) for coluna in ("Parâmetro", "Avaliação")],
+    ]
+    linhas = [("Síntese", avaliacao["summary"])]
+    if avaliacao["evidence"]:
+        linhas.append(("Dados da avaliação", "\n".join(avaliacao["evidence"])))
+
+    sitios = []
+    for site, label in HP_SITE_LABELS.items():
+        if site in avaliacao["positive_sites"]:
+            estado = "com sinais"
+        elif site in avaliacao["assessed_sites"]:
+            estado = "sem sinais"
+        else:
+            estado = "não avaliado"
+        sitios.append(f"{label}: {estado}.")
+    linhas.append(("Sítios anatômicos", "\n".join(sitios)))
+
+    metrics = avaliacao["metrics"]
+    suporte = []
+    for key, label, unit in (
+        ("ap_ao", "AP/Ao", ""), ("rpad", "RPAD", "%"),
+        ("at_et", "TA/TE", ""), ("pr_early", "IP no início da diástole", " m/s"),
+    ):
+        if metrics[key] is not None:
+            suporte.append(f"{label}: {metrics[key]:.2f}{unit}")
+    if suporte:
+        rotulo = "Métricas de suporte" if avaliacao["applicable"] else "Métricas descritivas"
+        linhas.append((rotulo, " · ".join(suporte)))
+
+    if avaliacao["missing"]:
+        linhas.append(("Pendências de revisão", "\n".join(avaliacao["missing"])))
+    notas = list(avaliacao["notes"])
     if not avaliacao["psap_usable"]:
-        elementos.append(Paragraph("PSAP não apresentada: qualidade da TRV e ausência de obstrução da via de saída do VD exigem revisão vigente.", styles["ReferenciaTexto"]))
+        notas.append("PSAP não apresentada: qualidade da TRV e ausência de obstrução da via de saída do VD exigem revisão vigente.")
     if str(medidas.get("HP_TRV") or "").strip() == "nao_mensuravel":
-        elementos.append(Paragraph("Velocidade e gradiente tricúspides históricos não apresentados: sinal declarado não mensurável; valores de origem preservados no registro.", styles["ReferenciaTexto"]))
+        notas.append("Velocidade e gradiente tricúspides históricos não apresentados: sinal declarado não mensurável; valores de origem preservados no registro.")
+    if notas:
+        linhas.append(("Notas técnicas", "\n".join(notas)))
     observacoes = str(medidas.get("HP_observacoes") or "").strip()
     if observacoes:
-        elementos.append(Paragraph(_esc("Observações: " + observacoes).replace("\n", "<br/>"), styles["Normal"]))
-    elementos.append(Spacer(1, 3 * mm))
-    return elementos
+        linhas.append(("Observações do examinador", observacoes))
+
+    for rotulo, texto in linhas:
+        data.append([
+            Paragraph(_esc(rotulo), styles["Normal"]),
+            Paragraph(_esc(texto).replace("\n", "<br/>"), styles["Normal"]),
+        ])
+    # Repeat the HP heading on continuation pages, including for long notes.
+    tabela = _criar_tabela_quantitativa(data, [50 * mm, 130 * mm], dividir_linhas=True)
+    tabela.setStyle(TableStyle([("VALIGN", (0, 2), (-1, -1), "TOP")]))
+    return [tabela, Spacer(1, 3 * mm)]
 
 
 def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
