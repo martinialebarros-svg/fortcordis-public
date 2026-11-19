@@ -5,7 +5,7 @@ from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
 from html import escape
 from io import BytesIO
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Annotated, Any, Dict, List, Literal, Optional, Tuple
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import StreamingResponse
@@ -1884,11 +1884,14 @@ def listar_ordens(
     incluir_resumo: bool = False,
     destinatario_chave: Optional[str] = None,
     os_id: Optional[int] = None,
+    os_ids: Annotated[Optional[List[Annotated[int, Field(ge=1)]]], Query(min_length=1, max_length=200)] = None,
 ):
     query = _query_ordens_filtradas(
         db, status, origem_atendimento, clinica_id, servico_id,
         tipo_horario, data_inicio, data_fim, search, destinatario_chave, os_id,
     )
+    if os_ids is not None:
+        query = query.filter(OrdemServico.id.in_(os_ids))
     resumo = None
     if incluir_resumo:
         # Aggregate the full filtered relation before offset/limit; never sum the page.

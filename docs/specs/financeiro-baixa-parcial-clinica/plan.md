@@ -12,3 +12,9 @@
 ## Falha segura e reversao
 
 O lote continua atomico: qualquer divergencia ou erro desfaz todas as gravacoes da solicitacao. A rota existente de desfazer cancela todos os recebimentos ativos daquela OS e restaura o saldo integral. Como o saldo e derivado e nao ha nova coluna, nao existe migracao de banco a reverter.
+
+## Correção no fluxo de Cobranças
+
+1. Acrescentar o filtro por IDs à consulta autenticada de OS e usar uma só leitura para conferir o lote. Preservar a validação de seleção completa e a conferência de concorrência no recebimento.
+2. Comparar os totais de Cobranças com os saldos das OS e testar a reabertura da clínica, inclusive a próxima baixa do saldo.
+3. Validar recuperação de falha, descarte de resposta após troca de aba e rejeição de dados alterados. O filtro é opcional e pode ser revertido junto com a interface sem migração.

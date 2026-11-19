@@ -14,6 +14,8 @@
 - BP-010: totais de cobranca, resumo financeiro, mensagem e PDF de pendencias usam o saldo em aberto.
 - BP-011: recibo de quitacao pelo WhatsApp fica indisponivel enquanto o lote ou a OS continuar parcial.
 - BP-012: baixas integrais existentes, multiplas formas, taxas, credito do cliente, auditoria, notificacao pos-commit e rollback permanecem compativeis.
+- BP-013: `Receber pendentes` e `Receber selecionadas` conferem até 200 OS pendentes em uma única leitura, comparando os dados atuais com a seleção. Seleção alterada ou incompleta bloqueia a abertura. Em falha de leitura, o operador pode tentar abrir novamente sem enviar o recebimento.
+- BP-014: os detalhes de Cobranças conferem o total do destinatário somando o saldo das OS pendentes em centavos. Usam o valor original apenas quando a API não informa o saldo. Divergências reais de saldo continuam bloqueando o detalhe.
 
 ## Contrato
 
@@ -22,3 +24,5 @@ Itens de `PATCH /ordens-servico/receber-lote` aceitam `saldo_em_aberto_esperado`
 `PATCH /ordens-servico/{id}/receber` aceita os mesmos campos de conferencia para completar ou registrar uma fracao do saldo de uma unica OS.
 
 As leituras de OS acrescentam `valor_recebido`, `valor_em_aberto` e `recebimento_parcial` sem remover campos anteriores.
+
+`GET /ordens-servico` aceita o filtro opcional repetido `os_ids` (IDs positivos, até 200 por chamada). O filtro combina com os demais filtros e mantém o contrato e as permissões da listagem. A confirmação usa o mesmo `PATCH /ordens-servico/receber-lote` com valor e saldo esperados.

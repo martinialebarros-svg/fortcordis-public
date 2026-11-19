@@ -13,7 +13,21 @@
 | Guardrail SDD | `spec.md` + `verify.md` reconhecidos para `financeiro-baixa-parcial-clinica` | aprovado localmente |
 | Stage tecnico | Deploy do SHA `4bf03990b881fb24d105949b4d0878935ad158b2`, backend saudavel, canario autenticado e 46 testes descartaveis de ordens de servico no VPS | aprovado em Stage |
 | Stage autenticado | Em uma OS explicitamente sintetica de R$ 300,00, o formulario aceitou R$ 100,00 sem gravar a operacao, exibiu baixa parcial, saldo restante de R$ 200,00, bloqueou recibo e alterou a acao para `Confirmar baixa parcial` | aprovado em Stage |
-| Producao | Nao solicitada nesta entrega | pendente |
+| Producao da funcionalidade original | PR `#45`, SHA `33aa37e3`, deploy `44428710832` | aprovado em producao |
+
+## Correção de Cobranças — 2026-11-19
+
+| Criterio | Evidencia | Estado |
+|---|---|---|
+| BP-013, abertura segura | Simulação de timeout nas rotas por OS, seguida de abertura por uma unica consulta em lote. Seleção incompleta ou alterada é rejeitada, e a API aceita somente IDs positivos e até 200 itens. | aprovado localmente |
+| BP-013, recuperação | Uma leitura com timeout mantém o recebimento fechado e libera nova tentativa. Uma resposta atrasada após troca de aba não abre o formulário. | aprovado localmente |
+| BP-014 | Depois de uma baixa de R$ 300,00 sobre R$ 1.000,00, a clínica reabre com a OS Parcial, o saldo de R$ 700,00 e o próximo formulário preenchido com R$ 700,00. Uma divergência verdadeira entre saldo e resumo continua bloqueada. | aprovado localmente |
+
+Esta correção foi verificada com dados descartáveis. A homologação em Stage e a instalação em produção são etapas posteriores à validação local.
+
+- Frontend: 74 testes focados no diff final, incluindo as respostas incompletas, repetidas, com outro destinatário ou com outro saldo. Suíte geral e testes Node aprovados. TypeScript, ESLint e build Next.js aprovados.
+- Backend: 58 testes focados e 38 subtestes aprovados, incluindo o filtro autenticado por IDs e o contrato HTTP. Suíte completa em SQLite descartável aprovada.
+- Guardrail SDD e `git diff --check` aprovados.
 
 ## Comandos executados
 

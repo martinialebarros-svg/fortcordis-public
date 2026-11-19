@@ -23,6 +23,7 @@ const searchInput = () => screen.getByRole("textbox");
 
 const osItem = (id: number) => ({ id, numero_os: `OS-${id}`, status: "Pendente", valor_final: 10,
   data_atendimento: "2026-09-15", paciente: "Paciente sintetico", tutor: "Tutor sintetico", clinica: "Clinica sintetica", servico: "Servico sintetico" });
+const idsConferencia = (url: string) => new URL(url, "http://test").searchParams.getAll("os_ids").map(Number);
 
 describe("Cobrancas remote groups", () => {
   const group = { chave: "clinica:1", nome_destinatario: "Clinica sintetica", tipo_destinatario: "clinica", quantidade_total: 101, quantidade_os: 101, total_pendente: 1010 };
@@ -149,6 +150,8 @@ describe("Ordens pagination", () => {
     window.history.replaceState({}, "", "/financeiro?aba=ordens");
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     mocks.get.mockImplementation(async (url: string) => {
+      const ids = idsConferencia(url);
+      if (ids.length) return { data: { items: ids.map(osItem) } };
       if (url.startsWith("/ordens-servico?")) return { data: { total: 201, items: [osItem(url.includes("skip=100") ? 101 : 1)], resumo: { pendentes: 201, valor_pendente: 2010 } } };
       if (/^\/ordens-servico\/\d+$/.test(url)) return { data: osItem(Number(url.split("/").pop())) };
       return { data: { items: [] } };
@@ -166,20 +169,23 @@ describe("Ordens pagination", () => {
     fireEvent.click(screen.getByRole("button", { name: "Selecionar pendentes" }));
     expect(screen.getByText(/2 selecionada\(s\) para baixa/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Receber selecionadas" }));
-    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("/ordens-servico/101"));
-    expect(mocks.get).toHaveBeenCalledWith("/ordens-servico/1");
+    await screen.findByRole("dialog", { name: "Receber OS em lote" });
+    expect(mocks.get.mock.calls.map(([url]) => idsConferencia(url)).filter((ids) => ids.length)).toEqual([[1, 101]]);
+    expect(mocks.get.mock.calls.some(([url]) => /^\/ordens-servico\/\d+$/.test(url))).toBe(false);
     expect(mocks.patch).not.toHaveBeenCalled();
     expect(mocks.post).not.toHaveBeenCalled();
   });
 
   it("blocks changed selection without submitting a payment", async () => {
     const read = mocks.get.getMockImplementation()!;
-    mocks.get.mockImplementation(async (url, options) => url === "/ordens-servico/1" ? { data: { ...osItem(1), valor_final: 20 } } : read(url, options));
+    mocks.get.mockImplementation(async (url, options) => idsConferencia(url).length
+      ? { data: { items: [{ ...osItem(1), valor_final: 20 }] } } : read(url, options));
     render(<FinanceiroPage />);
     await screen.findByText("OS #OS-1");
     fireEvent.click(screen.getByRole("button", { name: "Selecionar pendentes" }));
     fireEvent.click(screen.getByRole("button", { name: "Receber selecionadas" }));
     expect(await screen.findByText(/Uma OS mudou desde a selecao/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Receber OS em lote" })).not.toBeInTheDocument();
     expect(mocks.patch).not.toHaveBeenCalled();
   });
 
@@ -651,6 +657,97 @@ describe("Recebimento atomico em lote", () => {
     return modal;
   };
 
+  it("abre Receber pendentes com uma consulta e reabre a cobranca apos a baixa de 300 de 1.000", async () => {
+    window.history.replaceState({}, "", "/financeiro?aba=cobrancas");
+    const grupo = { chave: "clinica:1", nome_destinatario: "Clinica sintetica", tipo_destinatario: "clinica",
+      quantidade_total: 2, quantidade_os: 2, total_pendente: 1000 };
+    const ordensClinica = [
+      { ...osItem(1), clinica_id: 1, valor_final: 400, valor_em_aberto: 400, valor_recebido: 0 },
+      { ...osItem(2), clinica_id: 1, valor_final: 600, valor_em_aberto: 600, valor_recebido: 0 },
+    ];
+    mocks.get.mockImplementation(async (url: string) => {
+      if (url.startsWith("/ordens-servico/cobrancas?")) return { data: {
+        total: 1, total_os: 2, pendentes: 2, total_pendente: grupo.total_pendente, items: [{ ...grupo }],
+      } };
+      if (url.startsWith("/ordens-servico?")) return { data: {
+        total: 2, items: ordensClinica.map((os) => ({ ...os })),
+        resumo: { pendentes: 2, valor_pendente: grupo.total_pendente },
+      } };
+      if (/^\/ordens-servico\/\d+$/.test(url)) throw new Error("timeout of 15000ms exceeded");
+      return { data: { items: [] } };
+    });
+    mocks.patch.mockImplementation(async () => {
+      ordensClinica[0] = { ...ordensClinica[0], valor_em_aberto: 100, valor_recebido: 300 };
+      grupo.total_pendente = 700;
+      return { data: { os_ids: [1], baixa_parcial: true, saldo_em_aberto: 700 } };
+    });
+    render(<FinanceiroPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Abrir destinatario Clinica sintetica" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Receber pendentes" }));
+    const modal = await screen.findByRole("dialog", { name: "Receber OS em lote" });
+    expect(mocks.get.mock.calls.map(([url]) => idsConferencia(url)).filter((ids) => ids.length)).toEqual([[1, 2]]);
+    expect(mocks.get.mock.calls.some(([url]) => /^\/ordens-servico\/\d+$/.test(url))).toBe(false);
+    const valor = within(modal).getByRole("spinbutton", { name: "Valor do pagamento 1" });
+    expect(valor).toHaveValue(1000);
+    fireEvent.change(valor, { target: { value: "300.00" } });
+    fireEvent.click(within(modal).getByRole("button", { name: "Confirmar baixa parcial" }));
+    expect(await screen.findByText("Parcial")).toBeInTheDocument();
+    const detalhes = within(await screen.findByRole("region", { name: "Cobrancas de Clinica sintetica" }));
+    expect(detalhes.getByText(/Clinica sintetica.*700,00/)).toBeInTheDocument();
+    fireEvent.click(detalhes.getByRole("button", { name: "Fechar destinatario Clinica sintetica" }));
+    fireEvent.click(detalhes.getByRole("button", { name: "Abrir destinatario Clinica sintetica" }));
+    expect(await detalhes.findByText("Parcial")).toBeInTheDocument();
+    fireEvent.click(detalhes.getByRole("button", { name: "Receber pendentes" }));
+    const restante = await screen.findByRole("dialog", { name: "Receber OS em lote" });
+    expect(within(restante).getByRole("spinbutton", { name: "Valor do pagamento 1" })).toHaveValue(700);
+    expect(mocks.patch).toHaveBeenCalledTimes(1);
+    expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it("permite tentar novamente quando a conferencia em lote expira, sem enviar recebimento", async () => {
+    const read = mocks.get.getMockImplementation()!;
+    let failed = false;
+    mocks.get.mockImplementation(async (url, options) => {
+      if (idsConferencia(url).length && !failed) {
+        failed = true;
+        throw new Error("timeout of 15000ms exceeded");
+      }
+      return read(url, options);
+    });
+    render(<FinanceiroPage />);
+    await screen.findByText("OS #OS-1");
+    fireEvent.click(screen.getByRole("button", { name: "Selecionar pendentes" }));
+    const receber = screen.getByRole("button", { name: "Receber selecionadas" });
+    fireEvent.click(receber);
+    expect(await screen.findByText(/Nao foi possivel conferir as OS do lote/)).toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Receber OS em lote" })).not.toBeInTheDocument();
+    fireEvent.click(receber);
+    expect(await screen.findByRole("dialog", { name: "Receber OS em lote" })).toBeInTheDocument();
+    expect(mocks.patch).not.toHaveBeenCalled();
+  });
+
+  it("cancela a conferencia e ignora uma resposta atrasada quando a aba muda", async () => {
+    const read = mocks.get.getMockImplementation()!;
+    let signal: AbortSignal | undefined;
+    let concluir!: (response: { data: { items: typeof ordens } }) => void;
+    mocks.get.mockImplementation((url, options) => {
+      if (!idsConferencia(url).length) return read(url, options);
+      signal = options.signal;
+      return new Promise((resolve) => { concluir = resolve; });
+    });
+    render(<FinanceiroPage />);
+    await screen.findByText("OS #OS-1");
+    fireEvent.click(screen.getByRole("button", { name: "Selecionar pendentes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Receber selecionadas" }));
+    expect(await screen.findByText(/Conferindo ordens selecionadas/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: /Transacoes/ }));
+    expect(signal?.aborted).toBe(true);
+    await act(async () => concluir({ data: { items: ordens } }));
+    expect(screen.queryByText(/Conferindo ordens selecionadas/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("dialog", { name: "Receber OS em lote" })).not.toBeInTheDocument();
+    expect(mocks.patch).not.toHaveBeenCalled();
+  });
+
   it("envia uma unica baixa com valores esperados e pagamentos integrais e aguarda todas as OS para pedir o recibo", async () => {
     let concluir!: (result: unknown) => void;
     mocks.patch.mockImplementation(() => new Promise((resolve) => { concluir = resolve; }));
@@ -720,7 +817,8 @@ describe("Recebimento atomico em lote", () => {
     const confirmar = within(modal).getByRole("button", { name: "Confirmar baixa em lote" });
     fireEvent.click(confirmar);
     expect(await within(modal).findByRole("alert")).toHaveTextContent("Nenhuma baixa deste lote foi registrada por esta operacao");
-    await waitFor(() => expect(mocks.get.mock.calls.filter(([url]) => url.startsWith("/ordens-servico?"))).toHaveLength(2));
+    await waitFor(() => expect(mocks.get.mock.calls.filter(([url]) =>
+      url.startsWith("/ordens-servico?") && !idsConferencia(url).length)).toHaveLength(2));
     expect(within(modal).getByText("2 OS selecionada(s) para este lote")).toBeInTheDocument();
     expect(within(modal).getByText(/OS OS-2 -/)).toBeInTheDocument();
     expect(within(modal).getByRole("spinbutton", { name: "Valor do pagamento 1" })).toHaveValue(30.03);

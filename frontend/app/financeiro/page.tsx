@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "../layout-dashboard";
 import api from "@/lib/axios";
-import { validateOrderSelection } from "@/lib/ordens-selection";
+import { validateOrderSelection, validateOrderSelectionBatch } from "@/lib/ordens-selection";
 import { loadCompleteBillingGroup, type BillingGroup } from "@/lib/cobrancas-loading";
 import { loadStableCatalog } from "@/lib/stable-catalog-cache";
 import {
@@ -376,10 +376,13 @@ export default function FinanceiroPage() {
   useEffect(() => () => grupoControllerRef.current?.abort(), []);
   const [osAlvoId, setOsAlvoId] = useState<number | null>(null);
   const selecaoEpochRef = useRef(0);
-  useEffect(() => () => { selecaoEpochRef.current += 1; }, []);
+  const selecaoControllerRef = useRef<AbortController | null>(null);
+  useEffect(() => () => {
+    selecaoEpochRef.current += 1;
+    selecaoControllerRef.current?.abort();
+  }, []);
   const [erroSelecao, setErroSelecao] = useState("");
   const [validandoSelecao, setValidandoSelecao] = useState(false);
-  const validandoSelecaoRef = useRef(false);
   const [totalOrdens, setTotalOrdens] = useState(0);
   const [resumoOrdens, setResumoOrdens] = useState({ pendentes: 0, valor_pendente: 0 });
   const [resumo, setResumo] = useState<Resumo>({
@@ -662,6 +665,7 @@ export default function FinanceiroPage() {
     grupoControllerRef.current?.abort();
     grupoControllerRef.current = null;
     selecaoEpochRef.current++;
+    selecaoControllerRef.current?.abort();
     setGrupoAberto(null);
     setOrdensPagina([]);
     setOrdensServico([]);
@@ -1419,21 +1423,39 @@ export default function FinanceiroPage() {
     setEnviarReciboPdfWhatsAppAposRecebimento(false);
   };
 
-  const validarSelecao = async (ids: number[], status: string, snapshots = ordensServico) => {
-    if (validandoSelecaoRef.current) return false;
-    validandoSelecaoRef.current = true;
+  const validarSelecao = async (
+    ids: number[],
+    status: string,
+    { snapshots = ordensServico, emLote = false }: { snapshots?: OrdemServico[]; emLote?: boolean } = {},
+  ) => {
+    if (selecaoControllerRef.current) return false;
+    const controller = new AbortController();
+    selecaoControllerRef.current = controller;
     setValidandoSelecao(true);
     const epoch = selecaoEpochRef.current;
     setErroSelecao("");
     try {
-      await validateOrderSelection(ids, snapshots, status, async (id) =>
-        (await api.get<OrdemServico>(`/ordens-servico/${id}`)).data);
-      return epoch === selecaoEpochRef.current;
+      if (emLote) {
+        const params = new URLSearchParams({ status, limit: String(ids.length) });
+        ids.forEach((id) => params.append("os_ids", String(id)));
+        const mensagem = "Nao foi possivel conferir as OS do lote. Clique novamente em Receber para tentar.";
+        const { data } = await api.get<{ items: OrdemServico[] }>(`/ordens-servico?${params}`, {
+          signal: controller.signal,
+        }).catch(() => { throw new Error(mensagem); });
+        if (!Array.isArray(data?.items)) throw new Error(mensagem);
+        validateOrderSelectionBatch(ids, snapshots, status, data.items);
+      } else {
+        await validateOrderSelection(ids, snapshots, status, async (id) =>
+          (await api.get<OrdemServico>(`/ordens-servico/${id}`, { signal: controller.signal })).data);
+      }
+      return !controller.signal.aborted && epoch === selecaoEpochRef.current;
     } catch (error) {
-      setErroSelecao(error instanceof Error ? error.message : "Nao foi possivel conferir a selecao. Tente novamente.");
+      if (!controller.signal.aborted && epoch === selecaoEpochRef.current) {
+        setErroSelecao(error instanceof Error ? error.message : "Nao foi possivel conferir a selecao. Tente novamente.");
+      }
       return false;
     } finally {
-      validandoSelecaoRef.current = false;
+      selecaoControllerRef.current = null;
       setValidandoSelecao(false);
     }
   };
@@ -1448,7 +1470,7 @@ export default function FinanceiroPage() {
       setErroSelecao("Selecione no maximo 200 OS por recebimento em lote.");
       return;
     }
-    if (!(await validarSelecao(idsPendentes, "Pendente"))) return;
+    if (!(await validarSelecao(idsPendentes, "Pendente", { emLote: true }))) return;
 
     const total = idsPendentes.reduce((acc, id) => {
       const os = ordensServico.find((item) => item.id === id);
@@ -1600,7 +1622,7 @@ export default function FinanceiroPage() {
   };
 
   const confirmarRecebimentoOS = async () => {
-    if (modalReceberOS && !(await validarSelecao([modalReceberOS.id], "Pendente", [modalReceberOS]))) return;
+    if (modalReceberOS && !(await validarSelecao([modalReceberOS.id], "Pendente", { snapshots: [modalReceberOS] }))) return;
     if (!modalReceberOS) return;
 
     try {
@@ -1941,6 +1963,8 @@ export default function FinanceiroPage() {
   useEffect(() => {
     // A filter/tab change starts a new selection scope, but page changes do not.
     selecaoEpochRef.current += 1;
+    selecaoControllerRef.current?.abort();
+    setErroSelecao("");
     setOsSelecionadasRecibo([]);
     setOsSelecionadasBaixa([]);
   }, [chaveOrdens, abaAtiva]);
@@ -3538,6 +3562,7 @@ export default function FinanceiroPage() {
         )}
 
         {/* Conteudo - Ordens de Servico */}
+        {validandoSelecao && <div role="status" className="px-4 text-sm text-gray-600">Conferindo ordens selecionadas...</div>}
         {erroSelecao && <div role="alert" className="p-4 text-red-700">{erroSelecao}</div>}
         {abaAtiva === "ordens" && (
           <nav aria-label="Paginacao de ordens" className="flex flex-wrap items-center gap-3 p-4">

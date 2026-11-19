@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { validateOrderSelection } from "./ordens-selection";
+import { validateOrderSelection, validateOrderSelectionBatch } from "./ordens-selection";
 
 const order = { id: 1, status: "Pendente", valor_final: 10, destinatario_nome: "Sintetico" };
 describe("validateOrderSelection", () => {
@@ -30,5 +30,25 @@ describe("validateOrderSelection", () => {
       return orders[id];
     });
     expect(maximum).toBe(5);
+  });
+});
+
+describe("validateOrderSelectionBatch", () => {
+  const first = { ...order, valor_em_aberto: 7 };
+  const second = { ...order, id: 2 };
+  const snapshots = [first, second];
+
+  it("matches by id independently of the order returned by the API", () => {
+    expect(() => validateOrderSelectionBatch([1, 2], snapshots, "Pendente", [second, first])).not.toThrow();
+  });
+
+  it.each([
+    { items: [first], reason: "missing order" },
+    { items: [first, first], reason: "duplicate order" },
+    { items: [first, { ...second, id: 3 }], reason: "unexpected order" },
+    { items: [{ ...first, valor_em_aberto: 6 }, second], reason: "changed balance" },
+    { items: [first, { ...second, destinatario_nome: "Outro" }], reason: "changed recipient" },
+  ])("rejects $reason", ({ items }) => {
+    expect(() => validateOrderSelectionBatch([1, 2], snapshots, "Pendente", items)).toThrow(/mudou/);
   });
 });
