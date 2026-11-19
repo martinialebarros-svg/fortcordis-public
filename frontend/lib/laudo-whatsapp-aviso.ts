@@ -22,6 +22,7 @@ export interface LaudoAvisoWhatsApp {
   clinica?: string | null;
   clinic_id?: number | null;
   portal_clinica_liberado?: boolean;
+  portal_download_suspenso?: boolean;
   veterinario_parceiro_id?: number | null;
   veterinario_parceiro_nome?: string | null;
   portal_veterinario_liberado?: boolean;
@@ -107,7 +108,7 @@ export function getDestinosAvisoWhatsApp(laudo: LaudoAvisoWhatsApp): DestinoAvis
 }
 
 export function podeAvisarWhatsApp(laudo: LaudoAvisoWhatsApp): boolean {
-  return getDestinosAvisoWhatsApp(laudo).length > 0;
+  return !laudo.portal_download_suspenso && getDestinosAvisoWhatsApp(laudo).length > 0;
 }
 
 function nomeClinica(laudo: LaudoAvisoWhatsApp): string {

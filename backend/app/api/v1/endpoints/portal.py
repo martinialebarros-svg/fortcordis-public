@@ -117,6 +117,8 @@ PORTAL_SCOPE_PARTNER = ["partner:read", "exam:read", "exam:download"]
 PORTAL_PERMISSION_CLINIC_READ = "clinic:read"
 PORTAL_PERMISSION_EXAM_READ = "exam:read"
 PORTAL_PERMISSION_EXAM_DOWNLOAD = "exam:download"
+PORTAL_DOWNLOAD_ACTORS_SUBJECT_TO_SUSPENSION = {"clinica", "parceiro"}
+PORTAL_DOWNLOAD_SUSPENSO_DETAIL = "Laudo em correção. Download temporariamente suspenso."
 
 
 def _utcnow() -> datetime:
@@ -513,13 +515,18 @@ def _marcar_exame_visualizado_no_portal(
         db.commit()
 
 
-def _serialize_exam_attachment(anexo: AnexoAtendimento) -> PortalExamAttachmentResponse:
+def _assert_download_not_suspended(suspenso: bool) -> None:
+    if suspenso:
+        raise HTTPException(status_code=423, detail=PORTAL_DOWNLOAD_SUSPENSO_DETAIL)
+
+
+def _serialize_exam_attachment(anexo: AnexoAtendimento, *, download_suspenso: bool) -> PortalExamAttachmentResponse:
     return PortalExamAttachmentResponse(
         anexo_id=anexo.id,
         nome_original=anexo.nome_original or f"anexo_{anexo.id}",
         mime_type=anexo.mime_type or "application/octet-stream",
         tamanho=anexo.tamanho,
-        download_available=attachment_has_download_source(anexo),
+        download_available=not download_suspenso and attachment_has_download_source(anexo),
     )
 
 
@@ -529,7 +536,14 @@ def _build_exam_summary(
     paciente: Paciente | None = None,
     tutor: Tutor | None = None,
     laudo: Laudo | None = None,
+    *,
+    actor_type: str,
 ) -> PortalExamSummaryResponse:
+    download_suspenso = bool(
+        actor_type in PORTAL_DOWNLOAD_ACTORS_SUBJECT_TO_SUSPENSION
+        and laudo
+        and laudo.portal_download_suspenso
+    )
     return PortalExamSummaryResponse(
         id=exam.id,
         paciente_id=exam.paciente_id,
@@ -546,7 +560,8 @@ def _build_exam_summary(
         data_solicitacao=exam.data_solicitacao.isoformat() if exam.data_solicitacao else None,
         data_resultado=exam.data_resultado.isoformat() if exam.data_resultado else None,
         observacoes=exam.observacoes,
-        anexos=[_serialize_exam_attachment(item) for item in attachments],
+        download_suspenso=download_suspenso,
+        anexos=[_serialize_exam_attachment(item, download_suspenso=download_suspenso) for item in attachments],
     )
 
 
@@ -771,6 +786,14 @@ def _portal_build_laudo_operational_items(
     for laudo in laudos:
         related_exam = exams_by_laudo_id.get(int(laudo.id))
         status_key, status_label = _portal_operational_status_for_laudo(laudo, related_exam)
+        download_suspenso = status_key == "liberado_portal" and laudo.portal_download_suspenso
+        if download_suspenso:
+            status_label = "Laudo em correção"
+            observacoes = PORTAL_DOWNLOAD_SUSPENSO_DETAIL
+        elif status_key == "liberado_portal":
+            observacoes = f"Disponivel no portal da unidade {clinica_nome}."
+        else:
+            observacoes = f"Prazo padrao de ate {sla_horas}h apos a realizacao."
         operational_dt = _portal_operational_datetime_for_laudo(laudo)
         paciente = pacientes_map.get(laudo.paciente_id)
         tutor = tutores_map.get(getattr(paciente, "tutor_id", None))
@@ -799,12 +822,7 @@ def _portal_build_laudo_operational_items(
                         if status_key != "liberado_portal"
                         else None
                     ),
-                    observacoes=(
-                        "Prazo padrao de ate "
-                        f"{sla_horas}h apos a realizacao."
-                        if status_key != "liberado_portal"
-                        else f"Disponivel no portal da unidade {clinica_nome}."
-                    ),
+                    observacoes=observacoes,
                 ),
             )
         )
@@ -1331,6 +1349,7 @@ def abrir_laudo_por_link(
 
     paciente = db.query(Paciente).filter(Paciente.id == exam.paciente_id).first()
     laudo = laudos_map.get(exam.laudo_id) if exam.laudo_id else None
+    download_suspenso = bool(laudo and laudo.portal_download_suspenso)
 
     # Contexto sintetico so para emitir o token de download preso a (exame, anexo).
     # actor_type "clinica" mantem a contagem de "a clinica ja viu" coerente com o
@@ -1348,7 +1367,7 @@ def abrir_laudo_por_link(
         auth_method="exam_link",
     )
 
-    attachments = (
+    attachments = [] if download_suspenso else (
         db.query(AnexoAtendimento)
         .filter(AnexoAtendimento.exame_id == exam.id)
         .order_by(AnexoAtendimento.created_at.desc(), AnexoAtendimento.id.desc())
@@ -1397,6 +1416,7 @@ def abrir_laudo_por_link(
         paciente_nome=getattr(paciente, "nome", None),
         tipo_exame=exam.tipo_exame or "Exame",
         data_exame=laudo.data_exame.isoformat() if laudo and laudo.data_exame else None,
+        download_suspenso=download_suspenso,
         arquivos=arquivos,
         dispositivo_confiavel_disponivel=bool(settings.PORTAL_CLINIC_DEVICE_TRUST_ENABLED),
     )
@@ -1671,6 +1691,7 @@ def listar_exames_clinica_portal(
             pacientes_map.get(exam.paciente_id),
             tutores_map.get(getattr(pacientes_map.get(exam.paciente_id), "tutor_id", None)),
             laudos_map.get(exam.laudo_id) if exam.laudo_id else None,
+            actor_type=portal_session.actor_type,
         )
         for exam in exams
     ]
@@ -2056,6 +2077,7 @@ def listar_exames_parceiro_portal(
             pacientes_map.get(exam.paciente_id),
             tutores_map.get(getattr(pacientes_map.get(exam.paciente_id), "tutor_id", None)),
             laudos_map.get(exam.laudo_id) if exam.laudo_id else None,
+            actor_type=portal_session.actor_type,
         )
         for exam in exams
     ]
@@ -2115,6 +2137,7 @@ def listar_exames_pet_portal(
                 paciente,
                 tutor,
                 laudos_map.get(exam.laudo_id) if exam.laudo_id else None,
+                actor_type=portal_session.actor_type,
             )
         )
 
@@ -2137,6 +2160,9 @@ def gerar_download_url_exame_portal(
     _assert_portal_scope(portal_session, PORTAL_PERMISSION_EXAM_DOWNLOAD)
     exam, atendimentos_map, laudos_map = _load_exam_with_context(db, exame_id)
     _assert_portal_exam_access(db, portal_session, exam, atendimentos_map, laudos_map)
+    laudo = laudos_map.get(exam.laudo_id)
+    if portal_session.actor_type in PORTAL_DOWNLOAD_ACTORS_SUBJECT_TO_SUSPENSION and laudo:
+        _assert_download_not_suspended(laudo.portal_download_suspenso)
 
     attachments = (
         db.query(AnexoAtendimento)
@@ -2212,6 +2238,17 @@ def baixar_arquivo_anexo_portal(
         clinica_id = portal_session.clinica_id
         account_id = portal_session.account_id
 
+    # A autorização pode ter sido emitida antes da suspensão. Consulte o estado
+    # atual antes de entregar os bytes ou contabilizar um download.
+    if actor_type in PORTAL_DOWNLOAD_ACTORS_SUBJECT_TO_SUSPENSION:
+        download_suspenso = (
+            db.query(Laudo.portal_download_suspenso)
+            .join(Exame, Exame.laudo_id == Laudo.id)
+            .filter(Exame.id == attachment.exame_id)
+            .scalar()
+        )
+        _assert_download_not_suspended(bool(download_suspenso))
+
     _marcar_exame_visualizado_no_portal(db, attachment.exame_id, actor_type, actor_id)
 
     registrar_auditoria(
@@ -2232,7 +2269,9 @@ def baixar_arquivo_anexo_portal(
         request=request,
     )
 
-    return build_attachment_download_response(
+    response = build_attachment_download_response(
         attachment,
         missing_detail="Arquivo do anexo nao encontrado.",
     )
+    response.headers["Cache-Control"] = "private, no-store"
+    return response

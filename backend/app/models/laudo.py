@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Float, JSON, event
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text, ForeignKey, Float, JSON, event, false
 from sqlalchemy.sql import func
 from datetime import datetime
 from app.db.database import Base
@@ -41,6 +41,7 @@ class Laudo(Base):
     # Clínica
     clinic_id = Column(Integer, nullable=True)  # ID da clínica vinculada
     veterinario_parceiro_id = Column(Integer, nullable=True, index=True)  # Parceiro externo que encaminhou o caso
+    portal_download_suspenso = Column(Boolean, nullable=False, server_default=false())
 
     # Resultado da ultima tentativa de aviso de liberacao pelo WhatsApp
     # (POST /laudos/{id}/portal/whatsapp) - sucesso/falha do envio, nao

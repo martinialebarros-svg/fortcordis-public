@@ -10,6 +10,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from jose import jwt
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -22,15 +23,24 @@ os.environ.setdefault("SECRET_KEY", "portal-access-http-test-secret-key-12345678
 
 from app.core.config import settings
 from app.core.portal_release import PORTAL_RELEASED_STATUS
-from app.core.portal_security import PORTAL_DOWNLOAD_TOKEN_HEADER
+from app.api.v1.endpoints import laudos, portal
+from app.core.portal_security import PORTAL_DOWNLOAD_TOKEN_HEADER, create_portal_session_token
 from app.db.database import get_db
 from app.main import app
 from app.models.atendimento_clinico import AnexoAtendimento, AtendimentoClinico
+from app.models.auditoria_evento import AuditoriaEvento
 from app.models.clinica import Clinica
 from app.models.laudo import Exame, Laudo
 from app.models.paciente import Paciente
+from app.models.papel import Papel, usuario_papel
+from app.models.imagem_laudo import ImagemLaudo
 from app.models.portal_access import PortalAccessChallenge
+from app.models.portal_clinic_exam_link import PortalClinicExamLink
+from app.models.portal_partner import PortalPartnerProfile, PortalPartnerReleaseTarget
 from app.models.tutor import Tutor
+from app.models.user import User
+from app.services.echo_editor_source import load_echo_editor_source
+from app.services.portal_clinic_exam_link_service import issue_exam_link
 
 
 class _FakeRemoteResponse:
@@ -382,6 +392,126 @@ class PortalAccessHttpFlowTest(unittest.TestCase):
                 )
                 self.assertEqual(file_response.status_code, 200)
                 self.assertEqual(file_response.content, seed["attachment_bytes"])
+
+    def test_suspensao_bloqueia_downloads_e_o_mesmo_link_entrega_o_pdf_corrigido_ao_retomar(self):
+        for table in (
+            User.__table__, Papel.__table__, usuario_papel, AuditoriaEvento.__table__,
+            ImagemLaudo.__table__, PortalClinicExamLink.__table__,
+            PortalPartnerProfile.__table__, PortalPartnerReleaseTarget.__table__,
+        ):
+            table.create(self._engine)
+
+        seed = self._seed_portal_data()
+        with self._session_factory() as db:
+            admin = User(email="admin@example.com", nome="Operador de teste", papeis=[Papel(nome="admin")])
+            partner = PortalPartnerProfile(tipo="veterinario", nome_exibicao="Veterinário de teste")
+            laudo = Laudo(
+                paciente_id=seed["paciente_id"], veterinario_id=77, tipo="ecocardiograma",
+                titulo="Laudo fictício", clinic_id=seed["clinica_id"], status=PORTAL_RELEASED_STATUS,
+            )
+            db.add_all([admin, partner, laudo])
+            db.flush()
+            db.get(Exame, seed["exame_id"]).laudo_id = laudo.id
+            db.get(AnexoAtendimento, seed["anexo_id"]).origem = laudos.PORTAL_LAUDO_ATTACHMENT_ORIGIN
+            db.add(PortalPartnerReleaseTarget(partner_id=partner.id, exame_id=seed["exame_id"], laudo_id=laudo.id))
+            _, link_token = issue_exam_link(db, exame_id=seed["exame_id"], clinica_id=seed["clinica_id"], laudo_id=laudo.id)
+            laudo_id, partner_id = laudo.id, partner.id
+            original_revision = load_echo_editor_source(db, laudo_id).revision
+            admin_token = jwt.encode({"sub": admin.email}, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
+
+        def headers_for(actor, actor_id, **scope_ids):
+            token, _ = create_portal_session_token(
+                actor_type=actor, actor_id=actor_id, challenge_id="teste",
+                scope=["exam:read", "exam:download"], **scope_ids,
+            )
+            return {"Authorization": f"Bearer {token}"}
+
+        clinica_headers = headers_for("clinica", seed["clinica_id"], clinica_id=seed["clinica_id"])
+        partner_headers = headers_for("parceiro", partner_id)
+        tutor_headers = headers_for("tutor", seed["tutor_id"], paciente_id=seed["paciente_id"])
+        admin_headers = {"Authorization": f"Bearer {admin_token}"}
+        admin_route = f"/api/v1/laudos/{laudo_id}"
+        suspension_route = f"{admin_route}/portal/download-suspenso"
+        link_route = f"/api/v1/portal/laudo-link/{link_token}"
+        token_route = f"/api/v1/portal/exames/{seed['exame_id']}/download-url"
+        file_route = f"/api/v1/portal/anexos/{seed['anexo_id']}/arquivo"
+
+        def download(client, item):
+            return client.get(file_route, headers={item["download_token_header"]: item["download_token"]})
+
+        app.dependency_overrides[get_db] = self._override_get_db()
+        with (
+            patch.object(settings, "AUTH_PROVIDER", "local"),
+            patch.object(portal, "registrar_auditoria"),
+            TestClient(app) as client,
+        ):
+            old_link_item = client.post(link_route).json()["arquivos"][0]
+            old_items = [
+                client.post(token_route, headers=headers).json()["items"][0]
+                for headers in (clinica_headers, partner_headers)
+            ]
+            self.assertEqual(client.put(suspension_route, json={"suspenso": True}, headers=partner_headers).status_code, 401)
+            for _ in range(2):
+                response = client.put(suspension_route, json={"suspenso": True}, headers=admin_headers)
+                self.assertEqual(response.json(), {"portal_download_suspenso": True})
+            self.assertEqual(client.post(f"{admin_route}/portal/liberar", headers=admin_headers).status_code, 409)
+            response = client.post(
+                f"{admin_route}/portal/whatsapp", json={"idempotency_key": "aviso-teste"}, headers=admin_headers,
+            )
+            self.assertEqual(response.status_code, 409)
+
+            for headers, path in (
+                (clinica_headers, "/api/v1/portal/clinicas/exames"),
+                (partner_headers, "/api/v1/portal/parceiros/exames"),
+            ):
+                item = client.get(path, headers=headers).json()["items"][0]
+                self.assertTrue(item["download_suspenso"])
+                self.assertFalse(item["anexos"][0]["download_available"])
+                self.assertEqual(client.post(token_route, headers=headers).status_code, 423)
+                self.assertEqual(client.get(file_route, headers=headers).status_code, 423)
+            for item in [old_link_item, *old_items]:
+                self.assertEqual(download(client, item).status_code, 423)
+            link = client.post(link_route).json()
+            self.assertTrue(link["download_suspenso"])
+            self.assertEqual(link["arquivos"], [])
+
+            with self._session_factory() as db:
+                self.assertEqual(load_echo_editor_source(db, laudo_id).revision, original_revision)
+                self.assertIsNone(db.get(Exame, seed["exame_id"]).visualizado_portal_em)
+                self.assertIsNone(db.query(PortalPartnerReleaseTarget).one().downloaded_at)
+            self.assertEqual(client.get(file_route, headers=tutor_headers).content, seed["attachment_bytes"])
+
+            novo_pdf = SimpleNamespace(content=b"%PDF-1.4\nVersao corrigida\n", filename="corrigido.pdf")
+            novo_caminho = Path(self._tmpdir.name) / novo_pdf.filename
+            novo_caminho.write_bytes(novo_pdf.content)
+            with (
+                patch.object(laudos, "render_laudo_pdf", return_value=novo_pdf),
+                patch.object(laudos, "store_atendimento_attachment_file", return_value=(str(novo_caminho), novo_pdf.filename, "application/pdf")),
+            ):
+                response = client.put(
+                    admin_route, json={"diagnostico": "Texto corrigido", "portal_download_suspenso": False}, headers=admin_headers,
+                )
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertTrue(response.json()["portal_download_suspenso"])
+            self.assertEqual(download(client, old_link_item).status_code, 423)
+            self.assertEqual(
+                client.put(suspension_route, json={"suspenso": False}, headers=admin_headers).json(),
+                {"portal_download_suspenso": False},
+            )
+
+            new_link_item = client.post(link_route).json()["arquivos"][0]
+            response = download(client, new_link_item)
+            self.assertEqual(response.content, novo_pdf.content)
+            self.assertEqual(response.headers["Cache-Control"], "private, no-store")
+            self.assertEqual(download(client, old_items[1]).content, novo_pdf.content)
+
+        with self._session_factory() as db:
+            self.assertEqual(db.get(Laudo, laudo_id).status, PORTAL_RELEASED_STATUS)
+            self.assertIsNone(db.query(PortalPartnerReleaseTarget).one().revoked_at)
+            self.assertEqual(
+                [event.acao for event in db.query(AuditoriaEvento).order_by(AuditoriaEvento.id)],
+                ["LAUDO_PORTAL_DOWNLOAD_SUSPENSO", "LAUDO_PORTAL_DOWNLOAD_RETOMADO"],
+            )
 
     def test_clinic_download_marks_exame_as_visualizado_no_portal(self) -> None:
         seed = self._seed_portal_data()

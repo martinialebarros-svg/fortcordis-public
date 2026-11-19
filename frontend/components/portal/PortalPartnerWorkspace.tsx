@@ -28,6 +28,7 @@ import {
   loadPortalSession,
   loginPartnerPortal,
   logoutPartnerPortal,
+  PORTAL_DOWNLOAD_SUSPENSO_MESSAGE,
   refreshPartnerPortalSession,
   requestPartnerPasswordReset,
   savePortalSession,
@@ -720,14 +721,18 @@ export default function PortalPartnerWorkspace({
                       </div>
                     </div>
 
-                    {exam.observacoes ? (
+                    {exam.observacoes && !exam.download_suspenso ? (
                       <p className="mt-4 border-t border-slate-200 pt-4 text-sm leading-6 text-slate-600">
                         {exam.observacoes}
                       </p>
                     ) : null}
 
                     <div className="mt-4 flex flex-col gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:flex-wrap">
-                      {exam.anexos.length === 0 ? (
+                      {exam.download_suspenso ? (
+                        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900">
+                          {PORTAL_DOWNLOAD_SUSPENSO_MESSAGE}
+                        </p>
+                      ) : exam.anexos.length === 0 ? (
                         <span className="inline-flex items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2 text-sm text-slate-500">
                           <FileCheck2 className="h-4 w-4" />
                           Nenhum arquivo disponível
