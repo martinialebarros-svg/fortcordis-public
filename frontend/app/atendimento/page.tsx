@@ -490,10 +490,12 @@ type PainelExame = {
 
 type WorkspacePainel = "consulta" | "exames" | "prescricao" | "documentos" | "bibliotecas";
 type ConsultaEditorEtapa = "anamnese" | "diagnostico" | "plano";
-type PrescricaoCampoObrigatorio = "medicamento_nome" | "dose" | "frequencia" | "via";
+type PrescricaoCampoObrigatorio = "medicamento_nome" | "dose" | "frequencia" | "via" | "posologia_texto";
 
 export type PrescricaoItem = {
   id?: number;
+  _localId?: string;
+  ordem?: number;
   medicamento_id?: number | null;
   medicamento_nome: string;
   apresentacao_selecionada: string;
@@ -501,6 +503,7 @@ export type PrescricaoItem = {
   frequencia: string;
   duracao: string;
   via: string;
+  posologia_texto?: string | null;
   instrucoes: string;
   dose_mg_kg?: string;
   peso_referencia_kg?: string;
@@ -904,7 +907,7 @@ const persistLocalPresets = (storageKey: string, value: unknown) => {
 };
 
 let exameLocalIdCounter = 0;
-const gerarExameLocalId = (): string => {
+const gerarItemLocalId = (): string => {
   exameLocalIdCounter += 1;
   return `exame-local-${Date.now()}-${exameLocalIdCounter}`;
 };
@@ -932,7 +935,7 @@ const emptyExam = (): ExameSolicitacao => ({
   data_solicitacao: "",
   data_resultado: "",
   anexos_resultado: [],
-  _localId: gerarExameLocalId(),
+  _localId: gerarItemLocalId(),
 });
 
 const reindexarAposRemocaoDeItem = <T,>(registro: Record<number, T>, idxRemovido: number): Record<number, T> => {
@@ -967,6 +970,7 @@ const trocarIndicesAposMover = <T,>(registro: Record<number, T>, a: number, b: n
 };
 
 const emptyPrescriptionItem = (): PrescricaoItem => ({
+  _localId: gerarItemLocalId(),
   medicamento_id: null,
   medicamento_nome: "",
   apresentacao_selecionada: "",
@@ -982,6 +986,7 @@ const emptyPrescriptionItem = (): PrescricaoItem => ({
 });
 
 const cloneHistoricalPrescriptionItem = (item: PrescricaoItem): PrescricaoItem => ({
+  _localId: gerarItemLocalId(),
   medicamento_id: item.medicamento_id || null,
   medicamento_nome: item.medicamento_nome || "",
   apresentacao_selecionada: item.apresentacao_selecionada || "",
@@ -989,6 +994,7 @@ const cloneHistoricalPrescriptionItem = (item: PrescricaoItem): PrescricaoItem =
   frequencia: item.frequencia || "",
   duracao: item.duracao || "",
   via: item.via || "Oral",
+  posologia_texto: item.posologia_texto ?? null,
   instrucoes: item.instrucoes || "",
   dose_mg_kg: item.dose_mg_kg || "",
   peso_referencia_kg: "",
@@ -1042,6 +1048,7 @@ const isPrescriptionItemEmpty = (item?: Partial<PrescricaoItem> | null) => {
     !(current.dose || "").trim() &&
     !(current.frequencia || "").trim() &&
     !(current.duracao || "").trim() &&
+    current.posologia_texto == null &&
     !(current.instrucoes || "").trim()
   );
 };
@@ -1165,14 +1172,18 @@ const validarItensPrescricao = (itens: PrescricaoItem[]) => {
   let total = 0;
 
   itens.forEach((item, index) => {
-    const ativo = Boolean(item.medicamento_id || (item.medicamento_nome || "").trim());
+    const ativo = Boolean(item.medicamento_id || item.medicamento_nome.trim() || item.posologia_texto?.trim());
     if (!ativo) return;
 
     const itemErrors: Partial<Record<PrescricaoCampoObrigatorio, string>> = {};
     if (!(item.medicamento_nome || "").trim()) itemErrors.medicamento_nome = "Informe o medicamento.";
-    if (!(item.dose || "").trim()) itemErrors.dose = "Informe a dose.";
-    if (!(item.frequencia || "").trim()) itemErrors.frequencia = "Informe a frequencia.";
-    if (!(item.via || "").trim()) itemErrors.via = "Informe a via.";
+    if (item.posologia_texto != null) {
+      if (!item.posologia_texto.trim()) itemErrors.posologia_texto = "Informe a posologia em texto corrido.";
+    } else {
+      if (!(item.dose || "").trim()) itemErrors.dose = "Informe a dose.";
+      if (!(item.frequencia || "").trim()) itemErrors.frequencia = "Informe a frequencia.";
+      if (!(item.via || "").trim()) itemErrors.via = "Informe a via.";
+    }
 
     if (Object.keys(itemErrors).length > 0) {
       errors[index] = itemErrors;
@@ -1504,6 +1515,7 @@ const buildPrescricaoPayload = (form: AtendimentoForm) => ({
           frequencia: item.frequencia,
           duracao: item.duracao,
           via: item.via,
+          posologia_texto: item.posologia_texto ?? null,
           instrucoes: item.instrucoes,
           ordem: index,
           dose_mg_kg: item.dose_mg_kg || "",
@@ -1571,6 +1583,8 @@ export default function AtendimentoPage() {
   const [criandoAdendo, setCriandoAdendo] = useState(false);
   const [receitas, setReceitas] = useState<ReceitaResumo[]>([]);
   const [criandoReceita, setCriandoReceita] = useState(false);
+  const [selecionandoReceita, setSelecionandoReceita] = useState(false);
+  const trocaReceitaEmVooRef = useRef(false);
   const [historicoEdicoesRevision, setHistoricoEdicoesRevision] = useState(0);
   const [copiasLocaisParaRevisar, setCopiasLocaisParaRevisar] = useState<AtendimentoBackup[]>([]);
   const backupLocalEscritoRef = useRef<Record<number, string | null>>({});
@@ -1748,6 +1762,7 @@ export default function AtendimentoPage() {
   const [medForm, setMedForm] = useState<MedicamentoForm>(emptyMedicationForm());
   const [prescricaoEntradaModo, setPrescricaoEntradaModo] = useState<"industrializado" | "manipulado" | null>(null);
   const [prescricaoEditorManualAberto, setPrescricaoEditorManualAberto] = useState(false);
+  const focoItemManualRef = useRef<string | null>(null);
   const [prescricaoBuscaRapida, setPrescricaoBuscaRapida] = useState("");
   const [medicamentoBuscaPorItem, setMedicamentoBuscaPorItem] = useState<Record<number, string>>({});
   const [medicamentoFocoPorItem, setMedicamentoFocoPorItem] = useState<Record<number, boolean>>({});
@@ -1755,10 +1770,20 @@ export default function AtendimentoPage() {
   const [prescricaoPreviewPdf, setPrescricaoPreviewPdf] = useState<string | null>(null);
   const [prescricaoPreviewLoading, setPrescricaoPreviewLoading] = useState(false);
   const [prescricaoPreviewErro, setPrescricaoPreviewErro] = useState<string | null>(null);
+  const prescricaoPreviewRequestRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     formRef.current = form;
   }, [form]);
+
+  useEffect(() => {
+    const itemLocalId = focoItemManualRef.current;
+    if (!itemLocalId || workspacePainel !== "prescricao" || !prescricaoEditorManualAberto) return;
+    const indice = form.prescricao_itens.findIndex((item) => item._localId === itemLocalId);
+    if (indice < 0) return;
+    focoItemManualRef.current = null;
+    document.getElementById(`prescricao-nome-${indice}`)?.focus();
+  }, [form.prescricao_itens, prescricaoEditorManualAberto, workspacePainel]);
 
   useEffect(() => {
     const catalogosNoFormulario = new Set(
@@ -3866,24 +3891,12 @@ export default function AtendimentoPage() {
       ...emptyPrescriptionItem(),
       medicamento_nome: options?.manipulado ? "Formula manipulada" : "",
     };
-    const primeiroItemVazio =
-      form.prescricao_itens.length === 1 &&
-      isPrescriptionItemEmpty(form.prescricao_itens[0]);
-
-    setField(
-      "prescricao_itens",
-      primeiroItemVazio ? [itemVazio] : [...form.prescricao_itens, itemVazio]
-    );
+    const itensAtuais = formRef.current.prescricao_itens;
+    const reutilizarItemInicial = itensAtuais.length === 1 && isPrescriptionItemEmpty(itensAtuais[0]);
+    focoItemManualRef.current = itemVazio._localId ?? null;
+    setField("prescricao_itens", reutilizarItemInicial ? [itemVazio] : [...itensAtuais, itemVazio]);
     setPrescricaoEditorManualAberto(true);
     setWorkspacePainel("prescricao");
-    if (typeof window !== "undefined") {
-      window.requestAnimationFrame(() => {
-        document.getElementById("prescricao-itens")?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-      });
-    }
   };
 
   const selecionarMedicamentoBuscaRapida = (med: Medicamento, manipulado = false) => {
@@ -3893,14 +3906,14 @@ export default function AtendimentoPage() {
 
   // Preview em tempo real do PDF da prescricao
   const gerarPreviewPdf = useCallback(async () => {
-    const itensValidos = form.prescricao_itens.filter(
-      (item) => (item.medicamento_nome || "").trim()
-    );
-    if (itensValidos.length === 0) {
-      setPrescricaoPreviewPdf(null);
-      setPrescricaoPreviewErro(null);
+    prescricaoPreviewRequestRef.current?.abort();
+    const itens = buildPrescricaoPayload(form).itens.filter((item) => item.medicamento_nome.trim());
+    if (!itens.length) {
+      setPrescricaoPreviewLoading(false);
       return;
     }
+    const controller = new AbortController();
+    prescricaoPreviewRequestRef.current = controller;
     setPrescricaoPreviewLoading(true);
     try {
       const payload = {
@@ -3915,19 +3928,10 @@ export default function AtendimentoPage() {
         data_atendimento: form.data_atendimento || nowLocalInput().slice(0, 10),
         orientacoes_gerais: form.prescricao_orientacoes || "",
         retorno_dias: form.prescricao_retorno_dias ? Number(form.prescricao_retorno_dias) : null,
-        itens: form.prescricao_itens.map((item) => ({
-          id: item.id || null,
-          medicamento_id: item.medicamento_id || null,
-          medicamento_nome: item.medicamento_nome || "",
-          apresentacao_selecionada: item.apresentacao_selecionada || "",
-          dose: item.dose || "",
-          frequencia: item.frequencia || "",
-          duracao: item.duracao || "",
-          via: item.via || "",
-          instrucoes: item.instrucoes || "",
-        })),
+        itens,
       };
-      const response = await api.post("/atendimentos/prescricao/preview", payload);
+      const response = await api.post("/atendimentos/prescricao/preview", payload, { signal: controller.signal });
+      if (controller.signal.aborted) return;
       setPrescricaoPreviewErro(null);
       const pdfB64 = response.data?.pdf_base64;
       if (!pdfB64) {
@@ -3938,14 +3942,30 @@ export default function AtendimentoPage() {
       // data URL direto no iframe funciona na maioria dos navegadores
       setPrescricaoPreviewPdf(`data:application/pdf;base64,${pdfB64}`);
     } catch (err: any) {
+      if (controller.signal.aborted) return;
       console.error("Erro ao gerar preview PDF:", err);
       setPrescricaoPreviewPdf(null);
       const msg = extractApiErrorMessageSync(err, "Erro ao gerar preview.");
       setPrescricaoPreviewErro(msg);
     } finally {
-      setPrescricaoPreviewLoading(false);
+      if (!controller.signal.aborted) setPrescricaoPreviewLoading(false);
     }
   }, [cadastroComplementar.paciente.raca, especieExibicao, form, idadePacienteExibicao, pacienteNomeExibicao, pacienteSelecionado?.raca, tutorNomeExibicao]);
+
+  useEffect(() => {
+    setPrescricaoPreviewPdf(null);
+    setPrescricaoPreviewErro(null);
+    if (!prescricaoPreviewAtivo || workspacePainel !== "prescricao") {
+      setPrescricaoPreviewLoading(false);
+      return;
+    }
+    setPrescricaoPreviewLoading(true);
+    const timer = window.setTimeout(() => void gerarPreviewPdf(), 300);
+    return () => {
+      window.clearTimeout(timer);
+      prescricaoPreviewRequestRef.current?.abort();
+    };
+  }, [gerarPreviewPdf, prescricaoPreviewAtivo, workspacePainel]);
 
   const abrirMedicamentoBuscaRapida = (med: Medicamento) => {
     editarMedicamento(med);
@@ -4093,15 +4113,7 @@ export default function AtendimentoPage() {
 
   const aplicarProtocoloPrescricao = (protocolo: ProtocoloPrescricao) => {
     const itensGerados = protocolo.itens.map(montarItemDeProtocoloPrescricao);
-    const itensAtuaisPreenchidos = form.prescricao_itens.filter(
-      (item) =>
-        item.medicamento_id
-        || (item.medicamento_nome || "").trim()
-        || (item.dose || "").trim()
-        || (item.frequencia || "").trim()
-        || (item.duracao || "").trim()
-        || (item.instrucoes || "").trim()
-    );
+    const itensAtuaisPreenchidos = form.prescricao_itens.filter((item) => !isPrescriptionItemEmpty(item));
     const itensFinais = itensAtuaisPreenchidos.length === 0 ? itensGerados : [...itensAtuaisPreenchidos, ...itensGerados];
 
     const orientacaoProtocolo = (protocolo.orientacoesPadrao || "").trim();
@@ -4441,6 +4453,7 @@ export default function AtendimentoPage() {
       .map((item) => ({
         ...hydratePrescriptionItem(item),
         id: undefined,
+        _localId: undefined,
         historico_ajustes: [],
       }));
 
@@ -4484,7 +4497,8 @@ export default function AtendimentoPage() {
   const aplicarPresetPrescricao = (preset: PrescricaoPreset) => {
     const pesoReferencia = normalizePeso(form.triagem.peso);
     const itensGerados = preset.itens.map((item) => {
-      const hydrated = hydratePrescriptionItem({ ...item, id: undefined, historico_ajustes: [] });
+      const hydrated = hydratePrescriptionItem({ ...item, id: undefined, _localId: gerarItemLocalId(), historico_ajustes: [] });
+      if (hydrated.posologia_texto != null) return hydrated;
       const med = hydrated.medicamento_id ? medicamentos.find((entry) => entry.id === hydrated.medicamento_id) || null : null;
       const nextItem = {
         ...hydrated,
@@ -4512,15 +4526,7 @@ export default function AtendimentoPage() {
       return nextItem;
     });
 
-    const itensAtuaisPreenchidos = form.prescricao_itens.filter(
-      (item) =>
-        item.medicamento_id
-        || (item.medicamento_nome || "").trim()
-        || (item.dose || "").trim()
-        || (item.frequencia || "").trim()
-        || (item.duracao || "").trim()
-        || (item.instrucoes || "").trim()
-    );
+    const itensAtuaisPreenchidos = form.prescricao_itens.filter((item) => !isPrescriptionItemEmpty(item));
     const itensFinais = itensAtuaisPreenchidos.length === 0 ? itensGerados : [...itensAtuaisPreenchidos, ...itensGerados];
 
     const orientacaoPreset = (preset.orientacoes_gerais || "").trim();
@@ -4545,7 +4551,7 @@ export default function AtendimentoPage() {
 
   const editarPresetPrescricao = (preset: PrescricaoPreset) => {
     const itens = preset.itens.length
-      ? preset.itens.map((item) => hydratePrescriptionItem({ ...item, id: undefined, historico_ajustes: [] }))
+      ? preset.itens.map((item) => hydratePrescriptionItem({ ...item, id: undefined, _localId: gerarItemLocalId(), historico_ajustes: [] }))
       : [emptyPrescriptionItem()];
     setField("prescricao_itens", itens);
     setField("prescricao_orientacoes", preset.orientacoes_gerais || "");
@@ -4688,7 +4694,8 @@ export default function AtendimentoPage() {
   const mesclarFormularioAposSalvar = (
     hydrated: AtendimentoForm,
     examesEnviados: ExameSolicitacao[],
-    idsExclusaoEnviados: ReadonlySet<number>
+    idsExclusaoEnviados: ReadonlySet<number>,
+    prescricoesEnviadas: PrescricaoItem[]
   ) => {
     setForm((current) => {
       const examesReconciliados = reconcileExamsDuringSave(
@@ -4702,7 +4709,8 @@ export default function AtendimentoPage() {
           ...current,
           exames: examesReconciliados.length > 0 ? examesReconciliados : [emptyExam()],
         },
-        hydrated
+        hydrated,
+        prescricoesEnviadas
       );
     });
   };
@@ -4765,7 +4773,7 @@ export default function AtendimentoPage() {
         setPrescricaoValidationErrors(validacaoPrescricao.errors);
         if (validacaoPrescricao.total > 0) {
           setWorkspacePainel("prescricao");
-          setErro("Prescricao incompleta: preencha dose, frequencia e via em todos os itens ativos.");
+          setErro("Prescrição incompleta. Revise os campos obrigatórios dos medicamentos.");
           return null;
         }
       }
@@ -4858,7 +4866,7 @@ export default function AtendimentoPage() {
         // levar segundos numa rede lenta, e nenhum campo de texto fica
         // desabilitado enquanto isso) nao pode ser apagada pela resposta do
         // servidor.
-        mesclarFormularioAposSalvar(hydrated, examesEnviados, idsExclusaoEnviados);
+        mesclarFormularioAposSalvar(hydrated, examesEnviados, idsExclusaoEnviados, currentForm.prescricao_itens);
         clearDraftStorage();
         draftRestoreRef.current = true;
         setAutosaveState("saved");
@@ -4879,7 +4887,7 @@ export default function AtendimentoPage() {
           await carregarHistoricoPaciente(hydrated.paciente_id);
         }
       } else {
-        mesclarFormularioAposSalvar(hydrated, examesEnviados, idsExclusaoEnviados);
+        mesclarFormularioAposSalvar(hydrated, examesEnviados, idsExclusaoEnviados, currentForm.prescricao_itens);
         if (criandoAutomaticamente && response.data?.id) {
           // Primeiro POST automatico bem-sucedido: o atendimento passa a
           // existir no servidor, entao os saves seguintes viram PUT.
@@ -5063,7 +5071,8 @@ export default function AtendimentoPage() {
   };
 
   useEffect(() => {
-    if (typeof window === "undefined" || loading || !contextoAplicado || hydratingFormRef.current) {
+    if (typeof window === "undefined" || loading || !contextoAplicado || hydratingFormRef.current ||
+        criandoReceita || selecionandoReceita) {
       return;
     }
 
@@ -5102,7 +5111,7 @@ export default function AtendimentoPage() {
       // saveAtendimento pode, ele mesmo, mudar `form` (hidratacao) e reagendar
       // um novo timer - zerar aqui evita confundir os dois.
       autosaveTimerRef.current = null;
-      void saveAtendimento("autosave");
+      if (!trocaReceitaEmVooRef.current) void saveAtendimento("autosave");
     }, AUTOSAVE_DELAY_MS);
 
     return () => {
@@ -5110,7 +5119,7 @@ export default function AtendimentoPage() {
         window.clearTimeout(autosaveTimerRef.current);
       }
     };
-  }, [clinicalFieldValues, contextoAplicado, form, loading, selecionado]);
+  }, [clinicalFieldValues, contextoAplicado, criandoReceita, form, loading, selecionado, selecionandoReceita]);
 
   const deleteAtendimento = async (id: number) => {
     if (id === selecionadoRef.current && !(await confirmarSaidaAssistente())) return;
@@ -5400,12 +5409,18 @@ export default function AtendimentoPage() {
         : [emptyPrescriptionItem()],
     };
     hydratingFormRef.current = true;
+    formRef.current = proximo;
     setForm(proximo);
     // Trocar de receita nao e edicao: sem realinhar o snapshot, o autosave
     // dispararia um save so por causa da troca.
     lastPersistedSnapshotRef.current = serializeAtendimentoSnapshot(proximo);
     gravarBackupLocalAtendimento(proximo);
     setPrescricaoValidationErrors({});
+    setMedicamentoBuscaPorItem({});
+    setMedicamentoFocoPorItem({});
+    setPrescricaoEditorManualAberto(false);
+    focoItemManualRef.current = null;
+    setPrescricaoOrigem(null);
     if (typeof window !== "undefined") {
       window.requestAnimationFrame(() => {
         hydratingFormRef.current = false;
@@ -5413,53 +5428,108 @@ export default function AtendimentoPage() {
     }
   };
 
+  const podeTrocarReceita = () => {
+    if (formRef.current.prescricao_itens.some((item) =>
+      !item.medicamento_id && !item.medicamento_nome.trim() && !isPrescriptionItemEmpty(item)
+    )) {
+      setWorkspacePainel("prescricao");
+      setErro("Informe o nome dos medicamentos preenchidos antes de trocar de receita.");
+      return false;
+    }
+    return true;
+  };
+
+  const salvarAntesDeTrocarReceita = async (): Promise<number | null> => {
+    const atendimentoId = await saveAtendimento("autosave");
+    // A reconciliação do salvamento preenche os IDs dos itens após o render.
+    await new Promise<void>((resolve) => { window.requestAnimationFrame(() => resolve()); });
+    return atendimentoId;
+  };
+
+  const editorDeReceitaSincronizado = () =>
+    serializeAtendimentoSnapshot(formRef.current) === lastPersistedSnapshotRef.current;
+
   const selecionarReceita = async (prescricaoId: number | null) => {
-    const alvoAtual = formRef.current.prescricao_alvo_id || null;
-    if (alvoAtual === (prescricaoId || null)) return;
+    const alvoAtual = formRef.current.prescricao_alvo_id;
+    const alvo = prescricaoId
+      ? receitas.find((item) => item.id === prescricaoId)
+      : receitas.find((item) => item.sequencia === 1);
+    if (!alvo || alvoAtual === prescricaoId || trocaReceitaEmVooRef.current || pdfDownloadInFlightRef.current) return;
+    if (!podeTrocarReceita()) return;
 
-    // Troca sem salvar perderia o que foi digitado na receita anterior.
-    const salvou = await saveAtendimento("manual");
-
-    if (!salvou) return;
-
-    const alvo =
-      (prescricaoId
-        ? receitas.find((item) => item.id === prescricaoId)
-        : receitas.find((item) => item.sequencia === 1)) || null;
-    aplicarReceitaNoFormulario(alvo);
+    trocaReceitaEmVooRef.current = true;
+    setSelecionandoReceita(true);
+    try {
+      if (salvamentoAtendimentoEmVooRef.current || !editorDeReceitaSincronizado()) {
+        const abertura = abrirAtendimentoRequestIdRef.current;
+        const atendimentoId = await salvarAntesDeTrocarReceita();
+        if (!atendimentoId || selecionadoRef.current !== atendimentoId ||
+            abertura !== abrirAtendimentoRequestIdRef.current || !podeTrocarReceita()) return;
+        if (!editorDeReceitaSincronizado()) {
+          setErro("Há alterações recentes. Aguarde o salvamento e selecione a receita novamente.");
+          return;
+        }
+      }
+      aplicarReceitaNoFormulario(alvo);
+      setErro("");
+    } finally {
+      trocaReceitaEmVooRef.current = false;
+      setSelecionandoReceita(false);
+    }
   };
 
   const criarReceitaComplementar = async (adendoId?: number | null) => {
-    if (!selecionado) {
-      setErro("Salve o atendimento antes de emitir uma receita complementar.");
-      return;
-    }
-    const salvou = await saveAtendimento("manual");
-    if (!salvou) return;
+    if (!formRef.current.paciente_id || trocaReceitaEmVooRef.current || pdfDownloadInFlightRef.current) return;
+    if (!podeTrocarReceita()) return;
 
+    const iniciarPrimeira = !adendoId && !receitas.length &&
+      formRef.current.prescricao_itens.every(isPrescriptionItemEmpty) &&
+      !formRef.current.prescricao_orientacoes.trim() && !formRef.current.prescricao_retorno_dias;
+    const abertura = abrirAtendimentoRequestIdRef.current;
+    const pacienteId = formRef.current.paciente_id;
+    const alvoAtual = formRef.current.prescricao_alvo_id;
+    const contextoAtual = () =>
+      abertura === abrirAtendimentoRequestIdRef.current && pacienteId === formRef.current.paciente_id;
+
+    trocaReceitaEmVooRef.current = true;
     setCriandoReceita(true);
     try {
-      const origemId =
-        formRef.current.prescricao_alvo_id || receitas.find((item) => item.sequencia === 1)?.id || null;
-      const response = await api.post(`/atendimentos/${salvou}/prescricoes`, {
+      const atendimentoId = await salvarAntesDeTrocarReceita();
+      if (!atendimentoId || !contextoAtual() || selecionadoRef.current !== atendimentoId || !podeTrocarReceita()) return;
+      if (!editorDeReceitaSincronizado()) {
+        setErro("Há alterações recentes. Aguarde o salvamento e tente criar a receita novamente.");
+        return;
+      }
+
+      if (iniciarPrimeira) {
+        adicionarItemPrescricaoEmBranco();
+        setSucesso("Receita do dia criada.");
+        return;
+      }
+
+      const origemId = adendoId
+        ? alvoAtual || receitas.find((item) => item.sequencia === 1)?.id || null
+        : null;
+      const response = await api.post(`/atendimentos/${atendimentoId}/prescricoes`, {
         adendo_id: adendoId || null,
         copiar_de_prescricao_id: origemId,
       });
-      const nova: ReceitaResumo | null = response.data?.prescricao || null;
-      if (!nova) return;
+      if (!contextoAtual() || selecionadoRef.current !== atendimentoId) return;
+      const nova: ReceitaResumo = response.data.prescricao;
 
       setReceitas((prev) => [...prev.filter((item) => item.id !== nova.id), nova]);
+      if (!editorDeReceitaSincronizado() || !podeTrocarReceita()) {
+        setSucesso(`Receita ${nova.sequencia} criada. Abra-a pelo seletor quando terminar a edição atual.`);
+        return;
+      }
       aplicarReceitaNoFormulario(nova);
-      setWorkspacePainel("prescricao");
       setErro("");
-      setSucesso(
-        origemId
-          ? `Receita ${nova.sequencia} criada a partir da anterior. A receita ja emitida continua intacta.`
-          : `Receita ${nova.sequencia} criada.`
-      );
+      setWorkspacePainel("prescricao");
+      setSucesso(origemId ? `Receita ${nova.sequencia} criada a partir da anterior.` : `Receita ${nova.sequencia} criada.`);
     } catch (e: any) {
-      setErro(extractApiErrorMessageSync(e, "Nao foi possivel criar a receita complementar."));
+      if (contextoAtual()) setErro(extractApiErrorMessageSync(e, "Não foi possível criar a receita."));
     } finally {
+      trocaReceitaEmVooRef.current = false;
       setCriandoReceita(false);
     }
   };
@@ -6448,10 +6518,12 @@ export default function AtendimentoPage() {
       .map((item, idx) => `
         <tr>
           <td>${idx + 1}. ${escHtml(item.medicamento_nome || "-")}${item.apresentacao_selecionada ? `<span class="sub">Apresentacao: ${escHtml(item.apresentacao_selecionada)}</span>` : ""}</td>
-          <td>${escHtml(item.dose || "-")}</td>
-          <td>${escHtml(item.frequencia || "-")}</td>
-          <td>${escHtml(item.duracao || "-")}</td>
-          <td>${escHtml(item.via || "-")}</td>
+          ${item.posologia_texto != null
+            ? `<td colspan="4" style="white-space: pre-wrap">${escHtml(item.posologia_texto)}</td>`
+            : `<td>${escHtml(item.dose || "-")}</td>
+               <td>${escHtml(item.frequencia || "-")}</td>
+               <td>${escHtml(item.duracao || "-")}</td>
+               <td>${escHtml(item.via || "-")}</td>`}
           <td>${escHtml(item.instrucoes || "-")}</td>
         </tr>
       `)
@@ -6554,11 +6626,12 @@ export default function AtendimentoPage() {
       return null;
     }
 
-    if (pdfDownloadInFlightRef.current) {
+    if (pdfDownloadInFlightRef.current || (tipo === "prescricao" && trocaReceitaEmVooRef.current)) {
       return null;
     }
 
     const pacientePdfId = form.paciente_id;
+    const alvoReceitaPdf = formRef.current.prescricao_alvo_id;
     pdfDownloadInFlightRef.current = tipo;
     setGerandoPdfTipo(tipo);
 
@@ -6587,7 +6660,10 @@ export default function AtendimentoPage() {
 
       // Com uma receita complementar aberta, o PDF e o dela - o endpoint
       // legado continua servindo a receita do dia.
-      const alvoReceitaPdf = formRef.current.prescricao_alvo_id;
+      if (tipo === "prescricao" && (formRef.current.prescricao_alvo_id !== alvoReceitaPdf || !editorDeReceitaSincronizado())) {
+        setErro("Há alterações recentes na prescrição. Salve e gere o PDF novamente.");
+        return null;
+      }
       const rotaPdf =
         tipo === "prescricao" && alvoReceitaPdf ? `prescricoes/${alvoReceitaPdf}/pdf` : `${tipo}/pdf`;
       const response = await api.get(`/atendimentos/${atendimentoId}/${rotaPdf}`, {
@@ -7080,6 +7156,7 @@ export default function AtendimentoPage() {
     const copia: PrescricaoItem = {
       ...hydratePrescriptionItem(form.prescricao_itens[idx]),
       id: undefined,
+      _localId: gerarItemLocalId(),
       historico_ajustes: [],
     };
     const itens = [...form.prescricao_itens];
@@ -7094,6 +7171,7 @@ export default function AtendimentoPage() {
     isPrescriptionItemEmpty(form.prescricao_itens[0]);
   const renderPrescricaoItemCard = (item: PrescricaoItem, idx: number) => {
     const itemErrors = prescricaoValidationErrors[idx] || {};
+    const emTextoCorrido = item.posologia_texto != null;
     const sugestao = prescricaoSupport.itens[idx];
     const calculo = prescricaoCalculos[idx];
     const isUnico = form.prescricao_itens.length === 1;
@@ -7137,7 +7215,7 @@ export default function AtendimentoPage() {
 
     return (
       <article
-        key={`${idx}-${item.id || "novo"}`}
+        key={item._localId ?? `${idx}-${item.id || "novo"}`}
         className="overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-[0_18px_45px_-32px_rgba(15,23,42,0.32)]"
       >
         <div className="flex flex-col gap-3 border-b border-slate-200 bg-slate-50/80 px-5 py-4 md:flex-row md:items-start md:justify-between">
@@ -7286,10 +7364,11 @@ export default function AtendimentoPage() {
               </div>
 
               <div className="lg:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                <label htmlFor={`prescricao-nome-${idx}`} className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Nome exibido na receita
                 </label>
                 <input
+                  id={`prescricao-nome-${idx}`}
                   value={item.medicamento_nome}
                   onChange={(e) => updatePrescricaoItem(idx, { medicamento_nome: e.target.value })}
                   placeholder="Ex.: Pimobendan, Vetmedin ou formula personalizada"
@@ -7356,47 +7435,90 @@ export default function AtendimentoPage() {
               ) : null}
             </div>
 
-            <div className="grid gap-3 lg:grid-cols-2">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={emTextoCorrido}
+                onChange={(event) => {
+                  const usarTexto = event.target.checked;
+                  if (!usarTexto && item.posologia_texto?.trim() &&
+                      !window.confirm("Voltar para os campos e descartar a posologia em texto corrido?")) return;
+                  updatePrescricaoItem(idx, { posologia_texto: usarTexto ? "" : null });
+                  setPrescricaoValidationErrors((erros) => {
+                    const proximos = { ...erros };
+                    delete proximos[idx];
+                    return proximos;
+                  });
+                }}
+                className="h-4 w-4 accent-teal-600"
+              />
+              Usar posologia em texto corrido
+            </label>
+
+            {emTextoCorrido ? (
               <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Dose</label>
-                <input
-                  value={item.dose}
-                  onChange={(e) => updatePrescricaoItem(idx, { dose: e.target.value })}
-                  placeholder="Ex.: 1/2 comprimido ou 3,5 mg"
-                  className={inputClass("dose")}
+                <label
+                  htmlFor={`prescricao-posologia-${idx}`}
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500"
+                >
+                  Posologia em texto corrido
+                </label>
+                <textarea
+                  id={`prescricao-posologia-${idx}`}
+                  value={item.posologia_texto ?? ""}
+                  onChange={(event) => updatePrescricaoItem(idx, { posologia_texto: event.target.value })}
+                  placeholder="Descreva a via, as doses, os horários e a duração do tratamento."
+                  rows={4}
+                  aria-invalid={Boolean(itemErrors.posologia_texto)}
+                  className={inputClass("posologia_texto")}
                 />
-                {itemErrors.dose ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.dose}</p> : null}
+                {itemErrors.posologia_texto ? (
+                  <p className="mt-1.5 text-xs text-rose-600">{itemErrors.posologia_texto}</p>
+                ) : null}
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Frequencia</label>
-                <input
-                  value={item.frequencia}
-                  onChange={(e) => updatePrescricaoItem(idx, { frequencia: e.target.value })}
-                  placeholder="Ex.: a cada 12h"
-                  className={inputClass("frequencia")}
-                />
-                {itemErrors.frequencia ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.frequencia}</p> : null}
+            ) : (
+              <div className="grid gap-3 lg:grid-cols-2">
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Dose</label>
+                  <input
+                    value={item.dose}
+                    onChange={(e) => updatePrescricaoItem(idx, { dose: e.target.value })}
+                    placeholder="Ex.: 1/2 comprimido ou 3,5 mg"
+                    className={inputClass("dose")}
+                  />
+                  {itemErrors.dose ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.dose}</p> : null}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Frequencia</label>
+                  <input
+                    value={item.frequencia}
+                    onChange={(e) => updatePrescricaoItem(idx, { frequencia: e.target.value })}
+                    placeholder="Ex.: a cada 12h"
+                    className={inputClass("frequencia")}
+                  />
+                  {itemErrors.frequencia ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.frequencia}</p> : null}
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Duracao</label>
+                  <input
+                    value={item.duracao}
+                    onChange={(e) => updatePrescricaoItem(idx, { duracao: e.target.value })}
+                    placeholder="Opcional"
+                    className={inputClass()}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Via</label>
+                  <input
+                    value={item.via}
+                    onChange={(e) => updatePrescricaoItem(idx, { via: e.target.value })}
+                    placeholder="Ex.: Oral"
+                    className={inputClass("via")}
+                  />
+                  {itemErrors.via ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.via}</p> : null}
+                </div>
               </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Duracao</label>
-                <input
-                  value={item.duracao}
-                  onChange={(e) => updatePrescricaoItem(idx, { duracao: e.target.value })}
-                  placeholder="Opcional"
-                  className={inputClass()}
-                />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">Via</label>
-                <input
-                  value={item.via}
-                  onChange={(e) => updatePrescricaoItem(idx, { via: e.target.value })}
-                  placeholder="Ex.: Oral"
-                  className={inputClass("via")}
-                />
-                {itemErrors.via ? <p className="mt-1.5 text-xs text-rose-600">{itemErrors.via}</p> : null}
-              </div>
-            </div>
+            )}
 
             <div>
               <label className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -7424,93 +7546,97 @@ export default function AtendimentoPage() {
                   <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Apresentacao</p>
                   <p className="mt-1 font-medium text-slate-900">{resumoApresentacao}</p>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Via</p>
-                    <p className="mt-1 font-medium text-slate-900">{item.via || medicamentoSelecionado?.via_padrao || "Nao definida"}</p>
+                {!emTextoCorrido ? (
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Via</p>
+                      <p className="mt-1 font-medium text-slate-900">{item.via || medicamentoSelecionado?.via_padrao || "Nao definida"}</p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Frequencia</p>
+                      <p className="mt-1 font-medium text-slate-900">{item.frequencia || "Em aberto"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-slate-400">Frequencia</p>
-                    <p className="mt-1 font-medium text-slate-900">{item.frequencia || "Em aberto"}</p>
-                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {!emTextoCorrido ? (
+              <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
+                <div className="flex items-center gap-2">
+                  <Clock3 className="h-4 w-4 text-teal-600" />
+                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Calculo guiado da dose</p>
+                </div>
+                <div className="mt-4 grid gap-2">
+                  <input
+                    value={item.dose_mg_kg || ""}
+                    onChange={(e) => updatePrescricaoItem(idx, { dose_mg_kg: e.target.value })}
+                    placeholder="Dose mg/kg"
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
+                  />
+                  <input
+                    value={item.peso_referencia_kg || ""}
+                    onChange={(e) => updatePrescricaoItem(idx, { peso_referencia_kg: e.target.value })}
+                    placeholder={`Peso kg (${form.triagem.peso || "-"})`}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
+                  />
+                  <select
+                    value={item.unidade_dose_calculo || "mg"}
+                    onChange={(e) =>
+                      updatePrescricaoItem(idx, {
+                        unidade_dose_calculo: e.target.value as "mg" | "ml" | "comprimido",
+                      })
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
+                  >
+                    <option value="mg">mg</option>
+                    <option value="ml">mL</option>
+                    <option value="comprimido">comprimido</option>
+                  </select>
+                  <input
+                    value={item.concentracao_personalizada || ""}
+                    onChange={(e) => updatePrescricaoItem(idx, { concentracao_personalizada: e.target.value })}
+                    disabled={(item.unidade_dose_calculo || "mg") === "mg"}
+                    placeholder={
+                      (item.unidade_dose_calculo || "mg") === "ml"
+                        ? "Concentracao mg/mL"
+                        : (item.unidade_dose_calculo || "mg") === "comprimido"
+                          ? "Concentracao mg/comprimido"
+                          : "Sem concentracao"
+                    }
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+                  />
+                </div>
+
+                <div className="mt-4 rounded-[20px] border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">
+                  {calculo.doseTotalMg ? (
+                    <>
+                      <p>
+                        Resultado: <span className="font-semibold">{calculo.doseTotalMg.toFixed(2)} mg por dose</span>
+                        {calculo.unidade === "ml" && calculo.volumeMl ? ` - ${calculo.volumeMl.toFixed(2)} mL` : ""}
+                        {calculo.unidade === "comprimido" && calculo.comprimidos ? ` - ${calculo.comprimidos.toFixed(2)} comprimido(s)` : ""}
+                      </p>
+                      <p className="mt-1 text-xs text-teal-700">
+                        Base: {calculo.doseMgKg?.toFixed(3)} mg/kg - {calculo.pesoKg?.toFixed(2)} kg
+                        {calculo.concentracao ? ` - concentracao ${calculo.concentracao}` : ""}
+                      </p>
+                    </>
+                  ) : (
+                    <p>Informe dose e peso para habilitar o calculo automatico.</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => aplicarCalculoNaDose(idx, calculo)}
+                    disabled={!calculo.doseTotalMg}
+                    className="mt-3 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Aplicar calculo
+                  </button>
                 </div>
               </div>
-            </div>
+            ) : null}
 
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4">
-              <div className="flex items-center gap-2">
-                <Clock3 className="h-4 w-4 text-teal-600" />
-                <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">Calculo guiado da dose</p>
-              </div>
-              <div className="mt-4 grid gap-2">
-                <input
-                  value={item.dose_mg_kg || ""}
-                  onChange={(e) => updatePrescricaoItem(idx, { dose_mg_kg: e.target.value })}
-                  placeholder="Dose mg/kg"
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
-                />
-                <input
-                  value={item.peso_referencia_kg || ""}
-                  onChange={(e) => updatePrescricaoItem(idx, { peso_referencia_kg: e.target.value })}
-                  placeholder={`Peso kg (${form.triagem.peso || "-"})`}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
-                />
-                <select
-                  value={item.unidade_dose_calculo || "mg"}
-                  onChange={(e) =>
-                    updatePrescricaoItem(idx, {
-                      unidade_dose_calculo: e.target.value as "mg" | "ml" | "comprimido",
-                    })
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100"
-                >
-                  <option value="mg">mg</option>
-                  <option value="ml">mL</option>
-                  <option value="comprimido">comprimido</option>
-                </select>
-                <input
-                  value={item.concentracao_personalizada || ""}
-                  onChange={(e) => updatePrescricaoItem(idx, { concentracao_personalizada: e.target.value })}
-                  disabled={(item.unidade_dose_calculo || "mg") === "mg"}
-                  placeholder={
-                    (item.unidade_dose_calculo || "mg") === "ml"
-                      ? "Concentracao mg/mL"
-                      : (item.unidade_dose_calculo || "mg") === "comprimido"
-                        ? "Concentracao mg/comprimido"
-                        : "Sem concentracao"
-                  }
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-400 transition focus:border-teal-400 focus:outline-none focus:ring-4 focus:ring-teal-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-                />
-              </div>
-
-              <div className="mt-4 rounded-[20px] border border-teal-200 bg-teal-50 px-4 py-3 text-sm text-teal-900">
-                {calculo.doseTotalMg ? (
-                  <>
-                    <p>
-                      Resultado: <span className="font-semibold">{calculo.doseTotalMg.toFixed(2)} mg por dose</span>
-                      {calculo.unidade === "ml" && calculo.volumeMl ? ` - ${calculo.volumeMl.toFixed(2)} mL` : ""}
-                      {calculo.unidade === "comprimido" && calculo.comprimidos ? ` - ${calculo.comprimidos.toFixed(2)} comprimido(s)` : ""}
-                    </p>
-                    <p className="mt-1 text-xs text-teal-700">
-                      Base: {calculo.doseMgKg?.toFixed(3)} mg/kg - {calculo.pesoKg?.toFixed(2)} kg
-                      {calculo.concentracao ? ` - concentracao ${calculo.concentracao}` : ""}
-                    </p>
-                  </>
-                ) : (
-                  <p>Informe dose e peso para habilitar o calculo automatico.</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => aplicarCalculoNaDose(idx, calculo)}
-                  disabled={!calculo.doseTotalMg}
-                  className="mt-3 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Aplicar calculo
-                </button>
-              </div>
-            </div>
-
-            {sugestao?.doseSugerida ? (
+            {!emTextoCorrido && sugestao?.doseSugerida ? (
               <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
                 <p className="font-semibold">Dose sugerida automatica</p>
                 <p className="mt-1">{sugestao.doseSugerida}</p>
@@ -7529,7 +7655,7 @@ export default function AtendimentoPage() {
               </div>
             ) : null}
 
-            {sugestaoApresentacao ? (
+            {!emTextoCorrido && sugestaoApresentacao ? (
               <div
                 className={`rounded-[24px] border px-4 py-4 text-sm ${
                   sugestaoApresentacao.requerManipulacao
@@ -7582,7 +7708,7 @@ export default function AtendimentoPage() {
                   {item.historico_ajustes.slice(0, 4).map((ajuste) => (
                     <div key={ajuste.id} className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600">
                       <div className="flex items-center justify-between">
-                        <span className="font-semibold text-slate-900 capitalize">{ajuste.campo}</span>
+                        <span className="font-semibold text-slate-900 capitalize">{ajuste.campo === "posologia_texto" ? "Posologia em texto corrido" : ajuste.campo}</span>
                         <span className="text-slate-400">{formatDate(ajuste.created_at)}</span>
                       </div>
                       <div className="mt-1 text-slate-500">
@@ -8650,11 +8776,12 @@ export default function AtendimentoPage() {
                     <AtendimentoReceitasBar
                       atendimentoConcluido={atendimentoConcluido}
                       criandoReceita={criandoReceita}
+                      controlesOcupados={criandoReceita || selecionandoReceita || Boolean(gerandoPdfTipo)}
                       criarReceitaComplementar={criarReceitaComplementar}
                       formatDate={formatDate}
+                      podeCriarReceita={Boolean(form.paciente_id)}
                       receitaAtiva={receitaAtiva}
                       receitas={receitas}
-                      selecionado={selecionado}
                       selecionarReceita={selecionarReceita}
                     />
                     <AtendimentoPrescricaoWorkspace
@@ -8671,7 +8798,6 @@ export default function AtendimentoPage() {
                     especieRacaExibicao={especieRacaExibicao}
                     form={form}
                     formatDate={formatDate}
-                    gerarPreviewPdf={gerarPreviewPdf}
                     getAlertaPrescricaoClass={getAlertaPrescricaoClass}
                     itensPrescricaoAtivos={itensPrescricaoAtivos}
                     medicamentosCardiologicos={medicamentosCardiologicos}
@@ -8685,7 +8811,6 @@ export default function AtendimentoPage() {
                     prescricaoErrosCount={prescricaoErrosCount}
                     prescricaoModoFoco={prescricaoModoFoco}
                     prescricaoPreviewAtivo={prescricaoPreviewAtivo}
-                    prescricaoPreviewPdf={prescricaoPreviewPdf}
                     prescricaoSupport={prescricaoSupport}
                     prescricaoTemRascunhoInicial={prescricaoTemRascunhoInicial}
                     prescriptionPresets={prescriptionPresets}
@@ -8706,9 +8831,7 @@ export default function AtendimentoPage() {
                     setPrescricaoEntradaModo={setPrescricaoEntradaModo}
                     setPrescricaoModoFoco={setPrescricaoModoFoco}
                     setPrescricaoPreviewAtivo={setPrescricaoPreviewAtivo}
-                    setPrescricaoPreviewErro={setPrescricaoPreviewErro}
-                      setPrescricaoPreviewPdf={setPrescricaoPreviewPdf}
-                    />
+                      />
                   </>
                 ) : null}
               </div>

@@ -29,7 +29,6 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
     especieRacaExibicao,
     form,
     formatDate,
-    gerarPreviewPdf,
     getAlertaPrescricaoClass,
     itensPrescricaoAtivos,
     medicamentosCardiologicos,
@@ -43,7 +42,6 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
     prescricaoErrosCount,
     prescricaoModoFoco,
     prescricaoPreviewAtivo,
-    prescricaoPreviewPdf,
     prescricaoSupport,
     prescricaoTemRascunhoInicial,
     prescriptionPresets,
@@ -64,8 +62,6 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
     setPrescricaoEntradaModo,
     setPrescricaoModoFoco,
     setPrescricaoPreviewAtivo,
-    setPrescricaoPreviewErro,
-    setPrescricaoPreviewPdf,
     cancelarEdicaoPresetPrescricao,
   } = props;
 
@@ -87,19 +83,7 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
             </span>
             <button
               type="button"
-              onClick={() => {
-                const willHide = prescricaoPreviewAtivo;
-                setPrescricaoPreviewAtivo((prev: boolean) => !prev);
-                if (willHide) {
-                  if (prescricaoPreviewPdf && prescricaoPreviewPdf.startsWith("blob:")) {
-                    URL.revokeObjectURL(prescricaoPreviewPdf);
-                  }
-                  setPrescricaoPreviewPdf(null);
-                  setPrescricaoPreviewErro(null);
-                } else {
-                  setTimeout(() => gerarPreviewPdf(), 100);
-                }
-              }}
+              onClick={() => setPrescricaoPreviewAtivo((prev: boolean) => !prev)}
               className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-2 text-sm font-medium transition ${
                 prescricaoPreviewAtivo
                   ? "border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100"
@@ -145,7 +129,7 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
             <p className={`mt-2 text-lg font-semibold ${prescricaoErrosCount > 0 ? "text-rose-700" : "text-emerald-700"}`}>
               {prescricaoErrosCount > 0 ? `${prescricaoErrosCount} pendencia(s)` : "Sem pendencias"}
             </p>
-            <p className="mt-1 text-sm text-slate-500">Campos obrigatorios: medicamento, dose, frequencia e via.</p>
+            <p className="mt-1 text-sm text-slate-500">Informe o medicamento e preencha a posologia por campos ou em texto corrido.</p>
           </div>
           <div className="rounded-[24px] border border-white/80 bg-white/80 px-4 py-4 shadow-sm backdrop-blur">
             <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-500">Peso de referencia</p>
@@ -593,6 +577,14 @@ export default function AtendimentoPrescricaoWorkspace(props: AtendimentoPrescri
         ) : (
           <div className="space-y-4">
             {form.prescricao_itens.map((item: any, idx: number) => renderPrescricaoItemCard(item, idx))}
+            <button
+              type="button"
+              onClick={() => adicionarItemPrescricaoEmBranco()}
+              className="inline-flex items-center gap-2 rounded-2xl border border-teal-200 bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-900 transition hover:bg-teal-100"
+            >
+              <Plus className="h-4 w-4" />
+              Adicionar item manual
+            </button>
           </div>
         )}
       </section>

@@ -173,6 +173,7 @@ const buildPrescriptionMergeKey = (item: PrescricaoItem) =>
     (item.frequencia || "").trim().toLowerCase(),
     (item.duracao || "").trim().toLowerCase(),
     (item.via || "").trim().toLowerCase(),
+    item.posologia_texto == null ? "" : JSON.stringify(item.posologia_texto),
   ].join("|");
 
 const mergeAutoSavedItems = <T extends { id?: number | null }>(
@@ -202,7 +203,28 @@ const mergeAutoSavedItems = <T extends { id?: number | null }>(
   });
 };
 
-export const mergeAutoSavedFormState = (current: AtendimentoForm, persisted: AtendimentoForm): AtendimentoForm => ({
+const associarIdsDaPrescricaoSalva = (
+  current: PrescricaoItem[],
+  sent: PrescricaoItem[],
+  persisted: PrescricaoItem[],
+): PrescricaoItem[] => {
+  const idsPorItemLocal = new Map<string, number>();
+  for (const item of persisted) {
+    // A ordem enviada no payload referencia a posição original, mesmo com itens vazios entre os preenchidos.
+    const enviado = item.ordem == null ? undefined : sent[item.ordem];
+    if (item.id && enviado?._localId && !enviado.id) idsPorItemLocal.set(enviado._localId, item.id);
+  }
+  return current.map((item) => {
+    const id = item._localId && idsPorItemLocal.get(item._localId);
+    return !item.id && id ? { ...item, id } : item;
+  });
+};
+
+export const mergeAutoSavedFormState = (
+  current: AtendimentoForm,
+  persisted: AtendimentoForm,
+  prescricoesEnviadas: PrescricaoItem[] = [],
+): AtendimentoForm => ({
   ...current,
   id: persisted.id || current.id,
   ...(persisted.status === "Concluido" ? {
@@ -228,7 +250,7 @@ export const mergeAutoSavedFormState = (current: AtendimentoForm, persisted: Ate
     })
   ),
   prescricao_itens: mergeAutoSavedItems(
-    current.prescricao_itens,
+    associarIdsDaPrescricaoSalva(current.prescricao_itens, prescricoesEnviadas, persisted.prescricao_itens),
     persisted.prescricao_itens,
     buildPrescriptionMergeKey,
     (currentItem, persistedItem) => ({
