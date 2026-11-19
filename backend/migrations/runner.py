@@ -109,7 +109,9 @@ def get_migration_status() -> dict:
     tracking_table_exists = False
     with engine.connect() as connection:
         inspector = inspect(connection)
-        tracking_table_exists = "schema_migrations" in inspector.get_table_names()
+        # Health probes need one existence result, not the whole database catalog.
+        # Keep this uncached so a migration/drop is visible on the next probe.
+        tracking_table_exists = inspector.has_table("schema_migrations")
         if tracking_table_exists:
             rows = connection.execute(text("SELECT version FROM schema_migrations")).fetchall()
             applied_versions = {str(row[0]) for row in rows}
