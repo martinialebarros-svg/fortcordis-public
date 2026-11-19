@@ -2,8 +2,8 @@
  * Regras de alvo da receita no editor de prescricao.
  *
  * Um atendimento pode ter varias receitas: a do dia (sequencia 1), que viaja
- * no autosave do prontuario, e as complementares, emitidas em adendos depois
- * da alta, que tem endpoint proprio. Estas funcoes ficam fora da pagina por
+ * no autosave do prontuario, e as adicionais, que tem endpoint proprio e
+ * podem ser vinculadas a um adendo. Estas funcoes ficam fora da pagina por
  * serem a parte do fluxo que nao pode errar: apontar o editor para uma receita
  * e salvar em outra sobrescreveria um documento ja entregue ao tutor.
  */

@@ -51,6 +51,7 @@ class PrescricaoItemPayload(BaseModel):
     frequencia: Optional[str] = ""
     duracao: Optional[str] = ""
     via: Optional[str] = ""
+    posologia_texto: Optional[str] = None
     instrucoes: Optional[str] = ""
     ordem: Optional[int] = 0
     dose_mg_kg: Optional[str] = None

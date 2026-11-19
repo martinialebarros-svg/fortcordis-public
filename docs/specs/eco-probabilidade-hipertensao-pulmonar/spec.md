@@ -68,9 +68,3 @@ Cache ECO: `2026-11-16-eco-public-hp-reviewed-context-v38`; PDFs em cache anteri
 | HP-12 | Antes da promoção, comprovar que somente HP difere da base pública de produção e preparar a árvore de restauração com todos os blobs/modos paralelos preservados. |
 
 HP-12 é o aceite da preparação verificável antes da promoção. A instalação em produção e a restauração efetiva de Stage continuam obrigatórias para encerrar a entrega; são etapas operacionais posteriores, registradas separadamente no checklist de `verify.md`. Uma árvore preparada ou um teste em Stage não comprova que essas etapas já ocorreram.
-
-## Apresentação da avaliação no PDF
-
-A avaliação fica em uma tabela da análise quantitativa após Regurgitações, com a largura, a tipografia e as linhas alternadas das tabelas de medidas. As colunas Parâmetro e Avaliação organizam a síntese, a velocidade da IT, os sítios anatômicos, as métricas de suporte e as notas. A tabela explicita pendências de revisão e acomoda observações multilinha. Em continuação de página, repete o título e o cabeçalho.
-
-Prévia e emissão usam o mesmo layout e os mesmos critérios clínicos do módulo. A conclusão permanece no início e as fontes após a análise qualitativa. A versão de cache ECO `2026-11-18-eco-hp-table-layout-v39` permite que futuras gerações usem o novo layout.

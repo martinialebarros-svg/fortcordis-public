@@ -42,10 +42,3 @@ Estas etapas de implantação permanecem abertas neste registro; o aceite funcio
 ## Limites da evidência
 
 Dados exclusivamente sintéticos. A conferência autenticada descrita acima ocorreu em Stage. Não houve teste clínico real nem envio ao portal ou a destinatários externos. Os testes locais de renderização compartilhada não comprovam uma publicação no portal. Produção e restauração de Stage ainda precisam das evidências do checklist operacional. A classificação continua sujeita à revisão veterinária.
-
-## Validação local do layout em tabela — 18/11/2026
-
-- Os 111 testes focados de HP, medidas/cache e PDFs ecocardiográficos passaram, com 490 subtestes. A regressão de paginação verifica observação extensa, integridade das linhas e um único cabeçalho da avaliação por página.
-- Foram gerados cinco laudos sintéticos: canino confirmado, canino pendente, felino descritivo, caso com observação longa e caso com HP desativada. A inspeção das páginas confirmou alinhamento com as demais tabelas e continuação sem cortes ou cabeçalho duplicado.
-- A prévia e a emissão locais têm o mesmo conteúdo, descontada a marca de prévia. A conclusão precede as tabelas, a bibliografia permanece após a análise qualitativa e os resultados de HP e PSAP respeitam os critérios existentes.
-- Amostra visual em `output/pdf/avaliacao-hipertensao-pulmonar.pdf`, ignorada pelo Git. A validação deste ajuste é local.

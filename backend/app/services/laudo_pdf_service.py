@@ -23,7 +23,7 @@ from app.utils.paciente_helpers import data_civil_referencia, normalizar_sexo_pa
 
 
 LAUDO_PDF_RENDERER_VERSION = "2026-09-24-eco-presentation-v2"
-LAUDO_PDF_ECO_RENDERER_VERSION = "2026-11-18-eco-hp-table-layout-v39"
+LAUDO_PDF_ECO_RENDERER_VERSION = "2026-11-16-eco-public-hp-reviewed-context-v38"
 
 
 @dataclass(frozen=True)

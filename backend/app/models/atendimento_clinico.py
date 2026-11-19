@@ -277,6 +277,7 @@ class PrescricaoItem(Base):
     frequencia = Column(String)
     duracao = Column(String)
     via = Column(String)
+    posologia_texto = Column(Text)
     instrucoes = Column(Text)
     ordem = Column(Integer, nullable=False, default=0)
     dose_mg_kg = Column(String)
