@@ -19,6 +19,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from fastapi import HTTPException, UploadFile
+from pypdf import PdfReader
 from sqlalchemy import create_engine, event
 from starlette.datastructures import Headers
 from sqlalchemy.orm import sessionmaker
@@ -60,6 +61,7 @@ from app.schemas.atendimento import (
     PrescricaoComplementarPayload,
     PrescricaoItemPayload,
     PrescricaoPayload,
+    PrescricaoPreviewPayload,
     PrescricaoSyncPayload,
 )
 
@@ -394,6 +396,81 @@ class AtendimentoContinuidadePosAltaTest(unittest.TestCase):
         self.assertEqual(ctx.prescricao.orientacoes_gerais, "Repouso ate o resultado.")
 
     # === CA-003 / RF-015, RF-016 ===
+
+    def test_nova_receita_em_branco_preserva_posologia_em_texto_no_pdf_e_historico(self) -> None:
+        ctx = self._seed_atendimento_finalizado()
+        atendimento_id = ctx.atendimento.id
+        principal = self._itens_da_receita(ctx.prescricao.id)[0]
+        texto = "Manhã: instrução & revisão.\nÀ noite: ângulo < 2 > 1."
+
+        with patch.object(atendimento, "registrar_auditoria"):
+            nova = atendimento.criar_prescricao_complementar(
+                atendimento_id, PrescricaoComplementarPayload(), self.request, db=self.db, current_user=self.user,
+            )["prescricao"]
+            self.assertEqual(nova["sequencia"], 2)
+            self.assertEqual(nova["itens"], [])
+            self.assertFalse(nova["orientacoes_gerais"])
+            self.assertIsNone(nova["emitida_em"])
+            item = PrescricaoItemPayload(
+                medicamento_nome="Medicamento fictício B", dose="CAMPO INATIVO", posologia_texto="  ",
+            )
+
+            def salvar_item(payload):
+                return atendimento.atualizar_prescricao(
+                    atendimento_id, nova["id"], PrescricaoSyncPayload(itens=[payload]),
+                    self.request, db=self.db, current_user=self.user,
+                )["prescricao"]["itens"][0]
+
+            rascunho = salvar_item(item)
+            prescricao = self.db.get(PrescricaoClinica, nova["id"])
+            with self.assertRaises(HTTPException) as erro:
+                atendimento._responder_pdf_prescricao(
+                    self.db, atendimento=ctx.atendimento, prescricao=prescricao, current_user=self.user,
+                )
+            self.assertEqual(erro.exception.status_code, 422)
+            self.assertIsNone(prescricao.emitida_em)
+
+            item.id = rascunho["id"]
+            item.posologia_texto = texto
+            salvo = salvar_item(item)
+            self.assertEqual(salvo["posologia_texto"], texto)
+            self.assertEqual(salvar_item(PrescricaoItemPayload(
+                id=item.id, medicamento_nome=item.medicamento_nome, dose=item.dose,
+            ))["posologia_texto"], texto)
+            copia = atendimento.criar_prescricao_complementar(
+                atendimento_id, PrescricaoComplementarPayload(copiar_de_prescricao_id=nova["id"]),
+                self.request, db=self.db, current_user=self.user,
+            )["prescricao"]
+            self.assertEqual(copia["itens"][0]["posologia_texto"], texto)
+            self.assertNotEqual(copia["itens"][0]["id"], item.id)
+
+        self.assertIsNone(principal.posologia_texto)
+        self.assertEqual(principal.dose, "2 mg/kg")
+        ajuste = self.db.query(PrescricaoItemAjuste).filter_by(
+            prescricao_item_id=item.id, campo="posologia_texto",
+        ).one()
+        self.assertEqual(ajuste.valor_novo, texto)
+        detalhe = atendimento.obter_atendimento(atendimento_id, db=self.db, current_user=self.user)
+        self.assertEqual(detalhe["prescricoes"][1]["itens"][0]["posologia_texto"], texto)
+
+        final = atendimento._gerar_pdf_prescricao_bytes(
+            ctx.atendimento, ctx.paciente, None, None, prescricao, self._itens_da_receita(nova["id"]),
+        )
+        previa = atendimento._gerar_pdf_prescricao_preview_bytes(PrescricaoPreviewPayload(itens=[item]))
+        for pdf in (final, previa):
+            conteudo = PdfReader(BytesIO(pdf)).pages[0].extract_text()
+            self.assertIn("Manhã: instrução & revisão.\nÀ noite: ângulo < 2 > 1.", conteudo)
+            self.assertNotIn("CAMPO INATIVO", conteudo)
+            self.assertNotIn("Furosemida", conteudo)
+
+    def test_pdf_posologia_longa_pode_passar_de_uma_pagina(self) -> None:
+        texto = "\n".join(f"Linha {numero} do texto de teste." for numero in range(140))
+        item = PrescricaoItemPayload(medicamento_nome="Medicamento fictício", posologia_texto=texto)
+        pdf = atendimento._gerar_pdf_prescricao_preview_bytes(PrescricaoPreviewPayload(itens=[item]))
+        paginas = PdfReader(BytesIO(pdf)).pages
+        self.assertGreater(len(paginas), 1)
+        self.assertIn("Linha 0 do texto de teste.", paginas[0].extract_text())
+        self.assertIn("Linha 139 do texto de teste.", paginas[-1].extract_text())
 
     def test_pdf_da_receita_do_dia_nao_muda_depois_da_complementar(self) -> None:
         ctx = self._seed_atendimento_finalizado()

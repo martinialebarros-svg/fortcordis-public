@@ -127,14 +127,22 @@ export default function AtendimentoPrescricaoAside(props: AtendimentoPrescricaoA
                         (/(formula manipulada)/i.test(item.medicamento_nome || "") ? "Formula manipulada" : "Apresentacao em aberto")}
                     </p>
                   </div>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
-                    {item.via || "Via em aberto"}
-                  </span>
+                  {item.posologia_texto == null ? (
+                    <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600">
+                      {item.via || "Via em aberto"}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="mt-3 space-y-1 text-sm text-slate-600">
-                  <p>{item.dose || "Dose em aberto"}</p>
-                  <p>{item.frequencia || "Frequencia em aberto"}</p>
-                  <p>{item.duracao || "Duracao livre"}</p>
+                  {item.posologia_texto != null ? (
+                    <p className="whitespace-pre-wrap break-words">{item.posologia_texto || "Posologia em aberto"}</p>
+                  ) : (
+                    <>
+                      <p>{item.dose || "Dose em aberto"}</p>
+                      <p>{item.frequencia || "Frequencia em aberto"}</p>
+                      <p>{item.duracao || "Duracao livre"}</p>
+                    </>
+                  )}
                 </div>
               </div>
             ))

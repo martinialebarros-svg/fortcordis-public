@@ -16,15 +16,16 @@ export default function AtendimentoReceitasBar(props: AtendimentoReceitasBarProp
   const {
     atendimentoConcluido,
     criandoReceita,
+    controlesOcupados,
     criarReceitaComplementar,
     formatDate,
+    podeCriarReceita,
     receitaAtiva,
     receitas,
-    selecionado,
     selecionarReceita,
   } = props;
 
-  if (!selecionado || receitas.length === 0) return null;
+  if (!podeCriarReceita) return null;
 
   const varias = receitas.length > 1;
 
@@ -41,6 +42,8 @@ export default function AtendimentoReceitasBar(props: AtendimentoReceitasBarProp
               <button
                 key={receita.id}
                 type="button"
+                aria-pressed={ativa}
+                disabled={controlesOcupados}
                 onClick={() => void selecionarReceita(receita.sequencia > 1 ? receita.id : null)}
                 className={`inline-flex items-center gap-2 rounded-2xl border px-3 py-1.5 text-xs font-semibold transition ${
                   ativa
@@ -48,7 +51,7 @@ export default function AtendimentoReceitasBar(props: AtendimentoReceitasBarProp
                     : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                {receita.sequencia === 1 ? "Receita do dia" : `Complementar ${receita.sequencia}`}
+                {receita.sequencia === 1 ? "Receita do dia" : `Receita ${receita.sequencia}`}
                 <span
                   className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
                     receita.emitida_em ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"
@@ -64,11 +67,11 @@ export default function AtendimentoReceitasBar(props: AtendimentoReceitasBarProp
         <button
           type="button"
           onClick={() => void criarReceitaComplementar()}
-          disabled={criandoReceita}
+          disabled={controlesOcupados}
           className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-teal-300 bg-teal-50 px-4 py-2 text-sm font-semibold text-teal-900 transition hover:bg-teal-100 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {criandoReceita ? <Loader2 className="h-4 w-4 animate-spin" /> : <FilePlus2 className="h-4 w-4" />}
-          {criandoReceita ? "Criando..." : "Nova receita complementar"}
+          {criandoReceita ? "Criando..." : "Nova receita"}
         </button>
       </div>
 
@@ -81,11 +84,11 @@ export default function AtendimentoReceitasBar(props: AtendimentoReceitasBarProp
 
       {receitaAtiva && receitaAtiva.sequencia > 1 ? (
         <p className="mt-2 text-xs text-slate-500">
-          Editando uma receita complementar. A receita do dia e o restante do prontuario nao sao alterados por ela.
+          O PDF será gerado para a receita selecionada.
         </p>
       ) : atendimentoConcluido ? (
         <p className="mt-2 text-xs text-slate-500">
-          Atendimento concluido: a receita continua editavel com historico. Se preferir um registro separado, crie uma receita complementar.
+          Atendimento concluido: a receita continua editavel com historico. Se preferir um registro separado, crie uma nova receita.
         </p>
       ) : null}
 

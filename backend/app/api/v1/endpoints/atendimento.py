@@ -1181,7 +1181,18 @@ def _prescricao_criar_card_info(label: str, valor: str) -> Paragraph:
     )
 
 
-def _prescricao_criar_card_prescricao(idx: int, nome: str, dose: str, frequencia: str, duracao: str, via: str, apresentacao: str = "", instrucoes: str = "") -> Table:
+def _prescricao_criar_card_prescricao(
+    idx: int,
+    nome: str,
+    dose: str,
+    frequencia: str,
+    duracao: str,
+    via: str,
+    apresentacao: str = "",
+    instrucoes: str = "",
+    *,
+    posologia_texto: Optional[str] = None,
+) -> Table:
     """Cria card de prescricao (item) - versao generica."""
     styles = create_pdf_styles()
     titulo_style = ParagraphStyle(
@@ -1211,25 +1222,29 @@ def _prescricao_criar_card_prescricao(idx: int, nome: str, dose: str, frequencia
     if formula_manipulada:
         titulo_html += " <font name='Helvetica-Bold' size='7' color='#9a3412'>FORMULA MANIPULADA</font>"
 
-    info_table = Table(
-        [[
-            _prescricao_criar_card_info("Dose", dose or "-"),
-            _prescricao_criar_card_info("Frequencia", frequencia or "-"),
-            _prescricao_criar_card_info("Duracao", duracao or "-"),
-            _prescricao_criar_card_info("Via", via or "-"),
-        ]],
-        colWidths=[45 * mm, 45 * mm, 45 * mm, 45 * mm],
-    )
-    info_table.setStyle(TableStyle([
-        ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
-        ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#e5e7eb")),
-        ("BACKGROUND", (0, 0), (-1, -1), colors.white),
-        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-        ("TOPPADDING", (0, 0), (-1, -1), 6),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-    ]))
+    posologia: Union[Paragraph, Table]
+    if posologia_texto is not None:
+        posologia = _prescricao_criar_card_info("Posologia", posologia_texto)
+    else:
+        posologia = Table(
+            [[
+                _prescricao_criar_card_info("Dose", dose or "-"),
+                _prescricao_criar_card_info("Frequencia", frequencia or "-"),
+                _prescricao_criar_card_info("Duracao", duracao or "-"),
+                _prescricao_criar_card_info("Via", via or "-"),
+            ]],
+            colWidths=[45 * mm, 45 * mm, 45 * mm, 45 * mm],
+        )
+        posologia.setStyle(TableStyle([
+            ("BOX", (0, 0), (-1, -1), 0.6, colors.HexColor("#d1d5db")),
+            ("INNERGRID", (0, 0), (-1, -1), 0.4, colors.HexColor("#e5e7eb")),
+            ("BACKGROUND", (0, 0), (-1, -1), colors.white),
+            ("LEFTPADDING", (0, 0), (-1, -1), 6),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]))
 
     conteudo: List[Any] = [Paragraph(titulo_html, titulo_style)]
     if apres:
@@ -1240,7 +1255,7 @@ def _prescricao_criar_card_prescricao(idx: int, nome: str, dose: str, frequencia
                 obs_style,
             ),
         ])
-    conteudo.extend([Spacer(1, 2 * mm), info_table])
+    conteudo.extend([Spacer(1, 2 * mm), posologia])
     if instrucoes.strip():
         conteudo.extend([
             Spacer(1, 2.2 * mm),
@@ -1251,7 +1266,7 @@ def _prescricao_criar_card_prescricao(idx: int, nome: str, dose: str, frequencia
         ])
     card_bg = "#fff7ed" if formula_manipulada else "#fafafa"
     card_border = "#fdba74" if formula_manipulada else "#e5e7eb"
-    card = Table([[conteudo]], colWidths=[180 * mm])
+    card = Table([[conteudo]], colWidths=[180 * mm], splitInRow=int(posologia_texto is not None))
     card.setStyle(TableStyle([
         ("BOX", (0, 0), (-1, -1), 0.8, colors.HexColor(card_border)),
         ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(card_bg)),
@@ -1388,6 +1403,7 @@ def _gerar_pdf_prescricao_bytes(
                     item.via or "",
                     item.apresentacao_selecionada or "",
                     item.instrucoes or "",
+                    posologia_texto=item.posologia_texto,
                 ))
                 story.append(Spacer(1, 3 * mm))
         else:
@@ -1820,6 +1836,7 @@ def _map_prescricao_item(item: PrescricaoItem) -> dict:
         "frequencia": item.frequencia or "",
         "duracao": item.duracao or "",
         "via": item.via or "",
+        "posologia_texto": item.posologia_texto,
         "instrucoes": item.instrucoes or "",
         "ordem": item.ordem or 0,
         "dose_mg_kg": item.dose_mg_kg or "",
@@ -2243,6 +2260,7 @@ def _sync_prescricao(
             "frequencia": item.frequencia,
             "duracao": item.duracao,
             "via": item.via,
+            "posologia_texto": item.posologia_texto,
             "instrucoes": item.instrucoes,
             "dose_mg_kg": item.dose_mg_kg,
             "peso_referencia_kg": item.peso_referencia_kg,
@@ -2261,6 +2279,8 @@ def _sync_prescricao(
         item.frequencia = item_payload.frequencia or ""
         item.duracao = item_payload.duracao or ""
         item.via = item_payload.via or ""
+        if "posologia_texto" in item_payload.model_fields_set:
+            item.posologia_texto = item_payload.posologia_texto
         item.instrucoes = item_payload.instrucoes or ""
         item.ordem = item_payload.ordem if item_payload.ordem is not None else index
         item.dose_mg_kg = item_payload.dose_mg_kg or ""
@@ -3189,6 +3209,8 @@ def _responder_pdf_prescricao(
     )
     if not itens:
         raise HTTPException(status_code=404, detail="Prescricao sem itens para gerar PDF.")
+    if any(item.posologia_texto is not None and not item.posologia_texto.strip() for item in itens):
+        raise HTTPException(status_code=422, detail="Preencha a posologia em texto corrido antes de gerar o PDF.")
 
     branding = _obter_branding_pdf_documento(db, current_user)
     pdf_bytes = _gerar_pdf_prescricao_bytes(
@@ -3364,6 +3386,7 @@ def _gerar_pdf_prescricao_preview_bytes(
                     item.via or "",
                     item.apresentacao_selecionada or "",
                     item.instrucoes or "",
+                    posologia_texto=item.posologia_texto,
                 ))
                 story.append(Spacer(1, 3 * mm))
         else:
@@ -4867,7 +4890,8 @@ def criar_prescricao_complementar(
     current_user: User = Depends(get_current_user),
 ):
     """Cria a proxima receita do atendimento, sem tocar nas anteriores."""
-    atendimento = db.query(AtendimentoClinico).filter(AtendimentoClinico.id == atendimento_id).first()
+    atendimento = (db.query(AtendimentoClinico).filter(AtendimentoClinico.id == atendimento_id)
+                   .with_for_update().first())
     if not atendimento:
         raise HTTPException(status_code=404, detail="Atendimento nao encontrado.")
 
@@ -4892,38 +4916,37 @@ def criar_prescricao_complementar(
         retorno_dias=origem.retorno_dias if origem else None,
     )
     db.add(prescricao)
-    db.flush()
-
-    if origem:
-        itens_origem = (
-            db.query(PrescricaoItem)
-            .filter(PrescricaoItem.prescricao_id == origem.id)
-            .order_by(PrescricaoItem.ordem.asc(), PrescricaoItem.id.asc())
-            .all()
-        )
-        # Copia como registros novos: a receita de origem nao empresta ids,
-        # entao editar a copia nunca alcanca o documento ja emitido.
-        for index, item in enumerate(itens_origem):
-            db.add(
-                PrescricaoItem(
-                    prescricao_id=prescricao.id,
-                    medicamento_id=item.medicamento_id,
-                    medicamento_nome=item.medicamento_nome,
-                    apresentacao_selecionada=item.apresentacao_selecionada,
-                    dose=item.dose,
-                    frequencia=item.frequencia,
-                    duracao=item.duracao,
-                    via=item.via,
-                    instrucoes=item.instrucoes,
-                    ordem=index,
-                    dose_mg_kg=item.dose_mg_kg,
-                    peso_referencia_kg=item.peso_referencia_kg,
-                    unidade_dose_calculo=item.unidade_dose_calculo,
-                    concentracao_personalizada=item.concentracao_personalizada,
-                )
-            )
-
     try:
+        if origem:
+            db.flush()
+            itens_origem = (
+                db.query(PrescricaoItem)
+                .filter(PrescricaoItem.prescricao_id == origem.id)
+                .order_by(PrescricaoItem.ordem.asc(), PrescricaoItem.id.asc())
+                .all()
+            )
+            # Copia como registros novos: a receita de origem nao empresta ids,
+            # entao editar a copia nunca alcanca o documento ja emitido.
+            for index, item in enumerate(itens_origem):
+                db.add(
+                    PrescricaoItem(
+                        prescricao_id=prescricao.id,
+                        medicamento_id=item.medicamento_id,
+                        medicamento_nome=item.medicamento_nome,
+                        apresentacao_selecionada=item.apresentacao_selecionada,
+                        dose=item.dose,
+                        frequencia=item.frequencia,
+                        duracao=item.duracao,
+                        via=item.via,
+                        posologia_texto=item.posologia_texto,
+                        instrucoes=item.instrucoes,
+                        ordem=index,
+                        dose_mg_kg=item.dose_mg_kg,
+                        peso_referencia_kg=item.peso_referencia_kg,
+                        unidade_dose_calculo=item.unidade_dose_calculo,
+                        concentracao_personalizada=item.concentracao_personalizada,
+                    )
+                )
         db.commit()
     except IntegrityError as exc:
         db.rollback()

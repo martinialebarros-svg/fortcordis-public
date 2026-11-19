@@ -27,7 +27,8 @@ const complementar = {
 type HarnessProps = {
   receitas?: any[];
   receitaAtiva?: any;
-  selecionado?: number | null;
+  podeCriarReceita?: boolean;
+  controlesOcupados?: boolean;
   atendimentoConcluido?: boolean;
   selecionarReceita?: (id: number | null) => void;
   criarReceitaComplementar?: () => void;
@@ -38,23 +39,24 @@ function Harness(props: HarnessProps) {
     <AtendimentoReceitasBar
       atendimentoConcluido={props.atendimentoConcluido ?? true}
       criandoReceita={false}
+      controlesOcupados={props.controlesOcupados ?? false}
       criarReceitaComplementar={props.criarReceitaComplementar ?? (() => {})}
       formatDate={(valor: string) => valor}
       receitaAtiva={props.receitaAtiva === undefined ? receitaDoDia : props.receitaAtiva}
       receitas={props.receitas ?? [receitaDoDia, complementar]}
-      selecionado={props.selecionado === undefined ? 1 : props.selecionado}
+      podeCriarReceita={props.podeCriarReceita ?? true}
       selecionarReceita={props.selecionarReceita ?? (() => {})}
     />
   );
 }
 
 describe("AtendimentoReceitasBar", () => {
-  it("nao aparece sem atendimento salvo ou sem receita", () => {
-    const { container: semAtendimento } = render(<Harness selecionado={null} />);
-    expect(semAtendimento.firstChild).toBeNull();
+  it("permite começar a receita com paciente selecionado, mesmo sem receitas anteriores", () => {
+    const { container: semPaciente } = render(<Harness podeCriarReceita={false} />);
+    expect(semPaciente.firstChild).toBeNull();
     cleanup();
-    const { container: semReceita } = render(<Harness receitas={[]} />);
-    expect(semReceita.firstChild).toBeNull();
+    render(<Harness receitas={[]} receitaAtiva={null} atendimentoConcluido={false} />);
+    expect(screen.getByRole("button", { name: "Nova receita" })).toBeTruthy();
   });
 
   it("distingue receita emitida de rascunho", () => {
@@ -62,7 +64,7 @@ describe("AtendimentoReceitasBar", () => {
     expect(screen.getByText("Emitida")).toBeTruthy();
     expect(screen.getByText("Rascunho")).toBeTruthy();
     expect(screen.getByRole("button", { name: /Receita do dia/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /Complementar 2/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /Receita 2/i }).getAttribute("aria-pressed")).toBe("false");
   });
 
   it("avisa que a receita ativa ja foi emitida e pode estar com o tutor", () => {
@@ -77,13 +79,13 @@ describe("AtendimentoReceitasBar", () => {
     fireEvent.click(screen.getByRole("button", { name: /Receita do dia/i }));
     expect(selecionar).toHaveBeenLastCalledWith(null);
 
-    fireEvent.click(screen.getByRole("button", { name: /Complementar 2/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Receita 2/i }));
     expect(selecionar).toHaveBeenLastCalledWith(11);
   });
 
-  it("diz que a complementar nao altera a receita do dia", () => {
+  it("identifica o alvo da emissão", () => {
     render(<Harness receitaAtiva={complementar} />);
-    expect(screen.getByText(/nao sao alterados por ela/i)).toBeTruthy();
+    expect(screen.getByText(/PDF será gerado para a receita selecionada/i)).toBeTruthy();
   });
 
   it("permite edicao direta apos emissao com aviso de historico e novo PDF", () => {
@@ -97,7 +99,7 @@ describe("AtendimentoReceitasBar", () => {
   it("cria receita complementar pelo botao dedicado", () => {
     const criar = vi.fn();
     render(<Harness criarReceitaComplementar={criar} />);
-    fireEvent.click(screen.getByRole("button", { name: /Nova receita complementar/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Nova receita/i }));
     expect(criar).toHaveBeenCalledTimes(1);
   });
 });

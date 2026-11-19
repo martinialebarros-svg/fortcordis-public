@@ -342,3 +342,34 @@ describe("mergeAtendimentoFinalizado", () => {
     expect(merged.status).toBe("Em atendimento");
   });
 });
+
+it("mantém a posologia digitada enquanto o primeiro salvamento atribui IDs aos itens", () => {
+  const baseItem = {
+    medicamento_nome: "Medicamento fictício",
+    apresentacao_selecionada: "",
+    dose: "",
+    frequencia: "",
+    duracao: "",
+    via: "Oral",
+    instrucoes: "",
+  };
+  const primeiro = { ...baseItem, _localId: "primeiro", posologia_texto: "Texto inicial" };
+  const segundo = { ...baseItem, _localId: "segundo", posologia_texto: "Texto inicial" };
+  const emEdicao = {
+    ...baseForm(),
+    prescricao_itens: [{ ...segundo, posologia_texto: "Texto atualizado" }, primeiro],
+  };
+  const resposta = {
+    ...baseForm(),
+    prescricao_itens: [
+      { ...baseItem, posologia_texto: "Texto inicial", id: 9, ordem: 0 },
+      { ...baseItem, posologia_texto: "Texto inicial", id: 10, ordem: 1 },
+    ],
+  };
+
+  const mesclado = mergeAutoSavedFormState(emEdicao, resposta, [primeiro, segundo]);
+  expect(mesclado.prescricao_itens).toMatchObject([
+    { _localId: "segundo", id: 10, posologia_texto: "Texto atualizado" },
+    { _localId: "primeiro", id: 9, posologia_texto: "Texto inicial" },
+  ]);
+});

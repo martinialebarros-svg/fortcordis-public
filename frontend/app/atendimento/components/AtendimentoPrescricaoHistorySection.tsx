@@ -69,8 +69,14 @@ export default function AtendimentoPrescricaoHistorySection(props: AtendimentoPr
                     <Pill className="mt-0.5 h-4 w-4 shrink-0 text-teal-600" />
                     <p>
                       <span className="font-medium text-slate-900">{item.medicamento_nome}</span>
-                      {item.dose ? ` · ${item.dose}` : ""}
-                      {item.frequencia ? ` · ${item.frequencia}` : ""}
+                      {item.posologia_texto != null ? (
+                        <span className="block whitespace-pre-wrap break-words">{item.posologia_texto}</span>
+                      ) : (
+                        <>
+                          {item.dose ? ` · ${item.dose}` : ""}
+                          {item.frequencia ? ` · ${item.frequencia}` : ""}
+                        </>
+                      )}
                     </p>
                   </div>
                 ))}
