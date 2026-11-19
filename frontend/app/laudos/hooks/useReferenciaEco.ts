@@ -6,7 +6,7 @@ import { getCanine2DReference } from "@/lib/echo-2d-reference";
 import type { Echo2DView } from "@/lib/echo-2d-reference";
 import { ComparacaoMedida, ReferenciaEco } from "../types/referencia-eco";
 import { resolveEchoReferenceForMeasurements, selectEchoReferenceFromCatalog } from "@/lib/echo-reference-policy";
-import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
+import { isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
 import { canonicalEchoDiastolicKey, echoDiastolicReferences } from "@/lib/echo-diastolic-reference";
 import { FELINE_DIASTOLIC_KEYS } from "@/lib/echo-feline-diastolic-reference";
 import { lowWeightAgeContext, lowWeightEstimateText, makeLowWeightReference } from "@/lib/echo-low-weight-reference";
@@ -152,7 +152,7 @@ function motivoSemFaixa2D(
 ): string {
   if (PAREDES_2D.has(key)) return "Sem intervalo 2D por peso para esta espessura nas fontes adotadas";
   if (TEICHOLZ_2D.has(key)) return "Teichholz: intervalos 2D de Simpson não são aplicáveis";
-  if (!isCanineEchoSpecies(especie)) return "Sem faixa 2D desta população nas fontes adotadas";
+  if (!/^canin/i.test(especie)) return "Sem faixa 2D desta população nas fontes adotadas";
   if (lowWeightAgeContext(age) === "juvenile") return "Faixa 2D de cães adultos não aplicável à idade em crescimento";
   if (!plano2D) return "Confirme cão adulto e vista 2D para comparar";
   if (!Number.isFinite(pesoPacienteKg) || pesoPacienteKg === undefined || pesoPacienteKg < 2.6 || pesoPacienteKg > 67.8) {
@@ -198,7 +198,7 @@ export function compararMedidasComReferencia(
       : null;
     const fsCompativelComPar = key !== "DeltaD_FS_2D" ||
       (fsDoPar !== null && Math.abs(valorNumerico - fsDoPar) <= 1);
-    const faixa2D = isCanineEchoSpecies(referencia.especie) && fsCompativelComPar
+    const faixa2D = /^canin/i.test(referencia.especie) && fsCompativelComPar
       ? getCanine2DReference(key, pesoPacienteKg, plano2D, referenciaSegura.patient_age)
       : null;
     const metadados = referenciaSegura.range_metadata?.[mapeamento.campo];

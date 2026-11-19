@@ -6,7 +6,7 @@ export interface BillingGroup {
   quantidade_os: number;
   total_pendente: number;
 }
-interface BillingOrder { id: number; status: string; valor_final: number }
+interface BillingOrder { id: number; status: string; valor_final: number; valor_em_aberto?: number | null }
 interface BillingPage<T> { total: number; items: T[]; resumo: { pendentes: number; valor_pendente: number } }
 const cents = (value: number) => Math.round(value * 100);
 
@@ -28,14 +28,16 @@ export async function loadCompleteBillingGroup<T extends BillingOrder>(
       throw new Error("As cobrancas mudaram durante a leitura. Atualize os destinatarios e tente novamente.");
     }
     for (const item of page.items) {
-      if (items.has(item.id) || item.status === "Cancelado" || !Number.isFinite(item.valor_final)) {
+      if (items.has(item.id) || item.status === "Cancelado" || !Number.isFinite(item.valor_final) ||
+        !Number.isFinite(item.valor_em_aberto ?? item.valor_final)) {
         throw new Error("Leitura inconsistente das OS. Atualize os destinatarios e tente novamente.");
       }
       items.set(item.id, item);
     }
   }
   const pending = [...items.values()].filter((os) => os.status === "Pendente");
-  if (pending.length !== group.quantidade_os || pending.reduce((sum, os) => sum + cents(os.valor_final), 0) !== cents(group.total_pendente)) {
+  const saldoPendente = pending.reduce((sum, os) => sum + cents(os.valor_em_aberto ?? os.valor_final), 0);
+  if (pending.length !== group.quantidade_os || saldoPendente !== cents(group.total_pendente)) {
     throw new Error("Os valores das cobrancas mudaram. Atualize os destinatarios e tente novamente.");
   }
   return [...items.values()];

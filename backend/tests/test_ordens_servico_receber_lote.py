@@ -524,6 +524,27 @@ class RecebimentoLoteTest(unittest.TestCase):
             repetida = client.patch("/api/v1/ordens-servico/receber-lote", json=payload)
             self.assertEqual(repetida.status_code, 409, repetida.text)
 
+    def test_conferencia_http_do_lote_aceita_ids_repetidos_na_query_e_limita_o_total(self):
+        app = FastAPI()
+        app.include_router(ordens_servico.router, prefix="/api/v1/ordens-servico")
+
+        def db_isolado():
+            with self.Session() as db:
+                yield db
+
+        app.dependency_overrides[ordens_servico.get_db] = db_isolado
+        app.dependency_overrides[ordens_servico.get_current_user] = lambda: self.user
+        with TestClient(app) as client:
+            url = "/api/v1/ordens-servico"
+            params = [("os_ids", self.ids[0]), ("os_ids", self.ids[-1]), ("status", "Pendente")]
+            resposta = client.get(url, params=params)
+            self.assertEqual(resposta.status_code, 200, resposta.text)
+            self.assertEqual(resposta.json()["total"], 2)
+            self.assertEqual({item["id"] for item in resposta.json()["items"]}, {self.ids[0], self.ids[-1]})
+            for invalid_ids in [[0], list(range(1, 202))]:
+                with self.subTest(ids=len(invalid_ids)):
+                    rejeitada = client.get(url, params=[("os_ids", item) for item in invalid_ids])
+                    self.assertEqual(rejeitada.status_code, 422)
 
 if __name__ == "__main__":
     unittest.main()
