@@ -47,7 +47,7 @@ describe("referências diastólicas no visualizador do laudo salvo", () => {
       paciente: { id: 8, nome: "QA FICTÍCIO", especie: "Canina", peso_kg: 10 },
     } });
     render(<VisualizarLaudoPage />);
-    expect(await screen.findByRole("button", { name: "Suspender download", exact: true })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: /^Suspender download$/ })).toBeEnabled();
     expect(mocks.put).not.toHaveBeenCalled();
   });
 
