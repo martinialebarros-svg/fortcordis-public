@@ -66,3 +66,33 @@ As evidências de instalação, homologação e restauração serão registradas
 ## Ajuste de sincronização do teste na CI
 
 A primeira CI da PR pública #9 teve 2.697 testes aprovados e uma falha na recuperação de revisão em memória: o nome do arquivo e a transcrição já estavam restaurados, mas o link ainda não estava presente na consulta síncrona, compatível com a criação da URL em um efeito posterior do componente filho. Vinte execuções focais locais não reproduziram a falha. O teste passou a aguardar o próprio link e a conferir seu `href` e o objeto `File` original; as demais verificações foram mantidas. O componente de produção não foi alterado para contornar o teste. Após o ajuste, 91 testes de sete arquivos do assistente/áudio e o lint focal passaram. A execução completa da CI deve passar novamente antes de qualquer instalação.
+
+## Homologação e produção verificadas em 15/11/2026
+
+Esta seção atualiza as pendências de instalação descritas acima. A candidata pública foi homologada e promovida; a restauração de Stage está preparada e ainda depende de instalação e verificação final.
+
+- Stage: PR #9, SHA `5713379f57a5263c087e25565e66c41e46085f56`, [workflow completo aprovado](https://github.com/martinialebarros-svg/fortcordis-public/actions/runs/43709264667), com job de instalação executado. CI completa: 2.698 testes Vitest e 23 Node aprovados.
+- Produção: promoção protegida PR #10, SHA `e37c190d2585a8469bca4a26a3a2c02b2431ffa0`, [workflow completo aprovado](https://github.com/martinialebarros-svg/fortcordis-public/actions/runs/43711076744), com merge commit e política `[preserve-nginx]` confirmada (`enable_http2=0`, `reload=0`).
+- Em cada instalação: 60 testes backend e seis contratos HTTP fictícios aprovados sobre as fontes instaladas, em SQLite descartável e com rede bloqueada. Acesso autenticado 200, anônimo 401, identidade vinculada, 18 arquivos servidos com hash igual ao build e quatro marcadores da entrega conferidos.
+- Chrome autenticado em Stage: Consulta, Exames, Prescrição e Documentos carregaram. Espera local observada nas três áreas mantendo cabeçalho e navegação. Console sem erros. Os fingerprints da ficha fictícia, paciente, tutor e auditoria não mudaram antes/depois; não houve edição clínica.
+- Gates operacionais: canary autenticado e teste de backup/restauração aprovados. Agenda 5/5 em ambos; p95 de 281,11 ms em Stage e 459,77 ms em produção, abaixo de 1.200 ms.
+- Hashes dos arquivos de runtime, SQLite local, configuração fora da identidade da publicação e Nginx iguais ao preflight em ambos os ambientes. IA desativada em Stage; configuração ativa da produção preservada. Sessão temporária de verificação em produção encerrada.
+- Nenhuma nova transcrição/análise paga, envio de arquivo clínico, WhatsApp ou edição de prontuário real. Esta verificação não certifica fidelidade clínica nem implementa as propostas futuras de redução de passos.
+
+## Restauração preparada; instalação final pendente
+
+A árvore compartilhada preserva os 86 caminhos paralelos e os 1.430 caminhos existentes fora dos 14 caminhos da entrega, comparados por modo/tipo/blob. Os outros 12 caminhos próprios devem ser idênticos à produção; somente spec/verify recebem evidências e o contrato de restauração. O diff contra a base compartilhada permanece restrito aos 14 caminhos próprios.
+
+Antes de declarar o ciclo encerrado, exigir todos os checks da PR de restauração, workflow completo com instalação executada, SHA/árvore instalados, teste de acesso autenticado, código e arquivos servidos, configuração/runtime, saúde, zero lote ativo e nova prova de igualdade dos caminhos preservados. O resultado final será anexado à PR de restauração e às evidências operacionais privadas, sem registrar dados clínicos no repositório público.
+
+## Homologação dos três atalhos em Stage em 15/11/2026
+
+A PR #15 instalou `a9ded2ea52f8814a0a4ec504b83617fd52bada80`. O [workflow de Stage](https://github.com/martinialebarros-svg/fortcordis-public/actions/runs/43734112360) terminou com sucesso. No Chrome autenticado, uma gravação WAV original entrou na seleção ao lado de um PDF fictício e foi retirada sem remover o exame. Os atalhos de pendências focaram diagnóstico, prognóstico e anamnese ao voltar de Documentos. A ficha fictícia, paciente, tutor e auditoria permaneceram iguais.
+
+A incorporação usou uma réplica com os mesmos bytes do frontend instalado e uma API totalmente fictícia. Um trecho e um achado aprovados foram aplicados em uma ação, com preservação das anotações anteriores e origem do exame. A observação sem aprovação não entrou. Uma consulta revalidou o conjunto antes da inclusão. Os 43 assets públicos conferidos correspondiam à instalação e 160 testes fixados às fontes desse SHA passaram. O CSP da réplica bloqueou o service worker por desenho. A interface real em Stage não apresentou erros no console.
+
+Canary autenticado e teste de backup/restauração aprovados. Agenda 5/5 com p95 de 308,99 ms, abaixo de 1.200 ms. A IA de Stage permaneceu desativada, sem envio a provedor ou alteração clínica real.
+
+## Provas da restauração dos três atalhos
+
+A árvore preparada preserva 59 caminhos paralelos exclusivos e 1.430 caminhos existentes fora do escopo. Os outros 19 caminhos próprios são idênticos à árvore promovida pela [PR #16](https://github.com/martinialebarros-svg/fortcordis-public/pull/16). Nos dois documentos compartilhados, o histórico da base de Stage permanece integral. A árvore preparada não prova instalação. As verificações finais de produção e da restauração serão registradas nas respectivas PRs depois da execução, incluindo SHA, workflow, saúde, runtime e igualdade dos arquivos no servidor.
