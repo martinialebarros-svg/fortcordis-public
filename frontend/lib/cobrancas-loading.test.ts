@@ -21,6 +21,21 @@ describe("complete billing recipient loading", () => {
   it("rejects changed row values despite unchanged summaries", async () => {
     await expect(loadCompleteBillingGroup(group, async (skip) => ({ ...page(skip), items: page(skip).items.map((item) => ({ ...item, valor_final: 20 })) }), new AbortController().signal)).rejects.toThrow("valores");
   });
+  it("compares pending balances instead of original amounts after a partial receipt", async () => {
+    const partialOrders = [
+      { id: 1, status: "Pendente", valor_final: 400, valor_em_aberto: 100 },
+      { id: 2, status: "Pendente", valor_final: 600 },
+      { id: 3, status: "Pago", valor_final: 250, valor_em_aberto: 0 },
+    ];
+    const partialGroup = { ...group, quantidade_total: 3, quantidade_os: 2, total_pendente: 700 };
+    const load = (items: Array<(typeof partialOrders)[number]>) => loadCompleteBillingGroup(
+      partialGroup,
+      async () => ({ total: 3, items, resumo: { pendentes: 2, valor_pendente: 700 } }),
+      new AbortController().signal,
+    );
+    expect(await load(partialOrders)).toEqual(partialOrders);
+    await expect(load([{ ...partialOrders[0], valor_em_aberto: 90 }, ...partialOrders.slice(1)])).rejects.toThrow("valores");
+  });
   it("suppresses completion after cancellation", async () => {
     const controller = new AbortController();
     await expect(loadCompleteBillingGroup(group, async (skip) => { controller.abort(); return page(skip); }, controller.signal)).rejects.toThrow("cancelado");

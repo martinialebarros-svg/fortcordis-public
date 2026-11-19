@@ -8,6 +8,8 @@ O Financeiro exigia que o total informado coincidisse exatamente com a soma das 
 
 Permitir que o usuario registre o valor efetivamente recebido, mantenha o restante em aberto e consiga completar ou desfazer o recebimento depois, sem alterar o valor original das OS e sem criar credito indevido.
 
+Em Cobranças, abrir o recebimento em lote após uma única consulta de conferência e permitir reabrir os detalhes da clínica após a baixa parcial, com o saldo atualizado.
+
 ## Fora do escopo
 
 - baixa parcial de dividas de destinatarios diferentes no mesmo lote;

@@ -76,6 +76,15 @@ class OrdensBuscaResumoTest(unittest.TestCase):
         self.assertEqual(result["items"][0]["id"], 1)
         self.assertEqual(self.query(os_id=1, status="Pendente")["total"], 0)
 
+    def test_bulk_ids_select_only_requested_orders_and_respect_other_filters(self):
+        ids = [1, 3, 505, 800]
+        result = self.query(os_ids=ids, status="Pendente", limit=len(ids))
+        self.assertEqual(result["total"], 2)
+        self.assertEqual([row["id"] for row in result["items"]], [505, 3])
+        one = self.query(os_ids=ids, os_id=1)
+        self.assertEqual(one["total"], 1)
+        self.assertEqual(one["items"][0]["id"], 1)
+
     def test_search_full_base_and_all_visible_fields(self):
         for term in ("100%_\\", "animal TESTE", "pessoa teste", "unidade teste", "servico teste"):
             with self.subTest(term=term):

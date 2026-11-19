@@ -15,6 +15,29 @@ function fingerprint(value: OrderSnapshot) {
   return JSON.stringify(fields.map((key) => record[key] ?? null));
 }
 
+function assertSameOrder(before: OrderSnapshot, current: OrderSnapshot | undefined, status: string): void {
+  if (!current || current.status !== status || fingerprint(current) !== fingerprint(before)) {
+    throw new Error("Uma OS mudou desde a selecao. Limpe a selecao, atualize a lista e confira novamente.");
+  }
+}
+
+/** The bulk read must return the entire selected set with unchanged order data. */
+export function validateOrderSelectionBatch<T extends OrderSnapshot>(
+  ids: number[], snapshots: T[], status: string, currentOrders: T[],
+): void {
+  if (!ids.length || new Set(ids).size !== ids.length) throw new Error("Selecao de OS invalida.");
+  const expected = new Map(snapshots.map((os) => [os.id, os]));
+  const current = new Map(currentOrders.map((os) => [os.id, os]));
+  if (currentOrders.length !== ids.length || current.size !== ids.length) {
+    throw new Error("Uma OS mudou desde a selecao. Limpe a selecao, atualize a lista e confira novamente.");
+  }
+  for (const id of ids) {
+    const before = expected.get(id);
+    if (!before || before.status !== status) throw new Error("Selecao de OS mudou. Limpe a selecao e confira novamente.");
+    assertSameOrder(before, current.get(id), status);
+  }
+}
+
 /** Read-only, bounded concurrency. Any missing/changed item invalidates the entire selection. */
 export async function validateOrderSelection<T extends OrderSnapshot>(
   ids: number[], snapshots: T[], status: string, read: (id: number) => Promise<T>
@@ -25,10 +48,7 @@ export async function validateOrderSelection<T extends OrderSnapshot>(
     await Promise.all(ids.slice(start, start + 5).map(async (id) => {
       const before = expected.get(id);
       if (!before || before.status !== status) throw new Error("Selecao de OS mudou. Limpe a selecao e confira novamente.");
-      const current = await read(id);
-      if (current.status !== status || fingerprint(current) !== fingerprint(before)) {
-        throw new Error("Uma OS mudou desde a selecao. Limpe a selecao, atualize a lista e confira novamente.");
-      }
+      assertSameOrder(before, await read(id), status);
     }));
   }
 }
