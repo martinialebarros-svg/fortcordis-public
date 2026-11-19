@@ -17,6 +17,26 @@ export interface FonteLote {
   erro: string | null;
 }
 
+interface RevisaoFonteLote {
+  arquivo_id: string;
+  nome: string;
+  paciente_nome: string | null;
+  especie: string | null;
+  data_exame?: string | null;
+  identidade: "compativel" | "divergente" | "nao_confirmada";
+  motivo: string;
+  elegivel: boolean;
+  impedimento: string | null;
+  confirmada: boolean;
+  registrado_em: string | null;
+}
+
+interface RevisaoLote {
+  token: string;
+  pode_revisar: boolean;
+  fontes: RevisaoFonteLote[];
+}
+
 export interface AssistenteLote {
   id: string;
   atendimento_id: number;
@@ -28,22 +48,13 @@ export interface AssistenteLote {
   transcricao: string | null;
   modo?: ModoAssistenteLote;
   revisoes_transcricao?: AssistenteTranscricaoFonteRevisao[];
-  revisao_raca?: {
-    token: string;
-    pode_revisar: boolean;
+  revisao_raca?: RevisaoLote & {
     raca_cadastrada: string | null;
-    fontes: Array<{
-      arquivo_id: string;
-      nome: string;
-      paciente_nome: string | null;
-      especie: string | null;
-      identidade: "compativel" | "divergente" | "nao_confirmada";
-      motivo: string;
-      elegivel: boolean;
-      impedimento: string | null;
-      confirmada: boolean;
-      registrado_em: string | null;
-    }>;
+  };
+  revisao_identidade?: RevisaoLote & {
+    contexto_mudou: boolean;
+    paciente_nome: string | null;
+    paciente_idade: string | null;
   };
 }
 

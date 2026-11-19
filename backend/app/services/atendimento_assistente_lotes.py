@@ -26,7 +26,8 @@ from app.schemas.atendimento_assistente_lote import LoteEntrada
 from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_PART_BYTES, MAX_EXAMES
 from app.services.atendimento_assistente import AssistenteError, require_enabled, validar_audio, validar_arquivo
 from app.services.atendimento_assistente_identidade import (
-    DECISAO_RACA_PENDENTE, impedimento_revisao_raca, revisao_raca_aplicavel,
+    DECISAO_NOME_IDADE, DECISAO_RACA_PENDENTE, impedimento_revisao_identidade,
+    impedimento_revisao_raca, revisao_identidade_aplicavel, revisao_raca_aplicavel,
 )
 
 logger = logging.getLogger(__name__)
@@ -119,7 +120,9 @@ def _review_state(job):
         if len(job.revisoes_identidade_json) > 500_000:
             raise ValueError()
         state = json.loads(job.revisoes_identidade_json)
-        if (not isinstance(state, dict) or set(state) != {"version", "revisoes", "solicitacoes"}
+        if (not isinstance(state, dict)
+                or set(state) - {"contexto_revalidado"} != {"version", "revisoes", "solicitacoes"}
+                or type(state.get("contexto_revalidado", False)) is not bool
                 or state["version"] != 1 or not isinstance(state["revisoes"], dict)
                 or len(state["revisoes"]) > MAX_EXAMES or not isinstance(state["solicitacoes"], list)
                 or len(state["solicitacoes"]) > MAX_REVIEW_REQUESTS
@@ -158,7 +161,7 @@ def _review_matches(job, item, review, context):
     return bool(source and isinstance(review, dict)
                 and type(review.get("usuario_id")) is int and review["usuario_id"] == job.usuario_id
                 and all(review.get(key) == value for key, value in _review_binding(job, item).items())
-                and revisao_raca_aplicavel(source, context, review))
+                and (revisao_raca_aplicavel(source, context, review) or revisao_identidade_aplicavel(source, context, review)))
 
 
 def _authorize_review_actor(db, job, actor):
@@ -166,7 +169,7 @@ def _authorize_review_actor(db, job, actor):
         raise HTTPException(404, "Conjunto não encontrado.")
     user = db.get(User, job.usuario_id)
     if not user or user.ativo != 1 or not (user.tem_papel("admin") or user.tem_papel("medico")):
-        raise HTTPException(403, "A revisão de raça exige um médico-veterinário autorizado.")
+        raise HTTPException(403, "A revisão de identificação exige um médico-veterinário autorizado.")
     # Keep the application permission matrix authoritative in addition to role.
     _authorize_actor(db, job)
     return user
@@ -183,9 +186,10 @@ def _review_actor_allowed(db, job, actor):
         return False
 
 
-def _review_token(job, files):
+def _review_token(job, files, *, current_context=None):
     return _digest(_json({
         "lote_id": job.id, "status": job.status, "contexto": _digest(job.context_json),
+        **({"contexto_atual": _digest(_json(current_context))} if current_context is not None else {}),
         "resultado": _digest(job.resultado_json), "revisoes": _digest(job.revisoes_identidade_json),
         "fontes": [{"id": item.id, "nome": item.nome, "tipo": item.tipo, "status": item.status,
                     "sha256": item.sha256, "resultado": _digest(item.resultado_json)} for item in files],
@@ -220,24 +224,29 @@ def _reviews_for_synthesis(db, job, files=None):
     return result
 
 
-def _has_unreviewed_identity(files, reviews, context):
+def _identity_requires_review(source, context):
+    return source["identidade"] != "compativel" or impedimento_revisao_raca(source, context) is not None
+
+
+def _has_unreviewed_identity(files, reviews, context, *, revalidated=False):
     for item in files:
         if item.tipo != "exame":
             continue
         source = _source_identity(item)
         if not source:
             return True
-        if impedimento_revisao_raca(source, context) is not None:
-            return True
-        if source["identidade"] != "compativel" and not revisao_raca_aplicavel(source, context, reviews.get(source["arquivo"])):
+        if source["arquivo"] in reviews:
+            continue
+        if revalidated or _identity_requires_review(source, context):
             return True
     return False
 
 
-def _serialize_race_review(db, job, files, actor):
-    context = json.loads(job.context_json)
+def _serialize_identity_reviews(db, job, files, actor):
+    context, mode = _stored_context(job)
     allowed = _review_actor_allowed(db, job, actor)
     valid_snapshot = job.expires_at > datetime.utcnow()
+    current = None
     invalid_review = None
     try:
         state = _review_state(job)
@@ -245,7 +254,10 @@ def _serialize_race_review(db, job, files, actor):
         state, valid_snapshot, invalid_review = {"revisoes": {}}, False, exc.detail
     if (allowed or state["revisoes"]) and valid_snapshot:
         try:
-            _validate_snapshot(db, job)
+            live = _validate_patient(db, job)
+            if mode == "analise" and live != context:
+                current = live
+                raise HTTPException(409, "O contexto da revisão mudou. Confira novamente a identificação.")
         except HTTPException as exc:
             valid_snapshot, invalid_review = False, exc.detail
     if state["revisoes"]:
@@ -255,7 +267,9 @@ def _serialize_race_review(db, job, files, actor):
             _reviews_for_synthesis(db, job, files)
         except HTTPException as exc:
             invalid_review = exc.detail
-    sources = []
+    race_sources, identity_sources = [], []
+    identity_context = current if current is not None else context
+    revalidated = state.get("contexto_revalidado", False)
     for item in files:
         if item.tipo != "exame":
             continue
@@ -267,28 +281,53 @@ def _serialize_race_review(db, job, files, actor):
                          and _review_matches(job, item, review, context))
         if review and not confirmed:
             impediment = "A fonte ou o contexto da revisão mudou. Confira novamente a identificação."
-        sources.append({"arquivo_id": item.id, "nome": item.nome,
-                        "paciente_nome": source.get("paciente_nome") if source else None,
-                        "especie": source.get("especie") if source else None,
-                        "identidade": source.get("identidade") if source else "nao_confirmada",
-                        "motivo": source.get("motivo", "") if source else "",
-                        "elegivel": source is not None and impediment is None,
-                        "impedimento": impediment, "confirmada": confirmed,
-                        "registrado_em": review["registrado_em"] if confirmed else None})
-    result = {"token": _review_token(job, files),
-            "pode_revisar": bool(allowed and valid_snapshot and job.status in {"completed", "failed"}
-                                 and files and all(item.status == "completed" for item in files)),
-            "raca_cadastrada": context.get("paciente", {}).get("raca"), "fontes": sources}
-    return result, invalid_review
+        common = {"arquivo_id": item.id, "nome": item.nome,
+                  "paciente_nome": source.get("paciente_nome") if source else None,
+                  "especie": source.get("especie") if source else None,
+                  "identidade": source["identidade"] if source else "nao_confirmada",
+                  "motivo": source.get("motivo", "") if source else ""}
+        race_confirmed = confirmed and review["decisao"] == DECISAO_RACA_PENDENTE
+        identity_confirmed = confirmed and review["decisao"] == DECISAO_NOME_IDADE
+        race_sources.append({**common, "elegivel": impediment is None and not identity_confirmed,
+                             "impedimento": impediment, "confirmada": race_confirmed,
+                             "registrado_em": review["registrado_em"] if race_confirmed else None})
+        if source:
+            identity_impediment = impedimento_revisao_identidade(source, identity_context)
+            identity_pending = current is not None or revalidated or _identity_requires_review(source, identity_context)
+            if identity_confirmed or (identity_pending and not race_confirmed):
+                identity_sources.append({**common, "data_exame": source.get("data_exame"),
+                    "elegivel": identity_impediment is None, "impedimento": identity_impediment,
+                    "confirmada": identity_confirmed,
+                    "registrado_em": review["registrado_em"] if identity_confirmed else None})
+    ready = bool(allowed and job.status in {"completed", "failed"} and files
+                 and all(item.status == "completed" for item in files))
+    token = _review_token(job, files)
+    race = {"token": token, "pode_revisar": ready and valid_snapshot,
+            "raca_cadastrada": context.get("paciente", {}).get("raca"), "fontes": race_sources}
+    patient = identity_context.get("paciente", {})
+    identity = {"token": _review_token(job, files, current_context=current) if current is not None else token,
+                "pode_revisar": ready and (current is not None or (valid_snapshot and not invalid_review)),
+                "contexto_mudou": current is not None, "paciente_nome": patient.get("nome"),
+                "paciente_idade": patient.get("idade"), "fontes": identity_sources}
+    return race, identity, invalid_review
 
 
 def review_race(db, job, payload, actor, *, revoke=False):
-    """Atomically record a human decision and schedule synthesis only, if ready."""
+    return review_identity(db, job, payload, actor, decision=DECISAO_RACA_PENDENTE, revoke=revoke)
+
+
+def review_identity(db, job, payload, actor, *, decision=DECISAO_NOME_IDADE, revoke=False):
+    """Record a decision and queue synthesis only after resolving every source."""
     require_enabled()
     _authorize_review_actor(db, job, actor)
     if job.expires_at <= datetime.utcnow():
         raise HTTPException(410, "O conjunto expirou após 24 horas. Carregue as fontes novamente.")
-    _validate_snapshot(db, job)
+    current = _validate_patient(db, job)
+    context, mode = _stored_context(job)
+    updating = mode == "analise" and current != context
+    confirm_identity = decision == DECISAO_NOME_IDADE and not revoke
+    if not confirm_identity:
+        _validate_snapshot(db, job)
     state = _review_state(job)
     selection = sorted(str(value) for value in payload.arquivo_ids)
     action = "revogar" if revoke else "confirmar"
@@ -301,42 +340,61 @@ def review_race(db, job, payload, actor, *, revoke=False):
         return job, None
     if len(state["solicitacoes"]) >= MAX_REVIEW_REQUESTS:
         raise HTTPException(409, "O limite de revisões deste conjunto foi atingido. Prepare um novo conjunto.")
+    if confirm_identity and updating != payload.atualizar_contexto:
+        raise HTTPException(409, "O contexto da revisão mudou. Confira novamente a identificação.")
     files = _files(db, job.id)
     if job.status not in {"completed", "failed"} or not files or any(item.status != "completed" for item in files):
-        raise HTTPException(409, "Aguarde a conclusão de todos os arquivos antes de revisar a raça.")
-    if payload.revisao_token != _review_token(job, files):
+        raise HTTPException(409, "Aguarde a conclusão de todos os arquivos antes de revisar a identificação.")
+    if payload.revisao_token != _review_token(job, files, current_context=current if updating else None):
         raise HTTPException(409, "A revisão mudou em outra tela. Consulte o estado atual e confira novamente.")
     by_id = {item.id: item for item in files}
-    context = json.loads(job.context_json)
+    previous_context = _digest(job.context_json)
+    if updating:
+        # Current patient ID, name and species were checked against the saved lot.
+        # Never carry confirmations or automatic matches over to the new context.
+        context = current
+        job.context_json = _job_context(current, mode)
+        state["revisoes"].clear()
+        state["contexto_revalidado"] = True
     now = datetime.utcnow().isoformat() + "Z"
     selected, changed = {}, False
+    review_impediment = impedimento_revisao_identidade if decision == DECISAO_NOME_IDADE else impedimento_revisao_raca
     for file_id in selection:
         item = by_id.get(file_id)
         source = _source_identity(item) if item else None
         if not item or not source or not _source_bytes_intact(item):
             raise HTTPException(409, "O documento selecionado não está disponível para esta revisão.")
-        impediment = impedimento_revisao_raca(source, context)
+        impediment = review_impediment(source, context)
         if impediment is not None:
             raise HTTPException(409, impediment)
         binding = _review_binding(job, item)
         selected[file_id] = binding
+        previous_review = state["revisoes"].get(file_id)
+        if previous_review and previous_review.get("decisao") != decision:
+            raise HTTPException(409, "Retire a confirmação anterior deste documento antes de registrar outra.")
         if revoke:
-            if file_id not in state["revisoes"]:
+            if not previous_review:
                 raise HTTPException(409, "Este documento não tem uma confirmação ativa para desfazer.")
             del state["revisoes"][file_id]
             changed = True
-        elif not _review_matches(job, item, state["revisoes"].get(file_id), context):
-            state["revisoes"][file_id] = {"decisao": DECISAO_RACA_PENDENTE,
+        elif not _review_matches(job, item, previous_review, context):
+            if confirm_identity and not state.get("contexto_revalidado") and not _identity_requires_review(source, context):
+                raise HTTPException(409, "A identificação deste documento já é compatível.")
+            state["revisoes"][file_id] = {"decisao": decision,
                 "usuario_id": actor.id, "registrado_em": now, **binding}
             changed = True
     event = {"request_id": request_id, "payload_sha256": fingerprint, "acao": action,
              "usuario_id": actor.id, "registrado_em": now, "fontes": selected}
+    if decision == DECISAO_NOME_IDADE:
+        event["decisao"] = decision
+    if updating:
+        event["contexto_anterior_sha256"] = previous_context
     state["solicitacoes"].append(event)
     job.revisoes_identidade_json = _json(state)
     if changed:
         job.resultado_json, job.lease_token, job.lease_until = None, None, None
         reviews = _reviews_for_synthesis(db, job, files)
-        if revoke or _has_unreviewed_identity(files, reviews, context):
+        if revoke or _has_unreviewed_identity(files, reviews, context, revalidated=state.get("contexto_revalidado", False)):
             job.status, job.erro = "failed", "Há identificações pendentes. Confira os documentos antes de continuar a análise."
         else:
             job.status, job.erro = "queued", None
@@ -346,7 +404,7 @@ def review_race(db, job, payload, actor, *, revoke=False):
 
 def serialize(db, job, actor=None):
     files = _files(db, job.id)
-    race_review, invalid_review = _serialize_race_review(db, job, files, actor)
+    race_review, identity_review, invalid_review = _serialize_identity_reviews(db, job, files, actor)
     texts = [job.transcricao] if job.status != "deleting" else []
     transcript_reviews = []
     for item in files:
@@ -369,6 +427,7 @@ def serialize(db, job, actor=None):
         "modo": _stored_context(job)[1],
         "revisoes_transcricao": transcript_reviews,
         "revisao_raca": race_review,
+        "revisao_identidade": identity_review,
     }
 
 
@@ -531,7 +590,8 @@ def start_job(db, job, *, retry=False):
         raise HTTPException(409, "O atendimento salvo mudou. Prepare um novo conjunto com o contexto atualizado.")
     if job.revisoes_identidade_json:
         reviews = _reviews_for_synthesis(db, job, files)
-        if reviews and _has_unreviewed_identity(files, reviews, context):
+        revalidated = _review_state(job).get("contexto_revalidado", False)
+        if (reviews or revalidated) and _has_unreviewed_identity(files, reviews, context, revalidated=revalidated):
             raise HTTPException(409, "Há identificações pendentes. Confira os documentos antes de continuar a análise.")
     if not retry:
         job.context_json = _job_context(context, mode)
@@ -681,14 +741,20 @@ def process_job(job_id, token):
             _validate_snapshot(db, job)
             # A human review must remain bound to the original source and context.
             reviews = _reviews_for_synthesis(db, job, files)
+            if _review_state(job).get("contexto_revalidado") and _has_unreviewed_identity(files, reviews, context, revalidated=True):
+                raise HTTPException(409, "Há exames aguardando conferência no contexto atualizado.")
             review_version = job.revisoes_identidade_json
             db.rollback()
         if len(transcript) > 80000:
             raise AssistenteError("A transcrição conjunta excede 80.000 caracteres. Prepare um conjunto menor.")
         require_enabled()
         arguments = dict(transcript=transcript, context=context, exames=exames, user_id=user_id)
-        if reviews:
-            arguments["revisoes_raca"] = reviews
+        race_reviews = {name: review for name, review in reviews.items() if review["decisao"] == DECISAO_RACA_PENDENTE}
+        identity_reviews = {name: review for name, review in reviews.items() if review["decisao"] == DECISAO_NOME_IDADE}
+        if race_reviews:
+            arguments["revisoes_raca"] = race_reviews
+        if identity_reviews:
+            arguments["revisoes_identidade"] = identity_reviews
         result = sintetizar_lote(**arguments)
         result["avisos"] = list(dict.fromkeys([*result.get("avisos", []), *audio_notices]))
         with SessionLocal() as db:

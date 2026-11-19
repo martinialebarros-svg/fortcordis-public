@@ -41,7 +41,7 @@ class LoteEntrada(BaseModel):
         return self
 
 
-class RevisaoRacaBase(BaseModel):
+class RevisaoFonteBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_id: UUID
     revisao_token: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -54,11 +54,23 @@ class RevisaoRacaBase(BaseModel):
         return self
 
 
-class RevisaoRacaEntrada(RevisaoRacaBase):
+class RevisaoRacaEntrada(RevisaoFonteBase):
     confirmo_mesmo_paciente: Literal[True]
     confirmo_apenas_raca: Literal[True]
     consentimento: Literal[True]
 
 
-class RevogacaoRevisaoRacaEntrada(RevisaoRacaBase):
+class RevogacaoRevisaoRacaEntrada(RevisaoFonteBase):
     pass
+
+
+class RevisaoIdentidadeEntrada(RevisaoFonteBase):
+    arquivo_ids: list[UUID] = Field(min_length=1, max_length=1)
+    confirmo_mesmo_paciente: Literal[True]
+    confirmo_apenas_nome_idade: Literal[True]
+    consentimento: Literal[True]
+    atualizar_contexto: bool
+
+
+class RevogacaoRevisaoIdentidadeEntrada(RevisaoFonteBase):
+    arquivo_ids: list[UUID] = Field(min_length=1, max_length=1)

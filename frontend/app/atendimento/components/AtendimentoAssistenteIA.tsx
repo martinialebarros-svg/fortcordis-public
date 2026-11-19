@@ -9,7 +9,7 @@ import { validarArquivosLote, type AssistenteLote } from "@/lib/atendimento-assi
 import { extractApiErrorMessageSync } from "@/lib/api-error";
 import {
   ASSISTENTE_AUDIO_ACCEPT, ASSISTENTE_AUDIO_MAX_BYTES, ASSISTENTE_CAMPO_LABELS, ASSISTENTE_FILE_ACCEPT, ASSISTENTE_LOTE_AUDIO_MAX_BYTES,
-  podeIncorporarAchado, podeIncorporarCampo, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarAudioParaTranscricao, type AssistenteCampoRevisado, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
+  podeIncorporarAchado, podeIncorporarCampo, temRevisaoIdentidadeConfirmada, temRevisaoRacaConfirmada, textoAchadoParaRevisao, validarAudioParaTranscricao, type AssistenteCampoRevisado, type AssistenteIAResultado, type AssistenteIAStatus, type AssistenteTranscricaoFonteRevisao, type AssistenteTranscricaoResultado,
 } from "@/lib/atendimento-assistente-ia";
 import { useAtendimentoAudio } from "@/lib/use-atendimento-audio";
 import { guardarRevisaoAssistenteMemoria, lerRascunhoAssistenteMemoria, type AssistenteMemoryReview } from "@/lib/atendimento-assistente-memory";
@@ -493,10 +493,18 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
 
     {resultado ? <div className="mt-6 space-y-4 border-t border-slate-200 pt-5">
       <h4 className="font-semibold text-slate-900">3. Revisão do veterinário</h4>
-      {resultado.revisao_desatualizada ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Esta revisão está desatualizada. Os textos editados foram mantidos como referência, com inclusão desabilitada. Consulte o progresso e abra a nova revisão do conjunto antes de continuar.</p> : resultado.bloqueado_integracao ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">Integração bloqueada: há identificação ausente ou divergente nas fontes. Se a única divergência for a raça, confira os originais e registre sua decisão no conjunto. As demais divergências precisam ser esclarecidas antes de incorporar informações.</p> : null}
+      {resultado.revisao_desatualizada ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Esta revisão está desatualizada. Os textos editados foram mantidos como referência, com inclusão desabilitada. Consulte o progresso e abra a nova revisão do conjunto antes de continuar.</p> : resultado.bloqueado_integracao ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">Há pendências de identificação. Confira os originais e registre sua decisão no conjunto para as divergências de nome, idade ou raça que puder esclarecer.</p> : null}
       {resultado.raca_pendente_revisao ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Raça pendente de revisão veterinária. A análise considera a raça não confirmada; o cadastro e a identificação original dos exames permanecem preservados.</p> : null}
       {resultado.avisos.map((aviso, index) => <p key={index} className="text-sm text-amber-800">{aviso}</p>)}
-      {resultado.fontes?.length ? <div className="rounded-xl bg-slate-50 p-4"><h5 className="font-medium">Identificação das fontes</h5><ul className="mt-2 space-y-2 text-sm">{resultado.fontes.map((fonte, index) => <li key={index}><strong className="break-all">{fonte.arquivo}</strong>: {fonte.paciente_nome || "Paciente não identificado"} · {fonte.especie || "Espécie ausente"} · {fonte.data_exame || "Data ausente"}<p className={fonte.identidade === "compativel" ? "text-slate-600" : "text-amber-800"}>Leitura original: {fonte.motivo}</p>{temRevisaoRacaConfirmada(fonte) ? <p className="mt-1 font-medium text-teal-900">Decisão veterinária: documento do mesmo paciente, com raça pendente de revisão. Registrada em {new Date(fonte.revisao_raca!.registrado_em).toLocaleString("pt-BR")}.</p> : null}</li>)}</ul></div> : null}
+      {resultado.fontes?.length ? <div className="rounded-xl bg-slate-50 p-4">
+        <h5 className="font-medium">Identificação das fontes</h5>
+        <ul className="mt-2 space-y-2 text-sm">{resultado.fontes.map((fonte) => <li key={fonte.arquivo}>
+          <strong className="break-all">{fonte.arquivo}</strong> · {fonte.paciente_nome || "Paciente não identificado"} · {fonte.especie || "Espécie ausente"} · {fonte.data_exame || "Data ausente"}
+          <p className={fonte.identidade === "compativel" ? "text-slate-600" : "text-amber-800"}>Leitura original: {fonte.motivo}</p>
+          {temRevisaoRacaConfirmada(fonte) ? <p className="mt-1 font-medium text-teal-900">Documento confirmado pelo veterinário em {new Date(fonte.revisao_raca!.registrado_em).toLocaleString("pt-BR")}. Raça pendente de revisão.</p> : null}
+          {temRevisaoIdentidadeConfirmada(fonte) ? <p className="mt-1 font-medium text-teal-900">Vínculo com o paciente confirmado pelo veterinário em {new Date(fonte.revisao_identidade!.registrado_em).toLocaleString("pt-BR")}.</p> : null}
+        </li>)}</ul>
+      </div> : null}
       {resultado.pendencias.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><h5 className="font-medium text-amber-900">Informações para confirmar</h5><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{resultado.pendencias.map((item, index) => <li key={index}>{item}</li>)}</ul></div> : null}
       {resultado.campos.length ? <div className="space-y-3"><h5 className="font-medium">Informações propostas para o atendimento</h5>{resultado.campos.map((campo, index) => <article key={index} className="rounded-xl border border-slate-200 p-4">
         <label htmlFor={`campo-ia-${atendimentoId}-${index}`} className="text-sm font-semibold">{ASSISTENTE_CAMPO_LABELS[campo.campo] || campo.campo}</label>

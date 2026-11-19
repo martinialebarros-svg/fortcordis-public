@@ -14,7 +14,7 @@ from tests.test_atendimento_assistente_lotes_postgres import database
 from tests.test_atendimento_revisao_raca import CONTEXT, create_users, seed_job, load_migration
 from app.models.atendimento_assistente_lote import AtendimentoAssistenteLote as Lote
 from app.models.user import User
-from app.schemas.atendimento_assistente_lote import RevisaoRacaEntrada, RevogacaoRevisaoRacaEntrada
+from app.schemas.atendimento_assistente_lote import RevisaoIdentidadeEntrada, RevisaoRacaEntrada, RevogacaoRevisaoRacaEntrada
 from app.services import atendimento_assistente_lotes as service
 from app.services import atendimento_assistente_lote_provider as provider
 
@@ -84,6 +84,44 @@ def test_competing_new_requests_cannot_use_one_stale_review_token(review_databas
     assert sorted(outcomes) == [200, 409]
     with sessions() as db:
         assert len(json.loads(db.get(Lote, identifier).revisoes_identidade_json)["solicitacoes"]) == 1
+
+
+def test_concurrent_identity_refresh_has_one_decision_and_requires_remaining_sources(review_database, monkeypatch):
+    _, sessions, _, identifier = review_database
+    current = copy.deepcopy(CONTEXT)
+    current["paciente"]["idade"] = "8a (estimada)"
+    monkeypatch.setattr(service, "_contexto", lambda *args: copy.deepcopy(current))
+    with sessions() as db:
+        job = service.get_job(db, 8, 3, identifier)
+        files = service._files(db, identifier)
+        reading = json.loads(files[1].resultado_json)
+        reading["analise"]["fontes"][0].update(identidade="compativel", motivo="")
+        files[1].resultado_json = service._json(reading)
+        db.commit()
+        data = RevisaoIdentidadeEntrada(
+            request_id=uuid4(), revisao_token=service._review_token(job, files, current_context=current),
+            arquivo_ids=[files[0].id], confirmo_mesmo_paciente=True, confirmo_apenas_nome_idade=True,
+            consentimento=True, atualizar_contexto=True,
+        )
+
+    barrier = Barrier(2)
+    def submit():
+        barrier.wait(timeout=5)
+        with sessions() as db:
+            job = service.get_job(db, 8, 3, identifier, lock=True)
+            updated, event = service.review_identity(db, job, data, SimpleNamespace(id=3))
+            return updated.status, event
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        outcomes = list(pool.map(lambda _: submit(), range(2)))
+    assert [status for status, _ in outcomes] == ["failed", "failed"]
+    assert sum(event is not None for _, event in outcomes) == 1
+    with sessions() as db:
+        stored = db.get(Lote, identifier)
+        assert json.loads(stored.context_json) == current
+        state = json.loads(stored.revisoes_identidade_json)
+        assert len(state["solicitacoes"]) == len(state["revisoes"]) == 1
+    assert service._claim() is None
 
 
 def test_revocation_cannot_race_an_active_synthesis(review_database, monkeypatch):
