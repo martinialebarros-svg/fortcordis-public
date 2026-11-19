@@ -11,3 +11,7 @@
 `backend/tests/test_portal_access_http_flow.py` registra o cenário de suspensão, correção e retomada. As suítes de Laudos e Portal passaram com 392 testes e os quatro testes de concorrência do editor foram executados no PostgreSQL local. O frontend passou com 2.968 testes Vitest, 23 testes Node e build de produção. O guardrail de especificações e a revisão do diff passaram.
 
 A homologação em Stage e a publicação em produção ficam para a etapa de entrega.
+
+A compatibilidade com a liberação pelo Atendimento foi coberta no cenário HTTP de suspensão e no visualizador. Passaram 20 testes do backend e 28 testes do visualizador, incluindo o caso de laudo “Finalizado” com exame publicado.
+
+A regressão do fluxo de Atendimento verifica o controle no detalhe e o ciclo completo com laudo Finalizado e exame liberado. Os dados fictícios representam essa combinação suportada.

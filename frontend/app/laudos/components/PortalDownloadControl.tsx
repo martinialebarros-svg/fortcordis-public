@@ -11,6 +11,7 @@ interface PortalDownloadControlProps {
     portal_clinica_liberado?: boolean;
     portal_veterinario_liberado?: boolean;
     portal_download_suspenso?: boolean;
+    portal_pode_suspender_download?: boolean;
   };
   onChange: (suspenso: boolean) => void;
 }
@@ -19,7 +20,7 @@ export default function PortalDownloadControl({ laudo, onChange }: PortalDownloa
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
   const suspenso = Boolean(laudo.portal_download_suspenso);
-  const liberado = laudo.status === "Liberado no portal" || laudo.portal_clinica_liberado || laudo.portal_veterinario_liberado;
+  const liberado = laudo.portal_pode_suspender_download || laudo.status === "Liberado no portal" || laudo.portal_clinica_liberado || laudo.portal_veterinario_liberado;
   if (!suspenso && !liberado) return null;
 
   async function alterarSuspensao() {

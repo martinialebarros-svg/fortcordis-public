@@ -39,6 +39,18 @@ describe("referências diastólicas no visualizador do laudo salvo", () => {
   });
   afterEach(() => localStorage.clear());
 
+  it("permite suspender o PDF liberado pelo Atendimento com status interno Finalizado", async () => {
+    mocks.get.mockResolvedValue({ data: {
+      id: 91, tipo: "ecocardiograma", titulo: "Laudo fictício", status: "Finalizado",
+      portal_pode_suspender_download: true, portal_clinica_liberado: false,
+      portal_veterinario_liberado: false, data_laudo: "2026-11-19T12:00:00",
+      paciente: { id: 8, nome: "QA FICTÍCIO", especie: "Canina", peso_kg: 10 },
+    } });
+    render(<VisualizarLaudoPage />);
+    expect(await screen.findByRole("button", { name: "Suspender download", exact: true })).toBeEnabled();
+    expect(mocks.put).not.toHaveBeenCalled();
+  });
+
   it.each(["Dog", "Cão", "cachorro"])("detalhe exibe o índice atual do PDF para espécie %s", async (species) => {
     const raw = { DIVEd: "30", DIVEd_normalizado: "0.9", VE_tecnica_relatorio: "modo_m" };
     mocks.get.mockResolvedValue({ data: { id: 91, tipo: "ecocardiograma", titulo: "QA PARIDADE CANINA", descricao: montarDescricaoEcocardiograma(raw, { valvas: "", camaras: "", funcao: "", pericardio: "", vasos: "", ad_vd: "" }), medidas: raw,
