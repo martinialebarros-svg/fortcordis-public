@@ -187,6 +187,8 @@ class PulmonaryProbabilityTest(unittest.TestCase):
     def test_pdf_authoritative_class_source_placement_and_psap_safety(self):
         measures = reviewed(IT_Vmax="3.2", PSAP="45.96", HP_probabilidade="alta")
         text = pdf_text(measures)
+        self.assertLess(text.index("Regurgitações"), text.index("Avaliação de hipertensão pulmonar"))
+        self.assertLess(text.index("Avaliação de hipertensão pulmonar"), text.index("ANÁLISE QUALITATIVA"))
         self.assertIn("Probabilidade ecocardiográfica intermediária", text)
         self.assertNotIn("Probabilidade ecocardiográfica alta", text)
         self.assertIn("PSAP estimada (gradiente IT + PAD estimada)", text)
@@ -199,7 +201,7 @@ class PulmonaryProbabilityTest(unittest.TestCase):
         self.assertIn("não aplicável à espécie", feline)
         self.assertNotIn("Probabilidade ecocardiográfica intermediária", feline)
         inactive = pdf_text({"IT_Vmax": "3.6", "PSAP": "60"})
-        self.assertNotIn("PROBABILIDADE DE HIPERTENSÃO PULMONAR", inactive)
+        self.assertNotIn("Avaliação de hipertensão pulmonar", inactive)
         self.assertNotIn("10.1111/jvim.15725", inactive)
         nonmeasurable = pdf_text(reviewed(HP_TRV="nao_mensuravel", IT_Vmax="4", IT_Grad="64", PSAP="69"))
         self.assertNotIn("IT (insuficiência tricúspide) Vmax", nonmeasurable)
@@ -230,6 +232,20 @@ class PulmonaryProbabilityTest(unittest.TestCase):
                 "conclusao": "Conclusão sintética do examinador preservada para esta verificação."}
         reader = PdfReader(BytesIO(gerar_pdf_laudo_eco(data)))
         self.assertTrue(all((page.extract_text() or "").strip() for page in reader.pages))
+
+    def test_pdf_long_hp_observations_continue_under_the_assessment_heading(self):
+        lines = [f"Linha {i:02d}. Observação sintética de hipertensão pulmonar." for i in range(1, 81)]
+        report = {
+            "paciente": {"nome": "TESTE HP SINTETICO", "especie": "Canina"},
+            "medidas": reviewed(HP_observacoes="\n".join(lines)),
+        }
+        pages = [page.extract_text() or "" for page in PdfReader(BytesIO(gerar_pdf_laudo_eco(report))).pages]
+        observation_pages = [page for page in pages if any(line in page for line in lines)]
+        self.assertGreater(len(observation_pages), 1)
+        self.assertTrue(all(page.count("Avaliação de hipertensão pulmonar") == 1 for page in observation_pages))
+        text = "\n".join(pages)
+        for line in lines:
+            self.assertEqual(text.count(line), 1, line)
 
     def test_ai_request_accepts_review_stamp_and_uses_canonical_probability(self):
         from app.schemas.ai_echo import EchoStructureRequest, EchoClinicalStructureOutput
