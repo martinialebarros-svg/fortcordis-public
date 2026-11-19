@@ -15,3 +15,15 @@ A suíte ampla de Stage identificou uma simulação de lote legado sem contexto 
 
 A homologação usou as rotas instaladas, o upload e a consulta no domínio público e um processo de Stage limitado à ficha de teste para iniciar a fila e executar o provedor. Foi mantida a configuração pública do ambiente. O observador somente leitura registrou a conclusão antes da limpeza da ficha sintética. O acompanhamento periódico do operador local encerrou por incompatibilidade do tratamento de timeout no Python 3.10.
 
+## Confirmação de identidade por exame
+
+| Critério | Status | Evidência |
+| --- | --- | --- |
+| Conferência por arquivo e retomada com os mesmos anexos | verificado localmente | Teste do painel verifica o link do original, exige declaração por arquivo, registra duas decisões e mostra o mesmo conjunto na fila. Nenhum upload é solicitado. |
+| Conjunto antigo com grafia, idade e contexto divergentes | verificado localmente | Teste da API parte de um lote salvo antes do recurso, rejeita uma versão desatualizada e exige cada confirmação. Uma síntese simulada usa o contexto atual, a transcrição arquivada e os PDFs já lidos. |
+| Conflito de espécie, origem e concorrência | verificado localmente | A API recusa espécie diferente ou identificação incompleta. Teste no PostgreSQL descartável registra uma única decisão sob repetição concorrente e bloqueia a retomada enquanto falta um documento no contexto novo. |
+| Originais preservados e decisão reversível | verificado localmente | Teste compara os hashes e resultados salvos antes e depois. O resultado continua sujeito a revisão clínica. Revogar interrompe o uso da síntese anterior. |
+| Homologação do fluxo autenticado instalado em Stage | pendente | Usar documentos e cadastro fictícios com divergências de grafia e idade em lote ainda válido, incluindo mudança no contexto. |
+
+Na validação deste incremento passaram 175 testes do backend do assistente, incluindo PostgreSQL local descartável, 2.970 testes Vitest e 23 testes Node. O lint e o build do frontend passaram. A síntese foi simulada e os testes usaram dados fictícios.
+

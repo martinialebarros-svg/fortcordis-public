@@ -57,6 +57,12 @@ export interface AssistenteTranscricaoResultado {
   revisao_transcricao?: AssistenteTranscricaoRevisao;
 }
 
+interface RevisaoVeterinaria<Decisao extends string> {
+  decisao: Decisao;
+  usuario_id: number;
+  registrado_em: string;
+}
+
 export interface AssistenteIAResultado {
   modelo: string;
   esforco: string;
@@ -66,7 +72,16 @@ export interface AssistenteIAResultado {
   // Local review marker, retained with the draft after an uncertain mutation.
   revisao_desatualizada?: boolean;
   campos: Array<{ campo: ClinicalFieldKey; texto: string; fonte: string; evidencia: string }>;
-  fontes: Array<{ arquivo: string; paciente_nome: string | null; especie: string | null; data_exame: string | null; identidade: "compativel" | "divergente" | "nao_confirmada"; motivo: string; revisao_raca?: { decisao: "mesmo_paciente_raca_pendente"; usuario_id: number; registrado_em: string } }>;
+  fontes: Array<{
+    arquivo: string;
+    paciente_nome: string | null;
+    especie: string | null;
+    data_exame: string | null;
+    identidade: "compativel" | "divergente" | "nao_confirmada";
+    motivo: string;
+    revisao_raca?: RevisaoVeterinaria<"mesmo_paciente_raca_pendente">;
+    revisao_identidade?: RevisaoVeterinaria<"mesmo_paciente_nome_idade">;
+  }>;
   achados_exames: Array<{ arquivo: string; pagina: number | null; descricao: string; evidencia: string; valor: string | null; unidade: string | null; referencia: string | null; confianca: "alta" | "media" | "baixa"; alertas: string[] }>;
   sugestoes: Array<{ titulo: string; justificativa: string; conduta: string; limitacoes: string[] }>;
   pendencias: string[];
@@ -124,15 +139,23 @@ export function podeIncorporarCampo(resultado: AssistenteIAResultado, campo: Ass
 }
 
 export function temRevisaoRacaConfirmada(fonte: AssistenteIAResultado["fontes"][number]): boolean {
-  const revisao = fonte.revisao_raca;
-  return revisao?.decisao === "mesmo_paciente_raca_pendente" && Number.isInteger(revisao.usuario_id) &&
+  return decisaoRegistrada(fonte.revisao_raca, "mesmo_paciente_raca_pendente");
+}
+
+export function temRevisaoIdentidadeConfirmada(fonte: AssistenteIAResultado["fontes"][number]): boolean {
+  return decisaoRegistrada(fonte.revisao_identidade, "mesmo_paciente_nome_idade");
+}
+
+function decisaoRegistrada(revisao: RevisaoVeterinaria<string> | undefined, decisao: string): boolean {
+  return revisao?.decisao === decisao && Number.isInteger(revisao.usuario_id) &&
     revisao.usuario_id > 0 && Boolean(revisao.registrado_em) && Number.isFinite(Date.parse(revisao.registrado_em));
 }
 
 export function podeIncorporarAchado(resultado: AssistenteIAResultado, achado: AssistenteIAResultado["achados_exames"][number]): boolean {
   return resultado.revisao_desatualizada !== true && resultado.bloqueado_integracao === false && resultado.revisao_obrigatoria === true && achado.confianca === "alta" &&
     Boolean(achado.evidencia?.trim()) && resultado.fontes.some((fonte) => fonte.arquivo === achado.arquivo &&
-      (fonte.identidade === "compativel" || (resultado.raca_pendente_revisao === true && temRevisaoRacaConfirmada(fonte))));
+      (fonte.identidade === "compativel" || temRevisaoIdentidadeConfirmada(fonte) ||
+        (resultado.raca_pendente_revisao === true && temRevisaoRacaConfirmada(fonte))));
 }
 
 export function textoAchadoParaRevisao(resultado: AssistenteIAResultado, achado: AssistenteIAResultado["achados_exames"][number]): string {

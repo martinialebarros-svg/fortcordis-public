@@ -12,7 +12,10 @@ from app.core.security import get_current_user
 from app.db.database import get_db
 from app.models.atendimento_assistente_lote import AtendimentoAssistenteLote as Lote, AtendimentoAssistenteLoteArquivo as Arquivo
 from app.models.user import User
-from app.schemas.atendimento_assistente_lote import LoteEntrada, RevisaoRacaEntrada, RevogacaoRevisaoRacaEntrada
+from app.schemas.atendimento_assistente_lote import (
+    LoteEntrada, RevisaoIdentidadeEntrada, RevisaoRacaEntrada,
+    RevogacaoRevisaoIdentidadeEntrada, RevogacaoRevisaoRacaEntrada,
+)
 from app.services import atendimento_assistente_lotes as service
 from app.services.atendimento_assistente import AssistenteError
 from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_PART_BYTES, MAX_EXAME_BYTES
@@ -116,30 +119,45 @@ def retomar_lote(atendimento_id: int, lote_id: UUID, db: Session = Depends(get_d
 
 
 
-def _review_race(atendimento_id, lote_id, payload, request, db, current_user, *, revoke=False):
+def _review(atendimento_id, lote_id, payload, request, db, current_user, *, review, action, revoke=False):
     job = service.get_job(db, atendimento_id, current_user.id, str(lote_id), lock=True)
     try:
-        job, event = service.review_race(db, job, payload, current_user, revoke=revoke)
+        job, event = review(db, job, payload, current_user, revoke=revoke)
         result = service.serialize(db, job, current_user)
         db.rollback()
     except AssistenteError as exc:
         raise HTTPException(exc.status_code, str(exc)) from exc
     if event:
-        _auditar(request, current_user, atendimento_id, "ATENDIMENTO_IA_REVISAO_RACA",
-                 {"lote_id": str(lote_id), **event})
+        _auditar(request, current_user, atendimento_id, action, {"lote_id": str(lote_id), **event})
     return result
 
 
 @router.post("/{atendimento_id}/assistente/lotes/{lote_id}/revisar-raca")
 def revisar_raca_lote(atendimento_id: int, lote_id: UUID, payload: RevisaoRacaEntrada,
                       request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return _review_race(atendimento_id, lote_id, payload, request, db, current_user)
+    return _review(atendimento_id, lote_id, payload, request, db, current_user,
+                   review=service.review_race, action="ATENDIMENTO_IA_REVISAO_RACA")
 
 
 @router.post("/{atendimento_id}/assistente/lotes/{lote_id}/revogar-revisao-raca")
 def revogar_revisao_raca_lote(atendimento_id: int, lote_id: UUID, payload: RevogacaoRevisaoRacaEntrada,
                              request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return _review_race(atendimento_id, lote_id, payload, request, db, current_user, revoke=True)
+    return _review(atendimento_id, lote_id, payload, request, db, current_user,
+                   review=service.review_race, action="ATENDIMENTO_IA_REVISAO_RACA", revoke=True)
+
+
+@router.post("/{atendimento_id}/assistente/lotes/{lote_id}/revisar-identidade")
+def revisar_identidade_lote(atendimento_id: int, lote_id: UUID, payload: RevisaoIdentidadeEntrada,
+                            request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return _review(atendimento_id, lote_id, payload, request, db, current_user,
+                   review=service.review_identity, action="ATENDIMENTO_IA_REVISAO_IDENTIDADE")
+
+
+@router.post("/{atendimento_id}/assistente/lotes/{lote_id}/revogar-revisao-identidade")
+def revogar_revisao_identidade_lote(atendimento_id: int, lote_id: UUID, payload: RevogacaoRevisaoIdentidadeEntrada,
+                                    request: Request, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    return _review(atendimento_id, lote_id, payload, request, db, current_user,
+                   review=service.review_identity, action="ATENDIMENTO_IA_REVISAO_IDENTIDADE", revoke=True)
 
 
 @router.delete("/{atendimento_id}/assistente/lotes/{lote_id}", status_code=204)

@@ -38,6 +38,7 @@ const buttonClass = `${buttonBaseClass} bg-white text-teal-900`;
 const accept = `${ASSISTENTE_AUDIO_ACCEPT},${ASSISTENTE_FILE_ACCEPT}`;
 
 type ArquivoSelecionado = ArquivoLoteLocal & { audioDoAtendimento?: true };
+type AcaoRevisao = "revisar-raca" | "revogar-revisao-raca" | "revisar-identidade" | "revogar-revisao-identidade";
 
 export default function AtendimentoAssistenteLote(props: Props) {
   const { atendimentoId, pacienteId, usuarioId, texto, consentimento, habilitado, disabled, audioAtual,
@@ -54,7 +55,8 @@ export default function AtendimentoAssistenteLote(props: Props) {
   const [fontesRaca, setFontesRaca] = useState<string[]>([]);
   const [confirmoPaciente, setConfirmoPaciente] = useState(false);
   const [confirmoRaca, setConfirmoRaca] = useState(false);
-  const [avisoRaca, setAvisoRaca] = useState("");
+  const [fonteConferida, setFonteConferida] = useState<string | null>(null);
+  const [avisoRevisao, setAvisoRevisao] = useState("");
   const alive = useRef(true);
   const request = useRef<AbortController | null>(null);
   const activeOperation = useRef(false);
@@ -64,8 +66,8 @@ export default function AtendimentoAssistenteLote(props: Props) {
   const snapshotCallback = useRef(onSnapshot);
   snapshotCallback.current = onSnapshot;
   const revisaoAnterior = useRef<string | null>(null);
-  const pedidoRaca = useRef<{
-    acao: "revisar-raca" | "revogar-revisao-raca";
+  const pedidoRevisao = useRef<{
+    acao: AcaoRevisao;
     id: string;
     token: string;
     arquivos: string[];
@@ -77,6 +79,8 @@ export default function AtendimentoAssistenteLote(props: Props) {
   } | null>(null);
   const base = `/atendimentos/${atendimentoId}/assistente/lotes`;
   const active = Boolean(lote && ["uploading", "queued", "processing"].includes(lote.status));
+  const revisaoIdentidade = lote?.revisao_identidade;
+  const tokenRevisao = revisaoIdentidade?.token ?? lote?.revisao_raca?.token ?? null;
 
   const aceitarLote = (data: AssistenteLote | null) => {
     if (data && (data.atendimento_id !== atendimentoId || data.paciente_id !== pacienteId)) {
@@ -148,16 +152,16 @@ export default function AtendimentoAssistenteLote(props: Props) {
       : current);
   }, [audioAtual]);
   useEffect(() => {
-    const token = lote?.revisao_raca?.token ?? null;
-    if (revisaoAnterior.current !== token) {
+    if (revisaoAnterior.current !== tokenRevisao) {
       if (revisaoAnterior.current && !activeOperation.current) {
-        setAvisoRaca("A revisão do conjunto mudou. Confira os documentos novamente antes de registrar outra decisão.");
+        setAvisoRevisao("A revisão do conjunto mudou. Confira os documentos novamente antes de registrar outra decisão.");
       }
-      revisaoAnterior.current = token;
+      revisaoAnterior.current = tokenRevisao;
       setFontesRaca([]); setConfirmoPaciente(false); setConfirmoRaca(false);
-      if (!activeOperation.current) pedidoRaca.current = null;
+      setFonteConferida(null);
+      if (!activeOperation.current) pedidoRevisao.current = null;
     }
-  }, [lote?.revisao_raca?.token]);
+  }, [tokenRevisao]);
   useEffect(() => {
     onPendingChange(Boolean(arquivos.length && (!lote || lote.status === "uploading")));
     return () => onPendingChange(false);
@@ -355,55 +359,66 @@ export default function AtendimentoAssistenteLote(props: Props) {
   });
   const selecionarRaca = (id: string, checked: boolean) => {
     setFontesRaca((current) => checked ? [...current, id] : current.filter((item) => item !== id));
-    setConfirmoPaciente(false); setConfirmoRaca(false); setAvisoRaca(""); pedidoRaca.current = null;
+    setConfirmoPaciente(false); setConfirmoRaca(false); setAvisoRevisao(""); pedidoRevisao.current = null;
   };
-  const decidirRaca = (acao: "revisar-raca" | "revogar-revisao-raca", ids = fontesRaca) => void executar(async (signal) => {
+  const decidirRevisao = (acao: AcaoRevisao, ids = fontesRaca) => void executar(async (signal) => {
     const exibido = lote;
-    if (!exibido?.revisao_raca || !exibido.revisao_raca.pode_revisar || disabled || !habilitado || !ids.length) return;
-    const confirmar = acao === "revisar-raca";
-    if (confirmar && (!consentimento || !confirmoPaciente || !confirmoRaca)) return;
+    const identidade = acao.endsWith("identidade");
+    const chave = identidade ? "revisao_identidade" : "revisao_raca";
+    const revisao = exibido?.[chave];
+    if (!exibido || !revisao?.pode_revisar || disabled || !habilitado || !ids.length) return;
+    const confirmar = !acao.startsWith("revogar-");
+    if (confirmar && (!consentimento || (identidade ? ids[0] !== fonteConferida : !confirmoPaciente || !confirmoRaca))) return;
     const escolhidos = [...ids].sort();
-    const fontes = exibido.revisao_raca.fontes.filter((fonte) => escolhidos.includes(fonte.arquivo_id));
+    const fontes = revisao.fontes.filter((fonte) => escolhidos.includes(fonte.arquivo_id));
     if (fontes.length !== escolhidos.length || fontes.some((fonte) => confirmar ? !fonte.elegivel || fonte.confirmada : !fonte.confirmada)) return;
-    setAvisoRaca("");
+    setAvisoRevisao("");
     if (onEnsureSaved && !(await onEnsureSaved())) throw new Error("Salve o atendimento antes de revisar a identificação dos exames.");
     if (signal.aborted) return;
-    const anterior = pedidoRaca.current;
+    const anterior = pedidoRevisao.current;
     const mesmoPedido = anterior?.id === exibido.id && anterior.acao === acao &&
-      anterior.token === exibido.revisao_raca.token && JSON.stringify(anterior.arquivos) === JSON.stringify(escolhidos);
+      anterior.token === revisao.token && JSON.stringify(anterior.arquivos) === JSON.stringify(escolhidos);
     const pedido = mesmoPedido ? anterior : {
-      acao, id: exibido.id, token: exibido.revisao_raca.token, arquivos: escolhidos, request_id: crypto.randomUUID(),
+      acao, id: exibido.id, token: revisao.token, arquivos: escolhidos, request_id: crypto.randomUUID(),
     };
-    pedidoRaca.current = pedido;
-    const aplicada = (atual: AssistenteLote | null) => Boolean(atual?.revisao_raca && escolhidos.every((id) => {
-      const fonte = atual.revisao_raca!.fontes.find((item) => item.arquivo_id === id);
+    pedidoRevisao.current = pedido;
+    const aplicada = (atual: AssistenteLote | null) => Boolean(atual?.[chave] && escolhidos.every((id) => {
+      const fonte = atual[chave]?.fontes.find((item) => item.arquivo_id === id);
       return fonte && (confirmar ? fonte.confirmada : !fonte.confirmada);
     }));
     const concluir = () => {
       onResultInvalidated?.(exibido.id);
-      pedidoRaca.current = null;
+      pedidoRevisao.current = null;
       setFontesRaca([]); setConfirmoPaciente(false); setConfirmoRaca(false);
-      setAvisoRaca(confirmar ? "Decisão registrada. A raça continua pendente; o cadastro e os documentos originais foram preservados." : "Confirmação retirada. A análise anterior precisa ser revista antes de incorporar informações.");
+      setFonteConferida(null);
+      setAvisoRevisao(confirmar
+        ? identidade ? "Identificação confirmada para este arquivo." : "Decisão registrada. A raça continua pendente; o cadastro e os documentos originais foram preservados."
+        : "Confirmação retirada. A análise anterior precisa ser revista antes de incorporar informações.");
     };
     // Consult before any replay. A lost response must not schedule synthesis twice.
     const atual = await consultar(signal, exibido.id);
     if (signal.aborted) return;
     if (mesmoPedido && aplicada(atual)) { concluir(); return; }
-    if (!atual?.revisao_raca || atual.revisao_raca.token !== pedido.token) {
-      setFontesRaca([]); setConfirmoPaciente(false); setConfirmoRaca(false); pedidoRaca.current = null;
+    if (!atual?.[chave] || atual[chave]?.token !== pedido.token) {
+      setFontesRaca([]); setConfirmoPaciente(false); setConfirmoRaca(false);
+      setFonteConferida(null); pedidoRevisao.current = null;
       throw new Error("O conjunto mudou desde a conferência. Revise a identificação novamente antes de continuar.");
     }
-    if (!atual.revisao_raca.pode_revisar) throw new Error("A revisão não está disponível neste estado do conjunto. Consulte o progresso.");
+    if (!atual[chave]?.pode_revisar) throw new Error("A revisão não está disponível neste estado do conjunto. Consulte o progresso.");
     const payload = {
       request_id: pedido.request_id, revisao_token: pedido.token, arquivo_ids: pedido.arquivos,
-      ...(confirmar ? { confirmo_mesmo_paciente: true, confirmo_apenas_raca: true, consentimento: true } : {}),
+      ...(confirmar ? { confirmo_mesmo_paciente: true, consentimento: true, ...(identidade
+        ? { confirmo_apenas_nome_idade: true, atualizar_contexto: Boolean(exibido.revisao_identidade?.contexto_mudou) }
+        : { confirmo_apenas_raca: true }) } : {}),
     };
     // An uncertain response also invalidates the displayed analysis until reconciled.
     onResultInvalidated?.(exibido.id);
     try {
       const { data } = await api.post<AssistenteLote>(`${base}/${exibido.id}/${acao}`, payload, { signal, timeout: 30000 });
       if (signal.aborted) return;
-      aceitarLote(data); concluir();
+      aceitarLote(data);
+      if (!aplicada(data)) throw new Error("A decisão precisa ser conferida no estado atual do conjunto.");
+      concluir();
     } catch (error) {
       if (signal.aborted) return;
       try {
@@ -415,6 +430,10 @@ export default function AtendimentoAssistenteLote(props: Props) {
   });
   const bloqueado = busy || disabled || loading;
   const pendingUpload = lote?.status === "uploading";
+  const identidadesPendentes = revisaoIdentidade?.fontes.some((fonte) => !fonte.confirmada);
+  const fontesRevisaoRaca = lote?.revisao_raca?.fontes.filter((fonte) =>
+    !revisaoIdentidade?.fontes.some((item) => item.arquivo_id === fonte.arquivo_id && item.confirmada)) ?? [];
+  const original = (id: string) => `/api/v1${base}/${lote?.id}/arquivos/${id}/original`;
   const substituicaoPendente = Boolean(manifest.current && lote?.modo === "transcricao" && lote.status === "completed");
   const statusText = lote ? {
     uploading: "Enviando fontes do conjunto",
@@ -446,7 +465,7 @@ export default function AtendimentoAssistenteLote(props: Props) {
       <p role="status" className="font-medium text-teal-950">{statusText}</p>
       <ol className="space-y-2">{lote.arquivos.map((fonte, index) => <li key={fonte.id} className="rounded-lg bg-white p-2 text-sm">
         <span className="break-all">{index + 1}. {fonte.nome} — {STATUS_FONTE_LOTE[fonte.status]}</span>
-        {fonte.status !== "pending" ? <a className="ml-3 text-teal-800 underline" href={`/api/v1${base}/${lote.id}/arquivos/${fonte.id}/original`} target="_blank" rel="noopener noreferrer">Baixar original</a> : null}
+        {fonte.status !== "pending" ? <a className="ml-3 text-teal-800 underline" href={original(fonte.id)} target="_blank" rel="noopener noreferrer">Baixar original</a> : null}
         {fonte.erro ? <p className="mt-1 text-red-700">{fonte.erro}</p> : null}
         {fonte.status === "pending" ? <label className="mt-2 block text-amber-900">
           {arquivos.some((item) => item.id === fonte.id) ? "Arquivo selecionado para retomada" : "Selecione novamente este arquivo para concluir o envio."}
@@ -456,33 +475,64 @@ export default function AtendimentoAssistenteLote(props: Props) {
       {lote.status !== "completed" && lote.revisoes_transcricao?.length ? <AtendimentoTranscricaoRevisao fontes={lote.revisoes_transcricao} /> : null}
       {lote.erro ? <p role="alert" className="text-red-800">{lote.erro}</p> : null}
       {lote.status === "queued" || lote.status === "processing" ? <p className="text-sm text-slate-700">O processamento continua no servidor. Ao voltar a este atendimento, o progresso é recuperado. A revisão será liberada depois que todas as fontes forem processadas.</p> : null}
-      {lote.revisao_raca && lote.revisao_raca.fontes.some((fonte) => fonte.identidade !== "compativel" || fonte.confirmada) ? <fieldset className="space-y-3 rounded-xl border border-amber-200 bg-white p-3" disabled={bloqueado || !habilitado || !lote.revisao_raca.pode_revisar}>
+      {revisaoIdentidade && revisaoIdentidade.fontes.length > 0 ? <fieldset className="space-y-3 rounded-xl border border-amber-200 bg-white p-3" disabled={bloqueado || !habilitado || !revisaoIdentidade.pode_revisar}>
+        <legend className="px-1 font-semibold text-amber-950">Confirmar paciente por arquivo</legend>
+        <p className="text-sm text-slate-700">
+          Paciente do atendimento <strong>{revisaoIdentidade.paciente_nome}</strong>
+          {revisaoIdentidade.paciente_idade ? ` · Idade no cadastro ${revisaoIdentidade.paciente_idade}` : ""}.
+          Confira a identificação no original. Ao resolver as pendências, a análise retoma com os arquivos já processados.
+        </p>
+        {revisaoIdentidade.contexto_mudou ? <p className="text-sm text-amber-900">
+          O atendimento salvo mudou. Confira novamente cada exame com os dados atuais. A primeira confirmação atualiza o contexto do conjunto e invalida as confirmações anteriores.
+        </p> : null}
+        <ul className="space-y-3">{revisaoIdentidade.fontes.map((fonte) => <li key={fonte.arquivo_id} className="rounded-lg bg-slate-50 p-3 text-sm">
+          <p className="break-all font-medium">{fonte.nome}</p>
+          <a className="text-teal-800 underline" href={original(fonte.arquivo_id)} target="_blank" rel="noopener noreferrer">Baixar original de {fonte.nome}</a>
+          <p>{fonte.paciente_nome || "Paciente não identificado"} · {fonte.especie || "Espécie ausente"}{fonte.data_exame ? ` · ${fonte.data_exame}` : ""}</p>
+          <p className="mt-1 text-slate-600">Identificação na leitura original: {fonte.motivo || fonte.identidade}</p>
+          {fonte.confirmada ? <>
+            <p className="mt-1 font-medium text-teal-900">Vínculo confirmado pelo veterinário{fonte.registrado_em ? ` em ${new Date(fonte.registrado_em).toLocaleString("pt-BR")}` : ""}.</p>
+            <button type="button" className={`${buttonClass} mt-2`} onClick={() => decidirRevisao("revogar-revisao-identidade", [fonte.arquivo_id])}>Retirar confirmação de identidade de {fonte.nome}</button>
+          </> : fonte.elegivel ? <>
+            <label className="mt-2 flex items-start gap-2">
+              <input type="checkbox" checked={fonteConferida === fonte.arquivo_id} onChange={(event) => {
+                setFonteConferida(event.target.checked ? fonte.arquivo_id : null);
+                setAvisoRevisao(""); pedidoRevisao.current = null;
+              }} className="mt-1" />
+              Conferi o original de {fonte.nome}. É o mesmo paciente e qualquer divergência se limita ao nome ou à idade.
+            </label>
+            <button type="button" className={`${buttonBaseClass} mt-2 bg-teal-700 text-white`} disabled={fonteConferida !== fonte.arquivo_id || !consentimento}
+              onClick={() => decidirRevisao("revisar-identidade", [fonte.arquivo_id])}>Confirmar identidade de {fonte.nome}</button>
+          </> : <p className="mt-1 text-amber-900">{fonte.impedimento}</p>}
+        </li>)}</ul>
+      </fieldset> : null}
+      {lote.revisao_raca && fontesRevisaoRaca.some((fonte) => fonte.identidade !== "compativel" || fonte.confirmada) ? <fieldset className="space-y-3 rounded-xl border border-amber-200 bg-white p-3" disabled={bloqueado || !habilitado || !lote.revisao_raca.pode_revisar}>
         <legend className="px-1 font-semibold text-amber-950">Revisar a raça depois</legend>
         <p className="text-sm text-slate-700">Raça no cadastro: <strong>{lote.revisao_raca.raca_cadastrada || "Não informada"}</strong>. Se a única divergência for a raça, confira o paciente nos originais e confirme cada documento. Você poderá decidir a raça correta depois, sem alterar o cadastro ou os exames agora.</p>
-        <ul className="space-y-3">{lote.revisao_raca.fontes.map((fonte) => <li key={fonte.arquivo_id} className="rounded-lg bg-slate-50 p-3 text-sm">
+        <ul className="space-y-3">{fontesRevisaoRaca.map((fonte) => <li key={fonte.arquivo_id} className="rounded-lg bg-slate-50 p-3 text-sm">
           <p className="break-all font-medium">{fonte.nome}</p>
           <p>{fonte.paciente_nome || "Paciente não identificado"} · {fonte.especie || "Espécie ausente"}</p>
           <p className="mt-1 text-slate-600">Identificação na leitura original: {fonte.motivo || fonte.identidade}</p>
           {fonte.confirmada ? <>
             <p className="mt-1 font-medium text-teal-900">Identidade confirmada pelo veterinário. Raça pendente de revisão.</p>
             {fonte.registrado_em ? <p className="text-xs text-slate-600">Decisão registrada em {new Date(fonte.registrado_em).toLocaleString("pt-BR")}</p> : null}
-            <button type="button" className={`${buttonClass} mt-2`} onClick={() => decidirRaca("revogar-revisao-raca", [fonte.arquivo_id])}>Retirar confirmação de {fonte.nome}</button>
+            <button type="button" className={`${buttonClass} mt-2`} onClick={() => decidirRevisao("revogar-revisao-raca", [fonte.arquivo_id])}>Retirar confirmação de {fonte.nome}</button>
           </> : fonte.elegivel ? <label className="mt-2 flex items-start gap-2">
             <input type="checkbox" checked={fontesRaca.includes(fonte.arquivo_id)} onChange={(event) => selecionarRaca(fonte.arquivo_id, event.target.checked)} className="mt-1" />
             Conferi o original de {fonte.nome}
           </label> : <p className="mt-1 text-amber-900">{fonte.impedimento || "Esta identificação precisa ser esclarecida antes da análise."}</p>}
         </li>)}</ul>
-        {lote.revisao_raca.fontes.some((fonte) => fonte.elegivel && !fonte.confirmada) ? <>
-          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmoPaciente} onChange={(event) => { setConfirmoPaciente(event.target.checked); pedidoRaca.current = null; }} className="mt-1" />Confirmo que os documentos selecionados pertencem ao mesmo paciente deste atendimento.</label>
-          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmoRaca} onChange={(event) => { setConfirmoRaca(event.target.checked); pedidoRaca.current = null; }} className="mt-1" />Confirmei que a única divergência de identificação é a raça. Vou decidir a raça correta depois.</label>
+        {fontesRevisaoRaca.some((fonte) => fonte.elegivel && !fonte.confirmada) ? <>
+          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmoPaciente} onChange={(event) => { setConfirmoPaciente(event.target.checked); pedidoRevisao.current = null; }} className="mt-1" />Confirmo que os documentos selecionados pertencem ao mesmo paciente deste atendimento.</label>
+          <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={confirmoRaca} onChange={(event) => { setConfirmoRaca(event.target.checked); pedidoRevisao.current = null; }} className="mt-1" />Confirmei que a única divergência de identificação é a raça. Vou decidir a raça correta depois.</label>
           <p className="text-xs text-slate-600">A decisão fica registrada e atualiza a análise do conjunto. A revisão anterior será preservada como referência, com inclusão desabilitada até abrir o novo resultado. Documentos não confirmados continuam bloqueados.</p>
-          <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={!fontesRaca.length || !confirmoPaciente || !confirmoRaca || !consentimento} onClick={() => decidirRaca("revisar-raca")}>Confirmar documentos e revisar raça depois</button>
+          <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={!fontesRaca.length || !confirmoPaciente || !confirmoRaca || !consentimento} onClick={() => decidirRevisao("revisar-raca")}>Confirmar documentos e revisar raça depois</button>
         </> : null}
       </fieldset> : null}
-      {avisoRaca ? <p role="status" className="text-sm text-teal-900">{avisoRaca}</p> : null}
+      {avisoRevisao ? <p role="status" className="text-sm text-teal-900">{avisoRevisao}</p> : null}
     </> : null}
     <div className="flex flex-wrap gap-2">
-      {!lote || pendingUpload || lote.status === "failed" || substituicaoPendente ? <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={bloqueado || !habilitado || !consentimento || (!lote && !arquivos.length)} onClick={() => enviar()}>{busy ? "Preparando conjunto…" : lote?.status === "failed" ? lote.arquivos.every((fonte) => fonte.status === "completed") ? "Retomar análise do conjunto" : "Retomar arquivos que falharam" : pendingUpload || substituicaoPendente ? "Retomar envio dos arquivos" : "Analisar conjunto"}</button> : null}
+      {!lote || pendingUpload || lote.status === "failed" || substituicaoPendente ? <button type="button" className={`${buttonBaseClass} bg-teal-700 text-white`} disabled={bloqueado || !habilitado || !consentimento || (!lote && !arquivos.length) || (lote?.status === "failed" && Boolean(identidadesPendentes) && lote.arquivos.every((fonte) => fonte.status === "completed"))} onClick={() => enviar()}>{busy ? "Preparando conjunto…" : lote?.status === "failed" ? lote.arquivos.every((fonte) => fonte.status === "completed") ? "Retomar análise do conjunto" : "Retomar arquivos que falharam" : pendingUpload || substituicaoPendente ? "Retomar envio dos arquivos" : "Analisar conjunto"}</button> : null}
       <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => void executar(async (signal) => { await consultar(signal, lote?.id); })}>Consultar progresso</button>
       {lote?.status === "completed" && lote.modo === "transcricao" && lote.transcricao && !substituicaoPendente
         ? <button type="button" className={buttonClass} disabled={bloqueado} onClick={() => onReview(lote)}>Usar transcrição</button> : null}

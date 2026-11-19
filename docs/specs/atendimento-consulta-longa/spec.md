@@ -9,3 +9,10 @@
 - Consultar o progresso não cria arquivos ou diretórios. Lotes anteriores sem campo de modo continuam sendo apresentados como análise.
 
 A homologação em Stage verifica a igualdade do original recebido, a leitura de cada fonte e a síntese entregue para revisão.
+
+## Confirmação de identidade por exame
+
+- O painel **Confirmar paciente por arquivo** mostra o nome e a idade de referência do atendimento, a identificação lida e o original de cada exame pendente. O responsável pelo lote, com papel clínico e permissão de edição, confere o original e registra uma confirmação explícita por documento quando as diferenças se limitam ao nome ou à idade. A ação exige o consentimento já usado pelo assistente. O servidor exige nomes presentes e espécies identificadas e coincidentes. A revisão de raça mantém sua própria confirmação.
+- Para conjuntos ainda disponíveis cujo atendimento salvo mudou, a primeira confirmação atualiza o contexto se o ID, nome cadastrado e espécie do paciente continuam iguais. A decisão usa a versão atual exibida ao veterinário. Confirmações do contexto anterior perdem a validade e cada exame precisa ser conferido novamente. Leituras, transcrição e originais ficam no mesmo conjunto.
+- Cada decisão é registrada com usuário, horário, arquivo, leitura e contexto. Alterações concorrentes exigem nova conferência. Repetir a mesma solicitação não repete a decisão ou a síntese. A retirada de uma confirmação bloqueia a revisão anterior e volta a exigir a conferência daquele exame.
+- Ao resolver todas as pendências, a fila executa somente a síntese. A revisão exibe a identificação lida e a confirmação veterinária do vínculo. A decisão não altera o cadastro, a idade, a grafia original ou o conteúdo dos exames. A revisão de cada sugestão e achado continua obrigatória antes da incorporação.
