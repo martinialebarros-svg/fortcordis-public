@@ -11,3 +11,7 @@
 `PUT /api/v1/laudos/{id}/portal/download-suspenso` recebe `{"suspenso": true}` ou `{"suspenso": false}` e devolve `portal_download_suspenso`. O detalhe e a listagem interna incluem esse estado. Nos portais e no link da clínica, o campo `download_suspenso` reflete o efeito para o solicitante. A rota de entrega do arquivo consulta o estado persistido antes de servir os bytes e registra apenas os downloads que passaram por essa verificação.
 
 A retomada usa o PDF salvo pelo fluxo de edição contratado. Ela depende da revisão do operador e conserva as autorizações de destinatários já concedidas.
+
+O detalhe recebe `portal_pode_suspender_download` do servidor. Um exame liberado pelo Atendimento também habilita o controle, mesmo com o laudo em “Finalizado”.
+
+O detalhe usa `portal_pode_suspender_download` para reconhecer também exames liberados pelo Atendimento cujo laudo mantém status interno Finalizado.

@@ -82,6 +82,7 @@ interface Laudo {
   portal_clinica_disponivel?: boolean;
   portal_clinica_liberado?: boolean;
   portal_download_suspenso?: boolean;
+  portal_pode_suspender_download?: boolean;
   portal_veterinario_disponivel?: boolean;
   portal_veterinario_liberado?: boolean;
   portal_destinos_pendentes?: string[];

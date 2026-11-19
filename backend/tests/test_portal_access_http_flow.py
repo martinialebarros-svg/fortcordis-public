@@ -36,7 +36,7 @@ from app.models.papel import Papel, usuario_papel
 from app.models.imagem_laudo import ImagemLaudo
 from app.models.portal_access import PortalAccessChallenge
 from app.models.portal_clinic_exam_link import PortalClinicExamLink
-from app.models.portal_partner import PortalPartnerProfile, PortalPartnerReleaseTarget
+from app.models.portal_partner import PortalPartnerClinicLink, PortalPartnerProfile, PortalPartnerReleaseTarget
 from app.models.tutor import Tutor
 from app.models.user import User
 from app.services.echo_editor_source import load_echo_editor_source
@@ -398,6 +398,7 @@ class PortalAccessHttpFlowTest(unittest.TestCase):
             User.__table__, Papel.__table__, usuario_papel, AuditoriaEvento.__table__,
             ImagemLaudo.__table__, PortalClinicExamLink.__table__,
             PortalPartnerProfile.__table__, PortalPartnerReleaseTarget.__table__,
+            PortalPartnerClinicLink.__table__,
         ):
             table.create(self._engine)
 
@@ -407,7 +408,7 @@ class PortalAccessHttpFlowTest(unittest.TestCase):
             partner = PortalPartnerProfile(tipo="veterinario", nome_exibicao="Veterinário de teste")
             laudo = Laudo(
                 paciente_id=seed["paciente_id"], veterinario_id=77, tipo="ecocardiograma",
-                titulo="Laudo fictício", clinic_id=seed["clinica_id"], status=PORTAL_RELEASED_STATUS,
+                titulo="Laudo fictício", clinic_id=seed["clinica_id"], status="Finalizado",
             )
             db.add_all([admin, partner, laudo])
             db.flush()
@@ -445,6 +446,9 @@ class PortalAccessHttpFlowTest(unittest.TestCase):
             patch.object(portal, "registrar_auditoria"),
             TestClient(app) as client,
         ):
+            response = client.get(admin_route, headers=admin_headers)
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertTrue(response.json()["portal_pode_suspender_download"])
             old_link_item = client.post(link_route).json()["arquivos"][0]
             old_items = [
                 client.post(token_route, headers=headers).json()["items"][0]

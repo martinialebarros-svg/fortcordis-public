@@ -3121,6 +3121,13 @@ def obter_laudo(
         # O seletor de destino do aviso por WhatsApp abre nesta tela tambem, e
         # precisa saber quem ja recebeu.
         "whatsapp_envios": laudo.whatsapp_envios or {},
+        "portal_pode_suspender_download": (
+            is_portal_released_status(laudo.status, kind="laudo")
+            or db.query(Exame.id).filter(
+                Exame.laudo_id == laudo.id,
+                Exame.status == PORTAL_RELEASED_STATUS,
+            ).first() is not None
+        ),
         **_serialize_portal_release_state(db, laudo=laudo),
     }
 
