@@ -69,6 +69,50 @@ const saveBreedDecision = (confirmed = true) => {
 };
 
 describe("análise de conjunto", () => {
+  it("retoma o conjunto existente após confirmar cada original no contexto atualizado", async () => {
+    stored = breedJob();
+    stored.status = "failed";
+    stored.resultado = null;
+    stored.revisao_identidade = {
+      ...stored.revisao_raca!, contexto_mudou: true, paciente_nome: "Paciente Teste", paciente_idade: "8a (estimada)",
+      fontes: stored.revisao_raca!.fontes.map((fonte, index) => ({
+        ...fonte, motivo: index === 0 ? "Grafia divergente." : "Idade divergente.",
+      })),
+    };
+    delete stored.revisao_raca;
+    vi.mocked(api.post).mockImplementation(async (_url, body) => {
+      const id = (body as { arquivo_ids: string[] }).arquivo_ids[0];
+      const review = stored!.revisao_identidade!;
+      review.fontes.find((fonte) => fonte.arquivo_id === id)!.confirmada = true;
+      review.token = id;
+      review.contexto_mudou = false;
+      if (review.fontes.every((fonte) => fonte.confirmada)) stored!.status = "queued";
+      return response();
+    });
+    await open();
+    expect(screen.getByText(/A primeira confirmação atualiza/)).toBeVisible();
+    expect(screen.getByRole("link", { name: "Baixar original de exame-0.pdf" })).toHaveAttribute("href",
+      "/api/v1/atendimentos/1/assistente/lotes/batch-1/arquivos/exam-0/original");
+    const first = screen.getByRole("button", { name: "Confirmar identidade de exame-0.pdf" });
+    const second = screen.getByRole("button", { name: "Confirmar identidade de exame-1.pdf" });
+    expect(first).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(/Conferi o original de exame-0\.pdf/));
+    fireEvent.click(first);
+    await screen.findByText(/Vínculo confirmado pelo veterinário/);
+    expect(second).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Retomar análise do conjunto" })).toBeDisabled();
+    fireEvent.click(screen.getByLabelText(/Conferi o original de exame-1\.pdf/));
+    fireEvent.click(second);
+    await screen.findByText("Conjunto na fila de processamento");
+    expect(api.post).toHaveBeenNthCalledWith(1, expect.stringContaining("/batch-1/revisar-identidade"),
+      { request_id: expect.any(String), revisao_token: "snapshot-original", arquivo_ids: ["exam-0"],
+        confirmo_mesmo_paciente: true, confirmo_apenas_nome_idade: true, consentimento: true, atualizar_contexto: true },
+      expect.any(Object));
+    expect(api.post).toHaveBeenNthCalledWith(2, expect.stringContaining("/batch-1/revisar-identidade"),
+      expect.objectContaining({ arquivo_ids: ["exam-1"], atualizar_contexto: false }), expect.any(Object));
+    expect(api.put).not.toHaveBeenCalled();
+  });
+
   it("confirma documentos individualmente com duas declarações, preservando originais e leitura divergente", async () => {
     stored = breedJob();
     vi.mocked(api.post).mockImplementation(async () => { saveBreedDecision(); return response(); });

@@ -96,6 +96,10 @@ confirmação humana para a síntese; ela não confirma qual é a raça e não r
 tipo de divergência. Raça pendente não é uma raça: não escolha entre cadastro e exames,
 não deduza raça de imagens ou achados e não baseie conduta, referência ou predisposição
 em raça presumida. Registre a raça como pendência de revisão veterinária.
+Quando revisoes_identidade indicar confirmação veterinária do mesmo paciente, use
+essa decisão apenas para vincular o exame à análise. Preserve a leitura original,
+as grafias e idades documentadas e as demais limitações. A decisão confirma o vínculo,
+sem determinar a grafia ou a idade correta ou aprovar os achados clínicos.
 """
 
 
@@ -278,7 +282,8 @@ def _evidencias_exames(exames: list[dict], context: dict) -> tuple[list[ArquivoA
 
 
 def sintetizar_lote(*, transcript: str, context: dict, exames: list[dict], user_id: int,
-                   revisoes_raca: dict[str, dict] | None = None) -> dict:
+                   revisoes_raca: dict[str, dict] | None = None,
+                   revisoes_identidade: dict[str, dict] | None = None) -> dict:
     require_enabled()
     if len(transcript) > TRANSCRICAO_MAX_CHARS:
         raise AssistenteError("A transcrição conjunta excede 80.000 caracteres.", 413)
@@ -286,7 +291,8 @@ def sintetizar_lote(*, transcript: str, context: dict, exames: list[dict], user_
         raise AssistenteError("O lote precisa de uma transcrição ou exame concluído.", 422)
     files, combined, isolated_notes = _evidencias_exames(exames, context)
     checked = validar_resultado(AnaliseClinicaLote.model_validate(combined), transcript=transcript,
-                               context=context, files=files, revisoes_raca=revisoes_raca)
+                               context=context, files=files, revisoes_raca=revisoes_raca,
+                               revisoes_identidade=revisoes_identidade)
     if checked["bloqueado_integracao"]:
         return checked
     synthesis_context = deepcopy(context)
@@ -305,6 +311,11 @@ def sintetizar_lote(*, transcript: str, context: dict, exames: list[dict], user_
     }
     if reviews:
         payload["revisoes_veterinarias"] = reviews
+    if revisoes_identidade:
+        payload["revisoes_identidade"] = [
+            {"arquivo": source["arquivo"], "decisao": source["revisao_identidade"]["decisao"]}
+            for source in checked["fontes"] if "revisao_identidade" in source
+        ]
     provider = OpenAIAtendimentoProvider(read_timeout=PDF_READ_TIMEOUT_SECONDS if files else None)
     try:
         response = parse_structured_response(provider.client.responses,
@@ -333,4 +344,5 @@ def sintetizar_lote(*, transcript: str, context: dict, exames: list[dict], user_
         raise AssistenteError("A síntese não passou na validação de formato. Retome a análise para tentar novamente.", 502) from exc
     except Exception as exc:
         raise _provider_error(exc) from exc
-    return validar_resultado(output, transcript=transcript, context=context, files=files, revisoes_raca=revisoes_raca)
+    return validar_resultado(output, transcript=transcript, context=context, files=files,
+                             revisoes_raca=revisoes_raca, revisoes_identidade=revisoes_identidade)

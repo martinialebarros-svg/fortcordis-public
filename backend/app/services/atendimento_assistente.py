@@ -21,7 +21,8 @@ from app.core.config import settings
 from app.schemas.atendimento_assistente import AnaliseClinica
 from app.services.atendimento_ia_response import StructuredResponseError, parse_structured_response
 from app.services.atendimento_assistente_identidade import (
-    AVISO_RACA_PENDENTE, normal as _normal, species as _species, revisao_raca_aplicavel,
+    AVISO_RACA_PENDENTE, normal as _normal, species as _species,
+    revisao_identidade_aplicavel, revisao_raca_aplicavel,
 )
 
 logger = logging.getLogger(__name__)
@@ -160,8 +161,12 @@ def validar_arquivo(nome: str | None, mime: str | None, content: bytes, indice: 
     return ArquivoAnalise(name, detected, content, pages)
 
 
+AVISO_IDENTIDADE_ACHADO = "Identidade não confirmada: este achado não pode ser incorporado ao paciente."
+
+
 def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
-                      files: list[ArquivoAnalise], revisoes_raca: dict[str, dict] | None = None) -> dict:
+                      files: list[ArquivoAnalise], revisoes_raca: dict[str, dict] | None = None,
+                      revisoes_identidade: dict[str, dict] | None = None) -> dict:
     """Reject missing provenance and independently downgrade unsafe identity claims."""
     result = output.model_dump()
     by_name = {file.nome: file for file in files}
@@ -170,7 +175,8 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
         raise AssistenteError("A IA não identificou todas as fontes. A análise foi descartada; tente novamente.", 502)
     blocked = False
     confirmed_sources: set[str] = set()
-    reviewed_sources: set[str] = set()
+    identity_reviewed: set[str] = set()
+    race_reviewed = False
     for source in result["fontes"]:
         expected_name = _normal(context["paciente"]["nome"])
         extracted_name = _normal(source["paciente_nome"])
@@ -188,12 +194,16 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             if not source["motivo"]:
                 source["motivo"] = "Não foi possível confirmar a identidade deste exame. Confira a identificação no arquivo original."
         review = (revisoes_raca or {}).get(source["arquivo"])
+        identity_review = (revisoes_identidade or {}).get(source["arquivo"])
         if revisao_raca_aplicavel(source, context, review):
             # Do not rewrite what the model read. This separately records a
             # veterinarian's explicit decision, already bound to source/context.
             source["revisao_raca"] = {key: review[key] for key in ("decisao", "usuario_id", "registrado_em")}
-            reviewed_sources.add(source["arquivo"])
-        if source["identidade"] == "compativel" or source["arquivo"] in reviewed_sources:
+            race_reviewed = True
+        if revisao_identidade_aplicavel(source, context, identity_review):
+            source["revisao_identidade"] = {key: identity_review[key] for key in ("decisao", "usuario_id", "registrado_em")}
+            identity_reviewed.add(source["arquivo"])
+        if source["identidade"] == "compativel" or "revisao_raca" in source or "revisao_identidade" in source:
             confirmed_sources.add(source["arquivo"])
         else:
             blocked = True
@@ -223,13 +233,15 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             finding["referencia"] = None
             finding["alertas"].append("Leitura incerta: confira o original. Valores não liberados para incorporação.")
         if finding["arquivo"] not in confirmed_sources:
-            finding["alertas"].append("Identidade não confirmada: este achado não pode ser incorporado ao paciente.")
+            finding["alertas"].append(AVISO_IDENTIDADE_ACHADO)
+        elif finding["arquivo"] in identity_reviewed:
+            finding["alertas"] = [alerta for alerta in finding["alertas"] if alerta != AVISO_IDENTIDADE_ACHADO]
     if blocked:
         valid_fields = []
         result["sugestoes"] = []
         result["pendencias"].append("Corrija ou remova os arquivos com identificação divergente ou não confirmada e refaça a análise.")
     result["campos"] = valid_fields
-    if reviewed_sources:
+    if race_reviewed:
         result["raca_pendente_revisao"] = True
         result["pendencias"] = list(dict.fromkeys([*result["pendencias"], AVISO_RACA_PENDENTE]))
         result["avisos"].append(
