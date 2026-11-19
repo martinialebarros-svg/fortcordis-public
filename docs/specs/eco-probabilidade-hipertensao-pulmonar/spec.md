@@ -74,3 +74,7 @@ HP-12 é o aceite da preparação verificável antes da promoção. A instalaç�
 A avaliação fica em uma tabela da análise quantitativa após Regurgitações, com a largura, a tipografia e as linhas alternadas das tabelas de medidas. As colunas Parâmetro e Avaliação organizam a síntese, a velocidade da IT, os sítios anatômicos, as métricas de suporte e as notas. A tabela explicita pendências de revisão e acomoda observações multilinha. Em continuação de página, repete o título e o cabeçalho.
 
 Prévia e emissão usam o mesmo layout e os mesmos critérios clínicos do módulo. A conclusão permanece no início e as fontes após a análise qualitativa. A versão de cache ECO `2026-11-18-eco-hp-table-layout-v39` permite que futuras gerações usem o novo layout.
+
+| ID | Critério adicional de apresentação |
+| --- | --- |
+| HP-13 | Tabela de HP acompanha o estilo das medidas, mantém conteúdo e ordem na prévia e no PDF emitido e repete o cabeçalho nas continuações, inclusive com observação extensa. |

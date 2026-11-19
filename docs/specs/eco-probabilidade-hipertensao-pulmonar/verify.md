@@ -49,3 +49,13 @@ Dados exclusivamente sintéticos. A conferência autenticada descrita acima ocor
 - Foram gerados cinco laudos sintéticos: canino confirmado, canino pendente, felino descritivo, caso com observação longa e caso com HP desativada. A inspeção das páginas confirmou alinhamento com as demais tabelas e continuação sem cortes ou cabeçalho duplicado.
 - A prévia e a emissão locais têm o mesmo conteúdo, descontada a marca de prévia. A conclusão precede as tabelas, a bibliografia permanece após a análise qualitativa e os resultados de HP e PSAP respeitam os critérios existentes.
 - Amostra visual em `output/pdf/avaliacao-hipertensao-pulmonar.pdf`, ignorada pelo Git. A validação deste ajuste é local.
+
+## Homologação do layout em Stage
+
+| ID | Status | Evidência |
+| --- | --- | --- |
+| HP-13 | aprovado | PR pública #43, Stage `178f2dc66870a47cfc961ede1be902500814d072`, deploy `44434345038` concluído com sucesso. Prévia e PDF oficial regenerado do sintético #62 têm três páginas e texto igual por página, descontada a marca de prévia. As seis páginas foram inspecionadas visualmente, incluindo tabela de HP e cabeçalho na continuação. |
+
+As provas estão no diretório local `output/pdf/` da worktree `eco-hp-pdf-layout-local/fortcordis-public`: `stage-release-final.json`, `stage-hp-layout-installed-hp-tests.json`, `stage-preview.pdf`, `stage-official.pdf` e `.qa/stage-downloads/comparison.json`. Passaram 26 testes instalados, 99 subcasos e 15 casos de ciclo de vida. Cinco cenários locais cobrem revisão pendente, felinos, HP desativada e observação longa. A versão isolada para promoção sobre a produção atual foi revalidada com os 111 testes focados e 490 subtestes.
+
+A publicação do módulo de HP de 16/11/2026 foi concluída pela PR pública #32, seguida da restauração #33. O checklist operacional anterior registra o estado anterior àquela promoção. A presente promoção trata do layout tabular homologado pela PR #43. Produção e restauração desta rodada exigem conferência dos SHAs efetivamente instalados e preservação do snapshot de Stage vigente.
