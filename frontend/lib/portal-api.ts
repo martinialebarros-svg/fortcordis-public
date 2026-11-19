@@ -331,6 +331,7 @@ export type PortalExamItem = {
   data_solicitacao: string | null;
   data_resultado: string | null;
   observacoes: string | null;
+  download_suspenso?: boolean;
   anexos: PortalExamAttachment[];
 };
 
@@ -393,9 +394,12 @@ export type PortalExamLinkResponse = {
   paciente_nome?: string | null;
   tipo_exame: string;
   data_exame?: string | null;
+  download_suspenso?: boolean;
   arquivos: PortalDownloadItem[];
   dispositivo_confiavel_disponivel?: boolean;
 };
+
+export const PORTAL_DOWNLOAD_SUSPENSO_MESSAGE = "Laudo em correção. Download temporariamente suspenso.";
 
 const PORTAL_SESSION_STORAGE_KEY_PREFIX = "fortcordis_portal_session";
 
@@ -1216,13 +1220,14 @@ export async function resolvePortalExamLink(token: string): Promise<PortalExamLi
 
 export async function downloadPortalAttachment(item: PortalDownloadItem): Promise<void> {
   const response = await fetch(item.download_url, {
+    cache: "no-store",
     headers: {
       [item.download_token_header]: item.download_token,
     },
   });
 
   if (!response.ok) {
-    throw new Error(await readErrorMessage(response, "Nao foi possivel baixar o anexo."));
+    throw new PortalRequestError(response.status, await readErrorMessage(response, "Nao foi possivel baixar o anexo."));
   }
 
   const blob = await response.blob();

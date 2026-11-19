@@ -6,6 +6,7 @@ import { Download, FileText, Loader2, MonitorCheck, PawPrint, ShieldCheck } from
 
 import {
   downloadPortalAttachment,
+  PORTAL_DOWNLOAD_SUSPENSO_MESSAGE,
   PortalRequestError,
   resolvePortalExamLink,
   resumePortalDeviceSession,
@@ -72,8 +73,12 @@ export default function PortalExamLinkWorkspace({ linkToken }: PortalExamLinkWor
     setErroDownload("");
     try {
       await downloadPortalAttachment(item);
-    } catch {
-      setErroDownload("Não foi possível baixar o arquivo. Tente abrir o link de novo.");
+    } catch (erro) {
+      setErroDownload(
+        erro instanceof PortalRequestError && erro.status === 423
+          ? PORTAL_DOWNLOAD_SUSPENSO_MESSAGE
+          : "Não foi possível baixar o arquivo. Tente abrir o link de novo.",
+      );
     } finally {
       setBaixando(null);
     }
@@ -171,7 +176,11 @@ export default function PortalExamLinkWorkspace({ linkToken }: PortalExamLinkWor
         ) : null}
       </dl>
 
-      {exame.arquivos.length === 0 ? (
+      {exame.download_suspenso ? (
+        <p className="mt-6 rounded-md bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+          {PORTAL_DOWNLOAD_SUSPENSO_MESSAGE}
+        </p>
+      ) : exame.arquivos.length === 0 ? (
         <p className="mt-6 rounded-md bg-amber-50 p-4 text-sm leading-6 text-amber-900">
           O laudo já foi liberado, mas o arquivo ainda não está disponível para download. Tente de novo em
           alguns minutos.
