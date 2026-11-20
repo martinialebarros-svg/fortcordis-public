@@ -16,6 +16,7 @@ import {
   normalizarSexoPaciente,
 } from "@/lib/ultrassonografia-abdominal";
 import { ArrowLeft, Download, Edit, Loader2, ScanLine } from "lucide-react";
+import PortalDownloadControl from "../../laudos/components/PortalDownloadControl";
 
 interface ImagemPreview {
   id: number;
@@ -173,6 +174,12 @@ export default function VisualizarUltrassonografiaAbdominalPage() {
             </button>
           </div>
         </header>
+
+        <PortalDownloadControl
+          key={laudo.id}
+          laudo={laudo}
+          onChange={(suspenso) => setLaudo((atual: typeof laudo) => atual && { ...atual, portal_download_suspenso: suspenso })}
+        />
 
         <section className="fc-ultrasound-view-card fc-ultrasound-view-summary">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 text-sm">

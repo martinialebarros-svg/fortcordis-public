@@ -65,6 +65,7 @@ interface Laudo {
   tem_pdf_externo?: boolean;
   portal_clinica_disponivel?: boolean;
   portal_clinica_liberado?: boolean;
+  portal_download_suspenso?: boolean;
   portal_veterinario_disponivel?: boolean;
   portal_veterinario_liberado?: boolean;
   portal_destinos_pendentes?: string[];
@@ -146,7 +147,7 @@ function getPortalPendingDestinations(laudo: Laudo) {
 }
 
 function canReleasePortal(laudo: Laudo) {
-  return getPortalPendingDestinations(laudo).length > 0;
+  return !laudo.portal_download_suspenso && getPortalPendingDestinations(laudo).length > 0;
 }
 
 function getPortalConfirmMessage(laudo: Laudo) {
@@ -1002,6 +1003,11 @@ export default function LaudosPage() {
                               {laudo.whatsapp_parceiro_status === "enviado"
                                 ? "WhatsApp parceiro enviado"
                                 : "WhatsApp parceiro falhou"}
+                            </span>
+                          )}
+                          {laudo.portal_download_suspenso && (
+                            <span className="rounded-full bg-amber-50 px-2 py-1 text-xs font-medium text-amber-800">
+                              Download suspenso
                             </span>
                           )}
                           {(laudo.portal_clinica_baixado_em || laudo.portal_veterinario_baixado_em) && (

@@ -59,7 +59,7 @@ def load_echo_editor_source(db, laudo_id: int, *, lock: bool = False) -> EchoEdi
         tutor = query(Tutor).filter(Tutor.id == paciente.tutor_id).first() if paciente and paciente.tutor_id else None
         imagens = query(ImagemLaudo).options(defer(ImagemLaudo.conteudo)).filter(
             ImagemLaudo.laudo_id == laudo_id).order_by(ImagemLaudo.id).all()
-        content = {"laudo": _record(laudo), "paciente": _record(paciente),
+        content = {"laudo": _record(laudo, exclude=("portal_download_suspenso",)), "paciente": _record(paciente),
                    "tutor": _record(tutor),
                    "imagens": [_record(image, exclude=("conteudo",)) for image in imagens]}
         serialized = json.dumps(content, sort_keys=True, ensure_ascii=False, separators=(",", ":"), allow_nan=False)

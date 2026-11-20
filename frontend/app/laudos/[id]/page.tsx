@@ -31,6 +31,7 @@ import {
 import { getConfirmacaoRevogarVeterinario } from "@/lib/laudo-portal-destinos";
 import AvisoWhatsAppDialog from "../components/AvisoWhatsAppDialog";
 import PortalLiberadoPara from "../components/PortalLiberadoPara";
+import PortalDownloadControl from "../components/PortalDownloadControl";
 import EchoNarrativeConsistencyNotice from "../components/EchoNarrativeConsistencyNotice";
 import { ArrowLeft, CheckCircle, Download, FileText, Loader2, MessageCircle, Printer, Send, Upload } from "lucide-react";
 
@@ -80,6 +81,8 @@ interface Laudo {
   veterinario_parceiro_crmv?: string | null;
   portal_clinica_disponivel?: boolean;
   portal_clinica_liberado?: boolean;
+  portal_download_suspenso?: boolean;
+  portal_pode_suspender_download?: boolean;
   portal_veterinario_disponivel?: boolean;
   portal_veterinario_liberado?: boolean;
   portal_destinos_pendentes?: string[];
@@ -531,24 +534,26 @@ export default function VisualizarLaudoPage() {
           </div>
 
           <div className="fc-report-view-actions">
-            <button
-              type="button"
-              onClick={liberarNoPortalClinica}
-              disabled={liberandoPortal || !canReleasePortal(laudo)}
-              className={`fc-report-view-portal ${!canReleasePortal(laudo) ? "fc-report-view-portal-released" : ""}`}
-              title={getPortalButtonTitle(laudo)}
-            >
-              {!canReleasePortal(laudo) ? (
-                <CheckCircle className="w-4 h-4" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-              {!canReleasePortal(laudo)
-                ? "No portal"
-                : liberandoPortal
-                  ? "Liberando..."
-                  : "Liberar portal"}
-            </button>
+            {!laudo.portal_download_suspenso && (
+              <button
+                type="button"
+                onClick={liberarNoPortalClinica}
+                disabled={liberandoPortal || !canReleasePortal(laudo)}
+                className={`fc-report-view-portal ${!canReleasePortal(laudo) ? "fc-report-view-portal-released" : ""}`}
+                title={getPortalButtonTitle(laudo)}
+              >
+                {!canReleasePortal(laudo) ? (
+                  <CheckCircle className="w-4 h-4" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+                {!canReleasePortal(laudo)
+                  ? "No portal"
+                  : liberandoPortal
+                    ? "Liberando..."
+                    : "Liberar portal"}
+              </button>
+            )}
             <button
               type="button"
               onClick={downloadPDF}
@@ -581,6 +586,12 @@ export default function VisualizarLaudoPage() {
             <Link href={`/financeiro?aba=ordens&os_id=${laudo.ordem_servico.id}`} className="text-sm font-bold text-teal-800 underline">Ver no Financeiro</Link>
           </section>
         ) : null}
+
+        <PortalDownloadControl
+          key={laudo.id}
+          laudo={laudo}
+          onChange={(suspenso) => setLaudo((atual) => atual && { ...atual, portal_download_suspenso: suspenso })}
+        />
 
         <PortalLiberadoPara
           laudo={laudo}

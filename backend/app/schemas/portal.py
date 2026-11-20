@@ -76,6 +76,7 @@ class PortalExamSummaryResponse(BaseModel):
     data_solicitacao: Optional[str] = None
     data_resultado: Optional[str] = None
     observacoes: Optional[str] = None
+    download_suspenso: bool = False
     anexos: list[PortalExamAttachmentResponse] = Field(default_factory=list)
 
 
@@ -231,6 +232,7 @@ class PortalExamLinkResponse(BaseModel):
     paciente_nome: Optional[str] = None
     tipo_exame: str
     data_exame: Optional[str] = None
+    download_suspenso: bool = False
     arquivos: list[PortalDownloadLinkItemResponse] = Field(default_factory=list)
     # Evita duplicar PORTAL_CLINIC_DEVICE_TRUST_ENABLED no frontend: a pagina so
     # oferece "manter esta unidade conectada" quando o backend aceita.

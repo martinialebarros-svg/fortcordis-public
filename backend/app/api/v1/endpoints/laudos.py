@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, Request, UploadFile, status
-from sqlalchemy import exists, func, literal, or_, select, union_all
+from sqlalchemy import exists, func, literal, or_, select, union_all, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, aliased
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StrictBool
 from datetime import date, datetime, timedelta
 from io import BytesIO
 import json
@@ -1049,6 +1049,7 @@ def _serialize_portal_release_state(
     return {
         "portal_clinica_disponivel": clinic_available,
         "portal_clinica_liberado": clinic_released,
+        "portal_download_suspenso": laudo.portal_download_suspenso,
         "portal_veterinario_disponivel": vet_available,
         "portal_veterinario_liberado": bool(portal_veterinario_liberado),
         "portal_veterinarios_destinos": destinos_veterinarios,
@@ -3120,6 +3121,13 @@ def obter_laudo(
         # O seletor de destino do aviso por WhatsApp abre nesta tela tambem, e
         # precisa saber quem ja recebeu.
         "whatsapp_envios": laudo.whatsapp_envios or {},
+        "portal_pode_suspender_download": (
+            is_portal_released_status(laudo.status, kind="laudo")
+            or db.query(Exame.id).filter(
+                Exame.laudo_id == laudo.id,
+                Exame.status == PORTAL_RELEASED_STATUS,
+            ).first() is not None
+        ),
         **_serialize_portal_release_state(db, laudo=laudo),
     }
 
@@ -3162,6 +3170,8 @@ def atualizar_laudo(
 
 def _atualizar_laudo_transacional(laudo, laudo_data, db, current_user, *, commit=True):
     """Existing update contract; the editor can commit it with its own effects."""
+
+    laudo_data.pop("portal_download_suspenso", None)
 
     if laudo.tipo == TIPO_LAUDO_ELETROCARDIOGRAMA and buscar_ordem_laudo(db, laudo.id, somente_ativa=True):
         altera_identidade = (
@@ -3430,6 +3440,8 @@ def _liberar_laudo_para_portal(
     laudo = db.query(Laudo).filter(Laudo.id == laudo_id).first()
     if not laudo:
         raise HTTPException(status_code=404, detail="Laudo nao encontrado")
+    if laudo.portal_download_suspenso:
+        raise HTTPException(status_code=409, detail="Retome o download antes de liberar o laudo no portal.")
     if not laudo.paciente_id:
         raise HTTPException(
             status_code=422,
@@ -3689,6 +3701,49 @@ def liberar_laudo_para_portal(
     )
 
 
+class PortalDownloadSuspensaoRequest(BaseModel):
+    suspenso: StrictBool
+
+
+@router.put("/laudos/{laudo_id}/portal/download-suspenso")
+def alterar_suspensao_download_portal(
+    laudo_id: int,
+    payload: PortalDownloadSuspensaoRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    estado = (
+        db.query(Laudo.portal_download_suspenso)
+        .filter(Laudo.id == laudo_id)
+        .with_for_update()
+        .first()
+    )
+    if estado is None:
+        raise HTTPException(status_code=404, detail="Laudo não encontrado.")
+
+    if estado.portal_download_suspenso != payload.suspenso:
+        # O estado do portal não altera a versão clínica usada pelo editor.
+        db.execute(
+            update(Laudo)
+            .where(Laudo.id == laudo_id)
+            .values(portal_download_suspenso=payload.suspenso, updated_at=Laudo.updated_at)
+        )
+        registrar_auditoria(
+            current_user=current_user,
+            modulo="laudos",
+            entidade="laudo",
+            entidade_id=laudo_id,
+            acao="LAUDO_PORTAL_DOWNLOAD_SUSPENSO" if payload.suspenso else "LAUDO_PORTAL_DOWNLOAD_RETOMADO",
+            descricao="Download do laudo por parceiros suspenso." if payload.suspenso else "Download do laudo por parceiros retomado.",
+            request=request,
+            db=db,
+        )
+        db.commit()
+
+    return {"portal_download_suspenso": payload.suspenso}
+
+
 @router.post("/laudos/{laudo_id}/portal/veterinarios/{partner_id}/revogar")
 def revogar_liberacao_veterinario_no_portal(
     laudo_id: int,
@@ -3801,6 +3856,8 @@ def avisar_laudo_liberado_por_whatsapp(
     laudo = db.query(Laudo).filter(Laudo.id == laudo_id).first()
     if laudo is None:
         raise HTTPException(status_code=404, detail="Laudo nao encontrado.")
+    if laudo.portal_download_suspenso:
+        raise HTTPException(status_code=409, detail="Retome o download antes de avisar pelo WhatsApp.")
     if not is_portal_released_status(laudo.status, kind="laudo"):
         raise HTTPException(status_code=409, detail="Libere o laudo no portal antes de enviar o aviso.")
 
