@@ -14,4 +14,4 @@ A retomada usa o PDF salvo pelo fluxo de edição contratado. Ela depende da rev
 
 O detalhe recebe `portal_pode_suspender_download` do servidor. Um exame liberado pelo Atendimento também habilita o controle, mesmo com o laudo em “Finalizado”.
 
-O detalhe usa `portal_pode_suspender_download` para reconhecer também exames liberados pelo Atendimento cujo laudo mantém status interno Finalizado.
+O ciclo foi homologado no Stage com um exame fictício liberado pelo Atendimento. A retomada exige ação explícita e usa o mesmo link permanente com o PDF corrigido, sem alterar a data original de liberação.
