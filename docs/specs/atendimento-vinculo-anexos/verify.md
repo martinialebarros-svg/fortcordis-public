@@ -8,6 +8,7 @@
 | Cadastro do mesmo paciente e isolamento entre pacientes/usuários | Verificado localmente | Testes de contexto preservam o vínculo pelo ID. Mudança de peso clínico exige atualização da síntese com os mesmos arquivos. Troca de paciente e usuário continua protegida. |
 | Interface sem confirmações adicionais e com proveniência | Verificado localmente | Componentes testados e percurso local com API fictícia. Exame de Jully disponível no atendimento de Julie, com origem consultável. Uma inclusão ocorre depois da aprovação clínica. |
 | Compatibilidade com memória e revisão desatualizada | Verificado localmente | Cache legado bloqueado, edições e itens já aplicados são recuperados. A atualização da síntese libera a revisão e conserva a prevenção de inclusão automática ou repetida. |
+| Serialização da revisão de áudio com contexto salvo | Verificado localmente | Os 15 testes do módulo de transcrição passaram também pelo runner unittest do deploy. Fixture fornece contexto salvo válido, mantendo a validação do paciente e as assertions de transcrição e revisão por áudio. |
 | Tipos, lint, build e SDD | Verificado localmente | 2.980 testes Vitest e 23 testes Node aprovados, além de tipos, lint completo, build, sintaxe Python e guardrail SDD. |
 | Concorrência em PostgreSQL descartável | Verificado localmente | Oito cenários passaram em PostgreSQL 17 temporário, incluindo exclusividade do worker e decisões concorrentes legadas. O cluster foi encerrado após os testes. |
 | Homologação em Stage | Pendente | Validar o candidato isolado instalado antes da promoção. |
@@ -17,3 +18,5 @@ A validação local usa dados fictícios e provedores simulados. O backend ampli
 A prova de navegador usa o componente da aplicação com API fictícia. Ela verifica o percurso da interface e não certifica uma instalação ou uma análise clínica real. Os materiais de visualização ficam fora do repositório público.
 
 A verificação de produção será executada após a promoção autorizada, com workflow terminal, SHA instalado, serviços, rotas, bundles e preservação dos dados.
+
+O primeiro gate completo da candidata isolada `2e0a2a28` executou 2.747 testes e encontrou uma fixture antiga que chamava `serialize(None, job)` sem contexto/banco. A instalação foi dispensada pelo gate. A fixture foi atualizada para fornecer contexto sintético, preservando a validação real e todas as assertions. Regressão ampliada posterior com 190 testes e 85 subtestes aprovados; oito casos PostgreSQL ficaram sem URL nesse ensaio, já cobertos pela execução PostgreSQL documentada acima. O runner unittest do módulo passou 15/15.

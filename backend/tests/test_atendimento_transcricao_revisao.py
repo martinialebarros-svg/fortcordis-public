@@ -249,9 +249,11 @@ class BatchSerializationTests(unittest.TestCase):
                  SimpleNamespace(id="failed-audio", nome="failed.wav", tipo="audio", tamanho=10,
                                  status="failed", erro="erro", resultado_json=None)]
         from datetime import datetime
-        job = SimpleNamespace(context_json="{}", id="batch", atendimento_id=1, paciente_id=2, status="completed",
+        context = {"atendimento_id": 1, "paciente": {"id": 2, "nome": "Paciente fictício"}, "triagem": {}, "consulta": {}}
+        job = SimpleNamespace(context_json=json.dumps(context), id="batch", atendimento_id=1, paciente_id=2, status="completed",
                               erro=None, expires_at=datetime(2030, 1, 1), resultado_json=None, transcricao="Manual.")
         with patch.object(jobs, "_files", return_value=files), \
+                patch.object(jobs, "_contexto", return_value=context), \
                 patch.object(jobs, "_serialize_identity_reviews", return_value=(None, None, None)):
             result = jobs.serialize(None, job)
             self.assertEqual(result["transcricao"], "Manual.\n\nTexto literal.\n\nAntigo.")
