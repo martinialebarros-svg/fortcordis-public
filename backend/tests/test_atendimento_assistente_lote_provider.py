@@ -251,19 +251,17 @@ class LoteProviderTests(unittest.TestCase):
             service.sintetizar_lote(transcript=TRANSCRIPT, context=CONTEXT, exames=[exam], user_id=8)
         self.provider.client.responses.parse.assert_not_called()
 
-    def test_identity_is_revalidated_against_current_context_and_blocks_all_integration(self):
+    def test_document_demographic_differences_do_not_block_synthesis(self):
         context = copy.deepcopy(CONTEXT)
         context["paciente"]["nome"] = "Outro paciente"
         exam = cached_exam()
         exam["analise"]["avisos"] = ["Identificação exige conferência no original."]
         result = service.sintetizar_lote(transcript=TRANSCRIPT, context=context, exames=[exam], user_id=8)
-        self.assertTrue(result["bloqueado_integracao"])
-        self.assertEqual(result["campos"], [])
-        self.assertEqual(result["sugestoes"], [])
+        self.assertFalse(result["bloqueado_integracao"])
         self.assertEqual(len(result["achados_exames"]), 1)
-        self.assertTrue(any("Corrija ou remova" in item for item in result["pendencias"]))
+        self.assertEqual(result["fontes"][0]["paciente_nome"], exam["analise"]["fontes"][0]["paciente_nome"])
         self.assertTrue(any("01_exame.pdf" in notice and "Identificação exige conferência" in notice for notice in result["avisos"]))
-        self.provider.client.responses.parse.assert_not_called()
+        self.provider.client.responses.parse.assert_called_once()
 
     def test_uncertain_measurement_stays_unusable_in_synthesis_and_review(self):
         exam = cached_exam()

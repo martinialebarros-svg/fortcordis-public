@@ -33,8 +33,8 @@ class BreedReviewValidationTests(unittest.TestCase):
         original = copy.deepcopy(raw)
         result = direct.validar_resultado(AnaliseClinica.model_validate(raw), transcript=TRANSCRIPT,
                                           context=CONTEXT, files=[FILE])
-        self.assertTrue(result["bloqueado_integracao"])
-        self.assertEqual(result["sugestoes"], [])
+        self.assertFalse(result["bloqueado_integracao"])
+        self.assertEqual(result["sugestoes"], raw["sugestoes"])
         self.assertEqual(result["fontes"][0]["motivo"], raw["fontes"][0]["motivo"])
         self.assertNotIn("revisao_raca", result["fontes"][0])
         self.assertEqual(raw, original)
@@ -64,9 +64,9 @@ class BreedReviewValidationTests(unittest.TestCase):
                 self.assertFalse(revisao_raca_aplicavel(source, CONTEXT, REVIEW))
                 result = direct.validar_resultado(AnaliseClinica.model_validate(raw), transcript=TRANSCRIPT,
                     context=CONTEXT, files=[FILE], revisoes_raca={FILE.nome: REVIEW})
-                self.assertTrue(result["bloqueado_integracao"])
+                self.assertFalse(result["bloqueado_integracao"])
                 self.assertNotIn("revisao_raca", result["fontes"][0])
-                self.assertEqual(result["sugestoes"], [])
+                self.assertEqual(result["sugestoes"], raw["sugestoes"])
 
     def test_uncertain_findings_remain_without_numeric_values_after_confirmation(self):
         raw = raw_output(True)
@@ -124,14 +124,14 @@ class DeferredBreedSynthesisTests(unittest.TestCase):
         self.assertIn(AVISO_RACA_PENDENTE, result["pendencias"])
         self.assertEqual(len(result["achados_exames"]), 2)
 
-    def test_partial_confirmation_still_blocks_synthesis(self):
+    def test_partial_legacy_confirmation_does_not_block_uploaded_sources(self):
         exams = [cached_exam(1), cached_exam(2)]
         for exam in exams:
             exam["analise"]["fontes"][0]["identidade"] = "divergente"
         result = provider.sintetizar_lote(transcript=TRANSCRIPT, context=CONTEXT,
             exames=exams, user_id=8, revisoes_raca={exams[0]["arquivo"]["nome"]: REVIEW})
-        self.provider.client.responses.parse.assert_not_called()
-        self.assertTrue(result["bloqueado_integracao"])
+        self.provider.client.responses.parse.assert_called_once()
+        self.assertFalse(result["bloqueado_integracao"])
         self.assertIn("revisao_raca", result["fontes"][0])
         self.assertNotIn("revisao_raca", result["fontes"][1])
 

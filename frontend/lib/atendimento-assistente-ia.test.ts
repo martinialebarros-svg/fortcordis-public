@@ -45,7 +45,7 @@ describe("assistência IA do atendimento", () => {
     expect(podeIncorporarCampo(resultado, { ...campo, evidencia: "" })).toBe(false);
     expect(podeIncorporarCampo(resultado, { ...campo, campo: "plano_terapeutico" })).toBe(false);
   });
-  it("aceita achado de raça pendente apenas com decisão veterinária explícita e preserva os outros bloqueios", () => {
+  it("aceita vínculo do anexo apesar de diferenças demográficas e preserva revisão e proveniência", () => {
     const fonte: AssistenteIAResultado["fontes"][number] = {
       arquivo: "exame.pdf", paciente_nome: "Paciente Teste", especie: "canino", data_exame: "2026-11-08", identidade: "divergente", motivo: "Raça diferente",
       revisao_raca: { decisao: "mesmo_paciente_raca_pendente", usuario_id: 7, registrado_em: "2026-11-09T12:00:00Z" },
@@ -53,13 +53,15 @@ describe("assistência IA do atendimento", () => {
     const resultado = { bloqueado_integracao: false, revisao_obrigatoria: true, raca_pendente_revisao: true, fontes: [fonte] } as AssistenteIAResultado;
     const achado: AssistenteIAResultado["achados_exames"][number] = { arquivo: "exame.pdf", pagina: 2, descricao: "Creatinina", evidencia: "Creatinina 1,2 mg/dL", valor: "1,2", unidade: "mg/dL", referencia: "0,5–1,5", confianca: "alta", alertas: [] };
     expect(podeIncorporarAchado(resultado, achado)).toBe(true);
-    expect(podeIncorporarAchado({ ...resultado, raca_pendente_revisao: false }, achado)).toBe(false);
+    expect(podeIncorporarAchado({ ...resultado, raca_pendente_revisao: false }, achado)).toBe(true);
     expect(podeIncorporarAchado({ ...resultado, bloqueado_integracao: true }, achado)).toBe(false);
     expect(podeIncorporarAchado({ ...resultado, revisao_desatualizada: true }, achado)).toBe(false);
-    expect(podeIncorporarAchado({ ...resultado, fontes: [{ ...fonte, revisao_raca: undefined }] }, achado)).toBe(false);
-    expect(podeIncorporarAchado({ ...resultado, fontes: [{ ...fonte, revisao_raca: { ...fonte.revisao_raca!, registrado_em: "inválido" } }] }, achado)).toBe(false);
+    expect(podeIncorporarAchado({ ...resultado, fontes: [{ ...fonte, revisao_raca: undefined }] }, achado)).toBe(true);
+    expect(podeIncorporarAchado({ ...resultado, fontes: [{ ...fonte, paciente_nome: null, especie: null, identidade: "nao_confirmada", revisao_raca: undefined }] }, achado)).toBe(true);
     expect(podeIncorporarAchado(resultado, { ...achado, evidencia: "" })).toBe(false);
     expect(podeIncorporarAchado(resultado, { ...achado, confianca: "baixa" })).toBe(false);
     expect(podeIncorporarAchado(resultado, { ...achado, arquivo: "outro.pdf" })).toBe(false);
+    expect(podeIncorporarAchado(resultado, { ...achado, pagina: null })).toBe(false);
+    expect(podeIncorporarAchado(resultado, { ...achado, pagina: 0 })).toBe(false);
   });
 });

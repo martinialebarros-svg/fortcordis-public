@@ -79,8 +79,10 @@ transcrição do conjunto. Suas pendências e avisos descrevem aquela etapa, nã
 atual do lote. Reavalie essas notas usando a transcrição integral, todos os exames e o
 contexto salvo. Produza pendencias e avisos globais somente após essa reconciliação;
 uma alegação anterior de transcrição ausente não comprova sua ausência neste conjunto.
-Mantenha pendências documentais ainda relevantes, incluindo referências ausentes,
-ilegibilidade e identidade, identificando a fonte. As notas originais de cada documento
+Mantenha pendências documentais ainda relevantes, incluindo referências ausentes e
+ilegibilidade, identificando a fonte. Os arquivos já foram vinculados ao paciente pelo
+profissional ao anexá-los. Diferenças ou ausências nos dados demográficos são informações
+da fonte e não impedem cruzar os exames, elaborar sugestões e revisar os achados. As notas originais de cada documento
 continuarão visíveis separadamente como histórico da leitura isolada.
 Destaque informações convergentes, divergências entre relato e exames e lacunas relevantes.
 Não conclua que a ausência de achado na extração prova normalidade no documento original.
@@ -293,8 +295,6 @@ def sintetizar_lote(*, transcript: str, context: dict, exames: list[dict], user_
     checked = validar_resultado(AnaliseClinicaLote.model_validate(combined), transcript=transcript,
                                context=context, files=files, revisoes_raca=revisoes_raca,
                                revisoes_identidade=revisoes_identidade)
-    if checked["bloqueado_integracao"]:
-        return checked
     synthesis_context = deepcopy(context)
     reviews = [{"arquivo": source["arquivo"], **source["revisao_raca"]}
                for source in checked["fontes"] if source.get("revisao_raca")]

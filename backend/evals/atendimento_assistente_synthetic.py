@@ -42,7 +42,6 @@ class Case:
     name: str
     transcript: str
     documents: tuple[Document, ...]
-    blocked: bool = False
 
 
 def _pdf(pages: tuple[tuple[str, ...], ...]) -> bytes:
@@ -112,8 +111,8 @@ def cases() -> tuple[Case, ...]:
     return (
         Case("negacoes_nomes", TRANSCRIPT, ()),
         Case("documentos_unidades", "", (pdf, image)),
-        Case("identidade_divergente", TRANSCRIPT, (other,), True),
-        Case("identidade_ausente", TRANSCRIPT, (missing,), True),
+        Case("identidade_divergente", TRANSCRIPT, (other,)),
+        Case("identidade_ausente", TRANSCRIPT, (missing,)),
         Case("ilegivel_instrucao", "", (uncertain,)),
     )
 
@@ -122,15 +121,16 @@ def reference_output(case: Case, filenames: list[str]) -> dict:
     """Synthetic SDK response; never presented as a response from a live model."""
     output = {"campos": [], "fontes": [], "achados_exames": [], "sugestoes": [],
               "pendencias": [], "avisos": ["Fixture sintética: revisão obrigatória."]}
-    if case.transcript and not case.blocked:
+    if case.transcript:
         output["campos"] = [{"campo": "anamnese", "texto": case.transcript,
                               "fonte": "transcricao", "evidencia": case.transcript}]
     for document, filename in zip(case.documents, filenames):
         output["fontes"].append({
             "arquivo": filename, "paciente_nome": document.patient,
             "especie": "Canina" if document.patient else None, "data_exame": DATE,
-            # Deliberately optimistic: exercise independent identity guards offline.
-            "identidade": "compativel", "motivo": "Identificação sintética de teste.",
+            # Preserve the document's original demographic reading independently
+            # of its association with the selected visit.
+            "identidade": document.identity, "motivo": "Identificação sintética de teste.",
         })
         for measurement in document.measurements:
             output["achados_exames"].append({**deepcopy(measurement), "arquivo": filename, "alertas": []})

@@ -4,7 +4,8 @@ import AtendimentoAssistenteIA from "./AtendimentoAssistenteIA";
 import api from "@/lib/axios";
 import { useAtendimentoAudio } from "@/lib/use-atendimento-audio";
 import type { AssistenteIAResultado } from "@/lib/atendimento-assistente-ia";
-import { limparRascunhosAssistenteMemoria } from "@/lib/atendimento-assistente-memory";
+import { guardarRevisaoAssistenteMemoria, lerRascunhoAssistenteMemoria, limparRascunhosAssistenteMemoria } from "@/lib/atendimento-assistente-memory";
+import type { AssistenteLote } from "@/lib/atendimento-assistente-lote";
 
 vi.mock("@/lib/axios", () => ({ default: { get: vi.fn(), post: vi.fn() } }));
 vi.mock("@/lib/use-atendimento-audio", () => ({ useAtendimentoAudio: vi.fn() }));
@@ -85,6 +86,78 @@ describe("rascunho de IA em memória após navegação", () => {
     await waitFor(() => expect(nextApply).toHaveBeenCalledTimes(1));
     expect(nextApply).toHaveBeenCalledWith([{ campo: "queixa_principal", texto: "Tosse relatada pelo tutor." }]);
     expect(screen.getAllByRole("button", { name: "Adicionado ao atendimento" })).toHaveLength(2);
+  });
+  it("atualiza lote legado bloqueado preservando edições e inclusões até abrir a nova revisão", async () => {
+    const identity = { usuarioId: 7, atendimentoId: 1, pacienteId: 11 };
+    const avisoAntigo = "Identidade não confirmada: este achado não pode ser incorporado ao paciente.";
+    const resultadoLegado: AssistenteIAResultado = {
+      ...structuredClone(resultado), bloqueado_integracao: true,
+      fontes: [{ arquivo: "exame.pdf", paciente_nome: "Jully", especie: "canina", data_exame: "2026-10-31", identidade: "divergente", motivo: "Grafia diferente do cadastro." }],
+      achados_exames: [{ arquivo: "exame.pdf", pagina: 1, descricao: "Creatinina", evidencia: "Creatinina 1,2 mg/dL", valor: "1,2", unidade: "mg/dL", referencia: null, confianca: "alta", alertas: [avisoAntigo, avisoAntigo] }],
+    };
+    const textoEditado = "Texto já revisado pelo veterinário e incluído no atendimento.";
+    guardarRevisaoAssistenteMemoria(identity, {
+      texto: transcript, arquivos: [], resultado: resultadoLegado,
+      edicoes: { 0: textoEditado }, revisados: { 0: true, 1: true }, aplicados: { 0: true },
+      achadosEditados: { 0: "Achado revisado e já incluído." }, achadosRevisados: { 0: true }, achadosAplicados: { 0: true },
+      audioTranscrito: null, anexados: false, resultadoLoteId: "lote-legado",
+    });
+    const resultadoProjetado: AssistenteIAResultado = {
+      ...structuredClone(resultadoLegado), bloqueado_integracao: false,
+      achados_exames: resultadoLegado.achados_exames.map((achado) => ({ ...achado, alertas: [] })),
+    };
+    let batch: AssistenteLote = {
+      id: "lote-legado", atendimento_id: 1, paciente_id: 11, status: "completed", erro: null,
+      arquivos: [{ id: "exame-1", nome: "exame.pdf", tipo: "exame", tamanho: 50, status: "completed", erro: null }],
+      resultado: resultadoProjetado, transcricao: transcript, sintese_pendente: true,
+    };
+    vi.mocked(api.get).mockImplementation(async (url) => ({ data: String(url).includes("/lotes/") ? structuredClone(batch) : status }));
+    vi.mocked(api.post).mockImplementation(async (url) => {
+      expect(url).toBe("/atendimentos/1/assistente/lotes/lote-legado/retomar");
+      batch = { ...batch, status: "queued", resultado: null, sintese_pendente: false };
+      return { data: structuredClone(batch) };
+    });
+    const { onApplyFields } = abrir();
+    await screen.findByText("Leituras disponíveis — análise aguardando atualização");
+    await screen.findByText(/Esta revisão está desatualizada/);
+    expect(screen.getByLabelText("Anamnese")).toHaveValue(textoEditado);
+    expect(screen.getByRole("button", { name: "Adicionado ao atendimento" })).toBeDisabled();
+    expect(screen.getAllByLabelText(/Conferi este trecho com a fonte/)[1]).toBeChecked();
+    expect(screen.queryByText("Confirmar paciente por arquivo")).toBeNull();
+    expect(screen.queryByText("Revisar a raça depois")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Abrir revisão do conjunto" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Manter revisão atual" }));
+    await waitFor(() => {
+      const review = lerRascunhoAssistenteMemoria(identity)?.review;
+      expect(review?.edicoes[0]).toBe(textoEditado);
+      expect(review?.aplicados[0]).toBe(true);
+      expect(review?.achadosAplicados[0]).toBe(true);
+    });
+    fireEvent.click(screen.getByLabelText(/Confirmei a autorização do tutor/));
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar análise com arquivos processados" }));
+    await screen.findByText("Conjunto na fila de processamento");
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(screen.getByLabelText("Anamnese")).toHaveValue(textoEditado);
+    expect(onApplyFields).not.toHaveBeenCalled();
+    batch = {
+      ...batch, status: "completed", sintese_pendente: false,
+      resultado: { ...resultadoProjetado, campos: [{ ...resultadoProjetado.campos[0], texto: "Nova síntese das fontes já processadas." }] },
+    };
+    fireEvent.click(screen.getByRole("button", { name: "Consultar progresso" }));
+    await screen.findByText("Análise conjunta concluída");
+    fireEvent.click(screen.getByRole("button", { name: "Abrir revisão do conjunto" }));
+    const abrirNova = await screen.findByRole("button", { name: "Abrir nova revisão" });
+    expect(screen.getByLabelText("Anamnese")).toHaveValue(textoEditado);
+    expect(screen.getByRole("button", { name: "Adicionado ao atendimento" })).toBeDisabled();
+    fireEvent.click(abrirNova);
+    expect(screen.getByLabelText("Anamnese")).toHaveValue("Nova síntese das fontes já processadas.");
+    expect(screen.queryByText(/Esta revisão está desatualizada/)).toBeNull();
+    expect(screen.queryByText(avisoAntigo)).toBeNull();
+    expect(screen.getByRole("button", { name: "Adicionar ao atendimento" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Adicionar achado aos dados clínicos" })).toBeDisabled();
+    expect(screen.getByLabelText(/Conferi este achado no exame original/)).not.toBeChecked();
+    expect(onApplyFields).not.toHaveBeenCalled();
+    expect(api.post).toHaveBeenCalledTimes(1);
   });
   it.each([
     { scenario: "outro usuário", usuarioId: 8, pacienteId: 11, atendimentoId: 1 },

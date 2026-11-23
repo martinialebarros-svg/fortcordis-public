@@ -45,17 +45,18 @@ export interface AssistenteLote {
   erro: string | null;
   arquivos: FonteLote[];
   resultado: AssistenteIAResultado | null;
+  sintese_pendente?: boolean;
   transcricao: string | null;
   modo?: ModoAssistenteLote;
   revisoes_transcricao?: AssistenteTranscricaoFonteRevisao[];
-  revisao_raca?: RevisaoLote & {
+  revisao_raca?: (RevisaoLote & {
     raca_cadastrada: string | null;
-  };
-  revisao_identidade?: RevisaoLote & {
+  }) | null;
+  revisao_identidade?: (RevisaoLote & {
     contexto_mudou: boolean;
     paciente_nome: string | null;
     paciente_idade: string | null;
-  };
+  }) | null;
 }
 
 export type ModoAssistenteLote = "analise" | "transcricao";
