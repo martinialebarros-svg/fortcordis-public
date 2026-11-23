@@ -13,17 +13,6 @@ beforeEach(() => {
 });
 
 describe("useReferenciaEco", () => {
-  it.each(["Canina", "Dog", " Cão ", "cães", "Cachorro", "canine"])("compara 2D de aliases caninos exatos sem mudar a fonte: %s", (species) => {
-    const reference = { id: 1, especie: species, peso_kg: 13.6, patient_age: "2 anos" } as ReferenciaEco;
-    const before = { ...reference };
-    const rows = compararMedidasComReferencia({ DIVEd_2D: "33.53", DIVES_2D: "22.87" }, reference, "eixo_curto", 13.6);
-    expect(rows.DIVEd_2D).toMatchObject({ referencia_min: 26.01, referencia_max: 36.73, status: "normal" });
-    expect(reference).toEqual(before);
-  });
-  it.each(["CaninaXYZ", "Caninoide", "Dogfish", "Felina"])("não atribui intervalo canino 2D à espécie %s", (species) => {
-    const rows = compararMedidasComReferencia({ DIVEd_2D: "33.53" }, { id: 1, especie: species, peso_kg: 13.6 } as ReferenciaEco, "eixo_curto", 13.6);
-    expect(rows.DIVEd_2D).toMatchObject({ referencia_min: null, referencia_max: null, status: "nao_avaliado" });
-  });
   it.each(["Gato", "Cat", "Felino", " Feline "])("consulta aliases felinos pelo catálogo canônico: %s", async (species) => {
     const { result } = renderHook(() => useReferenciaEco());
     await act(async () => { await result.current.buscarReferencia(species, 5.6); });

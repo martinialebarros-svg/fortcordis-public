@@ -1,6 +1,6 @@
 # Verificação do vínculo pelo envio
 
-| Critério | Estado | Evidência |
+| Critério | Status | Evidência |
 | --- | --- | --- |
 | Síntese com demográficos divergentes ou ausentes | Verificado localmente | Regressões do validador, da síntese e do harness sintético preservam a identificação lida e permitem a análise. |
 | Aproveitamento de achados com revisão profissional | Verificado localmente | Testes de seleção e incorporação mantêm evidência, fonte, página, confiança e aprovação clínica por item. Leitura incerta permanece limitada. |
@@ -10,8 +10,10 @@
 | Compatibilidade com memória e revisão desatualizada | Verificado localmente | Cache legado bloqueado, edições e itens já aplicados são recuperados. A atualização da síntese libera a revisão e conserva a prevenção de inclusão automática ou repetida. |
 | Tipos, lint, build e SDD | Verificado localmente | 2.980 testes Vitest e 23 testes Node aprovados, além de tipos, lint completo, build, sintaxe Python e guardrail SDD. |
 | Concorrência em PostgreSQL descartável | Verificado localmente | Oito cenários passaram em PostgreSQL 17 temporário, incluindo exclusividade do worker e decisões concorrentes legadas. O cluster foi encerrado após os testes. |
-| Homologação em Stage e produção | Pendente | Esta implementação local não constitui evidência de instalação. |
+| Homologação em Stage | Pendente | Validar o candidato isolado instalado antes da promoção. |
 
 A validação local usa dados fictícios e provedores simulados. O backend ampliado passou em 179 testes e 74 subtests, incluindo PostgreSQL, com zero casos pulados.
 
 A prova de navegador usa o componente da aplicação com API fictícia. Ela verifica o percurso da interface e não certifica uma instalação ou uma análise clínica real. Os materiais de visualização ficam fora do repositório público.
+
+A verificação de produção será executada após a promoção autorizada, com workflow terminal, SHA instalado, serviços, rotas, bundles e preservação dos dados.
