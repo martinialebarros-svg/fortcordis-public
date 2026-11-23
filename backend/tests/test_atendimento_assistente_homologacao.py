@@ -91,11 +91,11 @@ class SyntheticFixturesTests(unittest.TestCase):
         self.assertFalse(checks["campos_com_evidencia_literal"])
         self.assertFalse(checks["sem_posologia_numerica"])
 
-    def test_wrong_identity_or_released_uncertain_number_fail(self):
+    def test_blocked_attachment_or_released_uncertain_number_fail(self):
         case = fixtures.cases()[2]
         result, filenames = reference_result(case)
-        result["bloqueado_integracao"] = False
-        self.assertFalse(runner.evaluate(case, result, filenames)["bloqueio_identidade"])
+        result["bloqueado_integracao"] = True
+        self.assertFalse(runner.evaluate(case, result, filenames)["vinculo_anexos_ao_atendimento"])
         case = fixtures.cases()[4]
         result, filenames = reference_result(case)
         result["achados_exames"][0].update(valor="1,2", unidade="mg/dL", confianca="alta")

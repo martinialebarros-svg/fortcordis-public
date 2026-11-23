@@ -25,6 +25,7 @@ from app.models.atendimento_assistente_lote import AtendimentoAssistenteLote as 
 from app.schemas.atendimento_assistente_lote import LoteEntrada
 from app.schemas.atendimento_assistente_lote_limites import MAX_AUDIO_BYTES, MAX_AUDIO_PART_BYTES, MAX_EXAMES
 from app.services.atendimento_assistente import AssistenteError, require_enabled, validar_audio, validar_arquivo
+from app.services.atendimento_assistente_identidade import ERROS_IDENTIDADE_LEGADOS, normalizar_vinculo_anexos
 from app.services.atendimento_assistente_identidade import (
     DECISAO_NOME_IDADE, DECISAO_RACA_PENDENTE, impedimento_revisao_identidade,
     impedimento_revisao_raca, revisao_identidade_aplicavel, revisao_raca_aplicavel,
@@ -71,9 +72,8 @@ def _authorize_actor(db, job):
 
 def _validate_patient(db, job):
     context = _contexto(db, job.atendimento_id)
-    original = json.loads(job.context_json)["paciente"]
     patient = context["paciente"]
-    if patient["id"] != job.paciente_id or any(patient.get(k) != original.get(k) for k in ("nome", "especie")):
+    if patient["id"] != job.paciente_id:
         raise HTTPException(409, "O paciente mudou. Prepare um novo conjunto para revisar o contexto correto.")
     return context
 
@@ -88,11 +88,17 @@ def _job_context(context, mode):
     return _json({**context, "_modo_assistente": mode} if mode == "transcricao" else context)
 
 
+def _clinical_snapshot(context):
+    # The registered patient ID binds uploads. Demographics may be corrected
+    # independently while the saved clinical narrative remains versioned.
+    return {**context, "paciente": {"id": context["paciente"]["id"]}}
+
+
 def _validate_snapshot(db, job):
     context = _validate_patient(db, job)
     saved, mode = _stored_context(job)
-    if mode == "analise" and context != saved:
-        raise HTTPException(409, "O atendimento salvo mudou durante a análise. Prepare um novo conjunto com o contexto atualizado.")
+    if mode == "analise" and _clinical_snapshot(context) != _clinical_snapshot(saved):
+        raise HTTPException(409, "O atendimento salvo mudou durante a análise. Retome a análise com o contexto atualizado e os arquivos já processados.")
 
 
 def get_job(db, atendimento_id, usuario_id, job_id, *, lock=False, validate_patient=True, allow_expired=False, allow_deleting=False):
@@ -204,6 +210,13 @@ def _source_bytes_intact(item):
         return False
 
 
+def _source_version(files):
+    return _digest(_json([
+        {"id": item.id, "status": item.status, "sha256": item.sha256,
+         "resultado_sha256": _digest(item.resultado_json)} for item in files
+    ]))
+
+
 def _reviews_for_synthesis(db, job, files=None):
     """Load only server-bound decisions; never trust a review from the AI output."""
     state = _review_state(job)
@@ -255,7 +268,7 @@ def _serialize_identity_reviews(db, job, files, actor):
     if (allowed or state["revisoes"]) and valid_snapshot:
         try:
             live = _validate_patient(db, job)
-            if mode == "analise" and live != context:
+            if mode == "analise" and _clinical_snapshot(live) != _clinical_snapshot(context):
                 current = live
                 raise HTTPException(409, "O contexto da revisão mudou. Confira novamente a identificação.")
         except HTTPException as exc:
@@ -402,9 +415,20 @@ def review_identity(db, job, payload, actor, *, decision=DECISAO_NOME_IDADE, rev
     return job, {"request_id": request_id, "acao": action, "arquivo_ids": selection}
 
 
+def _sintese_pendente(job, files, *, context_changed=False):
+    if _stored_context(job)[1] != "analise" or any(item.status != "completed" for item in files):
+        return False
+    if job.status == "failed":
+        return True
+    return bool(job.status == "completed" and (context_changed or not job.resultado_json
+                or json.loads(job.resultado_json).get("bloqueado_integracao")))
+
+
 def serialize(db, job, actor=None):
     files = _files(db, job.id)
-    race_review, identity_review, invalid_review = _serialize_identity_reviews(db, job, files, actor)
+    # Legacy decisions remain available as audit metadata, but are no longer an
+    # authorization requirement for documents attached to this patient's visit.
+    race_review, identity_review, _ = _serialize_identity_reviews(db, job, files, actor)
     texts = [job.transcricao] if job.status != "deleting" else []
     transcript_reviews = []
     for item in files:
@@ -414,17 +438,28 @@ def serialize(db, job, actor=None):
             if isinstance(result.get("revisao_transcricao"), dict):
                 transcript_reviews.append({"arquivo_id": item.id, "nome": item.nome,
                                            "revisao_transcricao": result["revisao_transcricao"]})
+    result = normalizar_vinculo_anexos(json.loads(job.resultado_json)) if job.resultado_json and job.status != "deleting" else None
+    saved, mode = _stored_context(job)
+    current = _validate_patient(db, job)
+    error = None if job.erro in ERROS_IDENTIDADE_LEGADOS else job.erro
+    context_changed = mode == "analise" and _clinical_snapshot(current) != _clinical_snapshot(saved)
+    if result and (
+        (result.get("fontes_versao") and result["fontes_versao"] != _source_version(files))
+        or any(not _source_bytes_intact(item) for item in files)
+    ):
+        result, error = None, "As fontes do conjunto mudaram. Confira os arquivos antes de continuar."
+    if result and context_changed:
+        result.update(revisao_desatualizada=True, bloqueado_integracao=True)
     return {
         "id": job.id, "atendimento_id": job.atendimento_id, "paciente_id": job.paciente_id,
-        "status": "failed" if job.status == "deleting" else job.status, "erro": invalid_review or job.erro,
+        "status": "failed" if job.status == "deleting" else job.status, "erro": error,
         "expires_at": job.expires_at.isoformat() + "Z",
         "arquivos": [{"id": f.id, "nome": f.nome, "tipo": f.tipo, "tamanho": f.tamanho, "status": f.status, "erro": f.erro,
                        **(_upload_progress(job.id, f) if f.tipo == "audio" and f.status == "pending" else {})} for f in files],
-        # A completed job does not make an old manual authorization permanently valid.
-        # Read invalidation is projection-only: keep originals and stored history intact.
-        "resultado": json.loads(job.resultado_json) if job.resultado_json and job.status != "deleting" and not invalid_review else None,
+        "resultado": result,
         "transcricao": "\n\n".join(t.strip() for t in texts if t.strip()),
-        "modo": _stored_context(job)[1],
+        "modo": mode,
+        "sintese_pendente": _sintese_pendente(job, files, context_changed=context_changed),
         "revisoes_transcricao": transcript_reviews,
         "revisao_raca": race_review,
         "revisao_identidade": identity_review,
@@ -575,26 +610,24 @@ def start_job(db, job, *, retry=False):
     require_enabled()
     if job.status == "deleting":
         raise HTTPException(409, "A exclusão deste conjunto está pendente. Tente apagar novamente.")
-    if job.status in ("queued", "processing", "completed"):
+    files = _files(db, job.id)
+    context = _validate_patient(db, job)
+    saved, mode = _stored_context(job)
+    context_changed = mode == "analise" and _clinical_snapshot(context) != _clinical_snapshot(saved)
+    refresh_synthesis = retry and _sintese_pendente(job, files, context_changed=context_changed)
+    if job.status in ("queued", "processing") or (job.status == "completed" and not refresh_synthesis):
         return job
     if not retry and job.status != "uploading":
         raise HTTPException(409, "Use Retomar para continuar o conjunto que falhou.")
-    if retry and job.status != "failed":
+    if retry and job.status != "failed" and not refresh_synthesis:
         raise HTTPException(409, "Envie os arquivos pendentes antes de iniciar.")
-    files = _files(db, job.id)
     if any(not item.sha256 for item in files):
         raise HTTPException(409, "Envie todos os arquivos antes de iniciar a análise.")
-    context = _validate_patient(db, job)
-    saved, mode = _stored_context(job)
-    if retry and mode == "analise" and context != saved:
-        raise HTTPException(409, "O atendimento salvo mudou. Prepare um novo conjunto com o contexto atualizado.")
-    if job.revisoes_identidade_json:
-        reviews = _reviews_for_synthesis(db, job, files)
-        revalidated = _review_state(job).get("contexto_revalidado", False)
-        if (reviews or revalidated) and _has_unreviewed_identity(files, reviews, context, revalidated=revalidated):
-            raise HTTPException(409, "Há identificações pendentes. Confira os documentos antes de continuar a análise.")
-    if not retry:
-        job.context_json = _job_context(context, mode)
+    # A new synthesis can use the current saved visit with the same patient's
+    # immutable readings and transcript. In-flight changes remain snapshot-checked.
+    job.context_json = _job_context(context, mode)
+    if refresh_synthesis:
+        job.resultado_json = None
     for item in files:
         if item.status == "failed":
             item.status, item.erro = "uploaded", None
@@ -733,28 +766,20 @@ def process_job(job_id, token):
                 job.status, job.erro = "completed", None
                 db.commit()
                 return
+            if any(not _source_bytes_intact(item) for item in files):
+                raise HTTPException(409, "As fontes do conjunto mudaram. Confira os arquivos antes de continuar.")
+            source_version = _source_version(files)
             transcript = serialize(db, job)["transcricao"]
             exames = [json.loads(item.resultado_json) for item in files if item.tipo == "exame"]
             audio_notices = list(dict.fromkeys(notice for item in files if item.tipo == "audio"
                 for notice in json.loads(item.resultado_json).get("avisos", [])))
             _authorize_actor(db, job)
             _validate_snapshot(db, job)
-            # A human review must remain bound to the original source and context.
-            reviews = _reviews_for_synthesis(db, job, files)
-            if _review_state(job).get("contexto_revalidado") and _has_unreviewed_identity(files, reviews, context, revalidated=True):
-                raise HTTPException(409, "Há exames aguardando conferência no contexto atualizado.")
-            review_version = job.revisoes_identidade_json
             db.rollback()
         if len(transcript) > 80000:
             raise AssistenteError("A transcrição conjunta excede 80.000 caracteres. Prepare um conjunto menor.")
         require_enabled()
         arguments = dict(transcript=transcript, context=context, exames=exames, user_id=user_id)
-        race_reviews = {name: review for name, review in reviews.items() if review["decisao"] == DECISAO_RACA_PENDENTE}
-        identity_reviews = {name: review for name, review in reviews.items() if review["decisao"] == DECISAO_NOME_IDADE}
-        if race_reviews:
-            arguments["revisoes_raca"] = race_reviews
-        if identity_reviews:
-            arguments["revisoes_identidade"] = identity_reviews
         result = sintetizar_lote(**arguments)
         result["avisos"] = list(dict.fromkeys([*result.get("avisos", []), *audio_notices]))
         with SessionLocal() as db:
@@ -762,8 +787,10 @@ def process_job(job_id, token):
             if job:
                 _authorize_actor(db, job)
                 _validate_snapshot(db, job)
-                if job.revisoes_identidade_json != review_version or _reviews_for_synthesis(db, job) != reviews:
-                    raise HTTPException(409, "A revisão mudou durante a análise. Confira novamente a identificação.")
+                current_files = _files(db, job_id)
+                if source_version != _source_version(current_files) or any(not _source_bytes_intact(item) for item in current_files):
+                    raise HTTPException(409, "As fontes do conjunto mudaram durante a análise. Confira os arquivos.")
+                result["fontes_versao"] = source_version
                 job.status, job.resultado_json, job.erro = "completed", _json(result), None
                 db.commit()
     except Exception as exc:

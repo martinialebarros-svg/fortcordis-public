@@ -153,9 +153,8 @@ function decisaoRegistrada(revisao: RevisaoVeterinaria<string> | undefined, deci
 
 export function podeIncorporarAchado(resultado: AssistenteIAResultado, achado: AssistenteIAResultado["achados_exames"][number]): boolean {
   return resultado.revisao_desatualizada !== true && resultado.bloqueado_integracao === false && resultado.revisao_obrigatoria === true && achado.confianca === "alta" &&
-    Boolean(achado.evidencia?.trim()) && resultado.fontes.some((fonte) => fonte.arquivo === achado.arquivo &&
-      (fonte.identidade === "compativel" || temRevisaoIdentidadeConfirmada(fonte) ||
-        (resultado.raca_pendente_revisao === true && temRevisaoRacaConfirmada(fonte))));
+    achado.pagina !== null && Number.isInteger(achado.pagina) && achado.pagina > 0 && achado.pagina <= 100 &&
+    Boolean(achado.evidencia?.trim()) && resultado.fontes.some((fonte) => fonte.arquivo === achado.arquivo);
 }
 
 export function textoAchadoParaRevisao(resultado: AssistenteIAResultado, achado: AssistenteIAResultado["achados_exames"][number]): string {

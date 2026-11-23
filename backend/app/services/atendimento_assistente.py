@@ -21,7 +21,7 @@ from app.core.config import settings
 from app.schemas.atendimento_assistente import AnaliseClinica
 from app.services.atendimento_ia_response import StructuredResponseError, parse_structured_response
 from app.services.atendimento_assistente_identidade import (
-    AVISO_RACA_PENDENTE, normal as _normal, species as _species,
+    AVISO_IDENTIDADE_ACHADO, AVISO_RACA_PENDENTE, normalizar_vinculo_anexos,
     revisao_identidade_aplicavel, revisao_raca_aplicavel,
 )
 
@@ -161,38 +161,17 @@ def validar_arquivo(nome: str | None, mime: str | None, content: bytes, indice: 
     return ArquivoAnalise(name, detected, content, pages)
 
 
-AVISO_IDENTIDADE_ACHADO = "Identidade não confirmada: este achado não pode ser incorporado ao paciente."
-
-
 def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
                       files: list[ArquivoAnalise], revisoes_raca: dict[str, dict] | None = None,
                       revisoes_identidade: dict[str, dict] | None = None) -> dict:
-    """Reject missing provenance and independently downgrade unsafe identity claims."""
+    """Validate source evidence while honoring the patient association of uploads."""
     result = output.model_dump()
     by_name = {file.nome: file for file in files}
     sources = {source["arquivo"]: source for source in result["fontes"]}
     if len(sources) != len(result["fontes"]) or set(sources) != set(by_name):
         raise AssistenteError("A IA não identificou todas as fontes. A análise foi descartada; tente novamente.", 502)
-    blocked = False
-    confirmed_sources: set[str] = set()
-    identity_reviewed: set[str] = set()
     race_reviewed = False
     for source in result["fontes"]:
-        expected_name = _normal(context["paciente"]["nome"])
-        extracted_name = _normal(source["paciente_nome"])
-        expected_species = _species(context["paciente"].get("especie"))
-        extracted_species = _species(source["especie"])
-        if (expected_name and extracted_name and expected_name != extracted_name) or (expected_species and extracted_species and expected_species != extracted_species):
-            source["identidade"] = "divergente"
-            notice = "A identificação do exame diverge do paciente selecionado. Confira o arquivo e o cadastro."
-            if not source["motivo"]:
-                source["motivo"] = notice
-            else:
-                result["avisos"].append(f"Validação da fonte {source['arquivo']}: {notice}")
-        elif not expected_name or not extracted_name or source["identidade"] != "compativel":
-            source["identidade"] = "nao_confirmada" if source["identidade"] != "divergente" else "divergente"
-            if not source["motivo"]:
-                source["motivo"] = "Não foi possível confirmar a identidade deste exame. Confira a identificação no arquivo original."
         review = (revisoes_raca or {}).get(source["arquivo"])
         identity_review = (revisoes_identidade or {}).get(source["arquivo"])
         if revisao_raca_aplicavel(source, context, review):
@@ -202,11 +181,6 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             race_reviewed = True
         if revisao_identidade_aplicavel(source, context, identity_review):
             source["revisao_identidade"] = {key: identity_review[key] for key in ("decisao", "usuario_id", "registrado_em")}
-            identity_reviewed.add(source["arquivo"])
-        if source["identidade"] == "compativel" or "revisao_raca" in source or "revisao_identidade" in source:
-            confirmed_sources.add(source["arquivo"])
-        else:
-            blocked = True
     valid_fields = []
     for field in result["campos"]:
         source = field["fonte"]
@@ -218,7 +192,7 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             raise AssistenteError("A IA citou uma fonte desconhecida. A análise foi descartada.", 502)
         else:
             # File readings are reviewed in achados_exames, never bypass that
-            # per-finding uncertainty/identity gate through a free-text field.
+            # per-finding evidence review through a free-text field.
             result["avisos"].append("Dados dos arquivos ficam nos achados dos exames para conferência individual.")
             continue
         valid_fields.append(field)
@@ -232,14 +206,6 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             finding["unidade"] = None
             finding["referencia"] = None
             finding["alertas"].append("Leitura incerta: confira o original. Valores não liberados para incorporação.")
-        if finding["arquivo"] not in confirmed_sources:
-            finding["alertas"].append(AVISO_IDENTIDADE_ACHADO)
-        elif finding["arquivo"] in identity_reviewed:
-            finding["alertas"] = [alerta for alerta in finding["alertas"] if alerta != AVISO_IDENTIDADE_ACHADO]
-    if blocked:
-        valid_fields = []
-        result["sugestoes"] = []
-        result["pendencias"].append("Corrija ou remova os arquivos com identificação divergente ou não confirmada e refaça a análise.")
     result["campos"] = valid_fields
     if race_reviewed:
         result["raca_pendente_revisao"] = True
@@ -248,8 +214,9 @@ def validar_resultado(output: AnaliseClinica, *, transcript: str, context: dict,
             "A confirmação veterinária é mostrada separadamente da identificação original. "
             "Os avisos das leituras isoladas permanecem como histórico; a raça ainda precisa de revisão."
         )
+    result = normalizar_vinculo_anexos(result)
     result["avisos"] = list(dict.fromkeys([*result["avisos"], REVIEW_NOTICE]))
-    return {**result, "modelo": settings.ATENDIMENTO_IA_MODEL, "esforco": _esforco_analise(com_arquivos=bool(files)), "revisao_obrigatoria": True, "bloqueado_integracao": blocked}
+    return {**result, "modelo": settings.ATENDIMENTO_IA_MODEL, "esforco": _esforco_analise(com_arquivos=bool(files)), "revisao_obrigatoria": True, "bloqueado_integracao": False}
 
 
 INSTRUCTIONS = """Você auxilia um médico-veterinário a REVISAR um atendimento, em português.
@@ -264,11 +231,19 @@ numerado do arquivo. evidencia deve ser trecho literal da fonte, sem paráfrase.
 diagnósticos sugeridos, planos de IA ou conteúdo ilegível em campos. Achados documentais ficam em
 achados_exames, sem repetir medidas ou resultados em campos; isso permite revisar cada fonte.
 Use o contexto salvo apenas para compreender o caso e justificar sugestões. Não o apresente como
-recém extraído. Identidade e dados do contexto salvo são a referência atual; não altere o paciente.
+recém extraído. O profissional vinculou os arquivos ao paciente ao anexá-los neste atendimento.
+Use essa associação para analisar o conjunto. Preserve os dados do cadastro e os dados
+documentais separadamente, com sua fonte e data; divergências não alteram o vínculo.
 Para cada arquivo, registre UMA fonte com nome do paciente, espécie e data explicitamente lidos
 (null se ausentes). Marque identidade compativel SOMENTE se a identificação é suficiente e coincide;
-marque divergente se não coincide, nao_confirmada se falta/está ilegível/ambígua. Não misture pacientes,
-datas ou exames. Se qualquer fonte divergir ou não puder ser identificada, deixe campos e sugestoes vazios.
+marque divergente se não coincide, nao_confirmada se falta/está ilegível/ambígua. Essa
+classificação descreve a leitura original e não bloqueia a análise ou as sugestões.
+Grafia do nome, raça, idade, peso, sexo e espécie podem divergir entre cadastro e documentos.
+Registre diferenças relevantes uma vez na fonte, com datas e valores originais, e prossiga
+com a análise dos arquivos vinculados pelo profissional. Não peça confirmação de identidade
+por arquivo. Não escolha uma raça, peso ou idade entre fontes nem substitua o cadastro.
+Referências, doses e interpretações dependentes desses dados exigem revisão do veterinário.
+Preserve a separação entre documentos, datas, unidades e resultados de cada exame.
 Para cada achado registre arquivo exato, página iniciando em 1 (imagens = 1), descrição, trecho literal,
 valor e unidade literais, referência do próprio laboratório (null se ausente). Nunca invente intervalo,
 não converta unidades, não derive valores e não interprete uma média como limite universal de normalidade.

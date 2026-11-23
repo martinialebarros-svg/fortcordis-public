@@ -185,7 +185,7 @@ def test_explicit_review_persists_separately_and_synthesizes_cached_prefixed_sou
     assert state(case)["revisao_raca"]["fontes"] == queued["revisao_raca"]["fontes"]
     synth = synthesize(case, monkeypatch)
     synth.assert_called_once()
-    assert set(synth.call_args.kwargs["revisoes_raca"]) == {"01_exame.pdf", "02_exame.pdf"}
+    assert "revisoes_raca" not in synth.call_args.kwargs
     assert state(case)["status"] == "completed"
     assert state(case)["resultado"]["raca_pendente_revisao"] is True
     assert_originals(case)
@@ -213,13 +213,12 @@ def test_conflicting_request_replay_is_rejected(case):
     assert case.audit.call_count == 1
 
 
-def test_partial_review_stays_blocked_and_second_explicit_review_queues(case, monkeypatch):
+def test_partial_legacy_review_can_resume_uploaded_documents(case, monkeypatch):
     files = [source["arquivo_id"] for source in state(case)["revisao_raca"]["fontes"]]
     response = confirm(case, payload(case, files[:1]))
     assert response.status_code == 200 and response.json()["status"] == "failed"
     assert service._claim() is None
-    assert case.client.post(case.path + "/retomar").status_code == 409
-    assert confirm(case, payload(case, files[1:])).json()["status"] == "queued"
+    assert case.client.post(case.path + "/retomar").json()["status"] == "queued"
     synthesize(case, monkeypatch).assert_called_once()
     assert_originals(case)
 
@@ -339,15 +338,15 @@ def test_worker_revalidates_after_synthesis_before_accepting_result(case, monkey
         assert job.status == "failed" and job.resultado_json is None
 
 
-def test_worker_checks_reviewer_role_again_before_provider(case, monkeypatch):
+def test_worker_uses_normal_attachment_permission_without_requiring_legacy_reviewer_role(case, monkeypatch):
     assert confirm(case).status_code == 200
     with case.sessions() as db:
         # Reception retains edit permission but cannot author a veterinary review.
         db.get(User, 3).papeis = [db.get(Papel, 3)]
         db.commit()
-    synthesize(case, monkeypatch).assert_not_called()
+    synthesize(case, monkeypatch).assert_called_once()
     with case.sessions() as db:
-        assert db.get(Lote, case.id).status == "failed"
+        assert db.get(Lote, case.id).status == "completed"
 
 
 def test_synthesis_failure_retries_only_synthesis_and_retains_review(case, monkeypatch):
@@ -407,7 +406,7 @@ def test_additive_migration_preserves_existing_row_and_is_idempotent():
 
 
 @pytest.mark.parametrize("change", ["permission", "role", "context", "reading", "source_bytes"])
-def test_completed_read_withholds_aggregate_when_manual_review_loses_validity(case, monkeypatch, change):
+def test_completed_read_checks_source_integrity_independently_of_legacy_review(case, monkeypatch, change):
     data = payload(case)
     assert confirm(case, data).status_code == 200
     synthesize(case, monkeypatch)
@@ -426,11 +425,36 @@ def test_completed_read_withholds_aggregate_when_manual_review_loses_validity(ca
         db.commit()
     current = state(case)
     assert current["status"] == "completed"
-    assert current["resultado"] is None and current["erro"]
-    assert not any(source["confirmada"] for source in current["revisao_raca"]["fontes"])
+    if change in {"reading", "source_bytes"}:
+        assert current["resultado"] is None and current["erro"]
+    else:
+        assert current["resultado"] is not None
+        assert current["resultado"]["bloqueado_integracao"] is False
     with case.sessions() as db:
         assert db.get(Lote, case.id).resultado_json == stored
 
+
+
+@pytest.mark.parametrize("change", ["missing", "modified"])
+def test_legacy_result_without_source_version_requires_intact_original(case, change):
+    from tests.test_atendimento_assistente import raw_output
+    historical = raw_output(True)
+    historical.update(bloqueado_integracao=True, revisao_obrigatoria=True)
+    stored = service._json(historical)
+    with case.sessions() as db:
+        job = db.get(Lote, case.id)
+        job.resultado_json = stored
+        item = service._files(db, case.id)[0]
+        if change == "missing":
+            Path(item.caminho).unlink()
+        else:
+            Path(item.caminho).write_bytes(b"modified original")
+        db.commit()
+    result = state(case)
+    assert result["resultado"] is None
+    assert "fontes do conjunto mudaram" in result["erro"]
+    with case.sessions() as db:
+        assert db.get(Lote, case.id).resultado_json == stored
 
 def identity_payload(case, index=0):
     review = state(case)["revisao_identidade"]
@@ -442,7 +466,7 @@ def identity_payload(case, index=0):
     }
 
 
-def test_stale_lot_confirms_name_and_age_then_synthesizes_without_reupload(case, monkeypatch):
+def test_demographic_changes_resume_cached_readings_without_identity_confirmations(case, monkeypatch):
     with case.sessions() as db:
         job = db.get(Lote, case.id)
         job.status, job.resultado_json = "failed", None
@@ -454,28 +478,18 @@ def test_stale_lot_confirms_name_and_age_then_synthesizes_without_reupload(case,
             reading["analise"]["fontes"][0].update(correction)
             item.resultado_json = service._json(reading)
             case.originals[item.id] = (item.sha256, item.resultado_json)
+        audio_content = b"synthetic original audio"
+        audio_path = case.directory / "original-audio.webm"
+        audio_path.write_bytes(audio_content)
         db.add(Arquivo(lote_id=case.id, id=str(uuid4()), ordem=2, nome="audio.webm",
-                       tipo="audio", tamanho=100, mime="audio/webm", status="completed", sha256="a" * 64,
+                       tipo="audio", tamanho=len(audio_content), mime="audio/webm", status="completed",
+                       sha256=hashlib.sha256(audio_content).hexdigest(), caminho=str(audio_path),
                        resultado_json=service._json({"texto": "Áudio fictício preservado."})))
         db.commit()
 
-    case.context["paciente"]["idade"] = "8a (estimada)"
-    stale = state(case)["revisao_identidade"]
-    assert stale["contexto_mudou"] and stale["pode_revisar"]
-    first = identity_payload(case)
-    case.context["consulta"]["anamnese"] = "Contexto atualizado."
-    route = case.path + "/revisar-identidade"
-    assert case.client.post(route, json=first).status_code == 409
-    first = identity_payload(case)
-    assert case.client.post(route, json={**first, "atualizar_contexto": False}).status_code == 409
-    partial = case.client.post(route, json=first).json()
-    assert partial["status"] == "failed" and not partial["revisao_identidade"]["contexto_mudou"]
-    assert [item["confirmada"] for item in partial["revisao_identidade"]["fontes"]] == [True, False]
-    assert case.client.post(route, json=first).json() == partial
-    assert case.client.post(case.path + "/retomar").status_code == 409
-    assert service._claim() is None
-    assert case.client.post(route, json=identity_payload(case, index=1)).json()["status"] == "queued"
-
+    case.context["paciente"].update(idade="8a (estimada)", nome="Paciente Fictício corrigido", raca="SRD")
+    assert state(case)["sintese_pendente"]
+    assert case.client.post(case.path + "/retomar").json()["status"] == "queued"
     synthesis = Mock(return_value=SimpleNamespace(status="completed", output_parsed={
         "campos": [], "sugestoes": [], "pendencias": [], "avisos": [],
     }))
@@ -492,26 +506,17 @@ def test_stale_lot_confirms_name_and_age_then_synthesizes_without_reupload(case,
     sent = json.loads(synthesis.call_args.kwargs["input"][0]["content"][0]["text"])
     assert sent["contexto_salvo"] == case.context
     assert "Áudio fictício preservado." in sent["transcricao"]
-    assert len(sent["revisoes_identidade"]) == 2 and "revisoes_veterinarias" not in sent
+    assert "revisoes_identidade" not in sent and "revisoes_veterinarias" not in sent
     completed = state(case)
     assert completed["status"] == "completed"
     result = completed["resultado"]
     assert not result["bloqueado_integracao"] and result["revisao_obrigatoria"]
     assert result["fontes"][0]["paciente_nome"] == "Paciente Fictíco"
     assert all(source["identidade"] == "divergente" for source in result["fontes"])
-    assert all(source["revisao_identidade"]["usuario_id"] == 3 for source in result["fontes"])
-    assert case.audit.call_count == 2
-    assert case.audit.call_args.args[-2] == "ATENDIMENTO_IA_REVISAO_IDENTIDADE"
+    assert case.audit.call_count == 0
     with case.sessions() as db:
         assert {item.id: (item.sha256, item.resultado_json) for item in service._files(db, case.id)
                 if item.tipo == "exame"} == case.originals
-
-    revocation = identity_payload(case)
-    for key in ("confirmo_mesmo_paciente", "confirmo_apenas_nome_idade", "consentimento", "atualizar_contexto"):
-        del revocation[key]
-    revoked = case.client.post(case.path + "/revogar-revisao-identidade", json=revocation).json()
-    assert revoked["status"] == "failed" and revoked["resultado"] is None
-    assert case.client.post(case.path + "/retomar").status_code == 409
 
 
 @pytest.mark.parametrize("field,value", [("especie", "Felina"), ("especie", None), ("paciente_nome", None)])
