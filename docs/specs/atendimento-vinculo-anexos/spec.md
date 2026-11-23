@@ -15,6 +15,7 @@
 - RF-008 Alterações demográficas no mesmo paciente não invalidam o vínculo do conjunto. A troca efetiva de paciente, de atendimento ou de usuário continua passando pelos controles de autorização existentes. Mudanças clínicas relevantes durante a execução continuam exigindo revisão atualizada da síntese.
 - RF-009 Recuperação em memória e armazenamento do navegador respeitam o novo contrato. Uma revisão realmente desatualizada continua protegida contra incorporação até a atualização do resultado.
 - RF-010 Falhas de leitura, retenção, integridade de arquivo e serviço de IA usam a recuperação existente. A nova associação documental não transforma uma leitura falha em resultado clínico.
+- RF-011 A consulta do contexto salvo durante a serialização preserva a transcrição literal e a revisão de incertezas de cada áudio. A projeção documental não altera a comparação do áudio.
 
 ## Aceite
 
