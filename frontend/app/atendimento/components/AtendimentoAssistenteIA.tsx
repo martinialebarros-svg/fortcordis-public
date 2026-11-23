@@ -493,18 +493,17 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
 
     {resultado ? <div className="mt-6 space-y-4 border-t border-slate-200 pt-5">
       <h4 className="font-semibold text-slate-900">3. Revisão do veterinário</h4>
-      {resultado.revisao_desatualizada ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Esta revisão está desatualizada. Os textos editados foram mantidos como referência, com inclusão desabilitada. Consulte o progresso e abra a nova revisão do conjunto antes de continuar.</p> : resultado.bloqueado_integracao ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">Há pendências de identificação. Confira os originais e registre sua decisão no conjunto para as divergências de nome, idade ou raça que puder esclarecer.</p> : null}
-      {resultado.raca_pendente_revisao ? <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Raça pendente de revisão veterinária. A análise considera a raça não confirmada; o cadastro e a identificação original dos exames permanecem preservados.</p> : null}
+      {resultado.revisao_desatualizada ? <p role="alert" className="rounded-xl bg-amber-50 p-3 text-sm text-amber-900">Esta revisão está desatualizada. Os textos editados foram mantidos como referência, com inclusão desabilitada. Consulte o progresso e abra a nova revisão do conjunto antes de continuar.</p> : resultado.bloqueado_integracao ? <p role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">Atualize a revisão do conjunto para aproveitar os dados disponíveis.</p> : null}
       {resultado.avisos.map((aviso, index) => <p key={index} className="text-sm text-amber-800">{aviso}</p>)}
-      {resultado.fontes?.length ? <div className="rounded-xl bg-slate-50 p-4">
-        <h5 className="font-medium">Identificação das fontes</h5>
+      {resultado.fontes?.length ? <details className="rounded-xl bg-slate-50 p-4">
+        <summary className="cursor-pointer font-medium">Origem e dados dos documentos</summary>
         <ul className="mt-2 space-y-2 text-sm">{resultado.fontes.map((fonte) => <li key={fonte.arquivo}>
           <strong className="break-all">{fonte.arquivo}</strong> · {fonte.paciente_nome || "Paciente não identificado"} · {fonte.especie || "Espécie ausente"} · {fonte.data_exame || "Data ausente"}
           <p className={fonte.identidade === "compativel" ? "text-slate-600" : "text-amber-800"}>Leitura original: {fonte.motivo}</p>
           {temRevisaoRacaConfirmada(fonte) ? <p className="mt-1 font-medium text-teal-900">Documento confirmado pelo veterinário em {new Date(fonte.revisao_raca!.registrado_em).toLocaleString("pt-BR")}. Raça pendente de revisão.</p> : null}
           {temRevisaoIdentidadeConfirmada(fonte) ? <p className="mt-1 font-medium text-teal-900">Vínculo com o paciente confirmado pelo veterinário em {new Date(fonte.revisao_identidade!.registrado_em).toLocaleString("pt-BR")}.</p> : null}
         </li>)}</ul>
-      </div> : null}
+      </details> : null}
       {resultado.pendencias.length ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><h5 className="font-medium text-amber-900">Informações para confirmar</h5><ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">{resultado.pendencias.map((item, index) => <li key={index}>{item}</li>)}</ul></div> : null}
       {resultado.campos.length ? <div className="space-y-3"><h5 className="font-medium">Informações propostas para o atendimento</h5>{resultado.campos.map((campo, index) => <article key={index} className="rounded-xl border border-slate-200 p-4">
         <label htmlFor={`campo-ia-${atendimentoId}-${index}`} className="text-sm font-semibold">{ASSISTENTE_CAMPO_LABELS[campo.campo] || campo.campo}</label>
@@ -520,11 +519,11 @@ function AtendimentoAssistenteSalvo({ atendimentoId, patientLabel, pacienteId, o
         <blockquote className="my-2 border-l-2 border-teal-300 pl-3 text-slate-600">{achado.evidencia}</blockquote>
         {achado.valor ? <p>Valor: {achado.valor} {achado.unidade || "(unidade não informada)"}</p> : null}
         {achado.referencia ? <p>Referência no documento: {achado.referencia}</p> : null}
-        {achado.alertas.map((alerta, i) => <p key={i} className="mt-1 text-amber-800">{alerta}</p>)}
+        {Array.from(new Set(achado.alertas)).map((alerta) => <p key={alerta} className="mt-1 text-amber-800">{alerta}</p>)}
         {podeIncorporarAchado(resultado, achado) ? <div className="mt-3 border-t border-slate-100 pt-3">
           <label className="text-sm font-medium" htmlFor={`achado-ia-${atendimentoId}-${index}`}>Texto para os dados clínicos</label>
           <textarea id={`achado-ia-${atendimentoId}-${index}`} rows={3} className="mt-1 w-full rounded-lg border border-slate-300 p-2" value={achadosEditados[index] ?? ""} disabled={editandoRevisaoBloqueado || achadosAplicados[index]} onChange={(event) => { setAchadosEditados((prev) => ({ ...prev, [index]: event.target.value })); setAchadosRevisados((prev) => ({ ...prev, [index]: false })); }} />
-          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={editandoRevisaoBloqueado || achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo paciente, data, valor e unidade.</label>
+          <label className="mt-2 flex items-start gap-2"><input type="checkbox" checked={Boolean(achadosRevisados[index])} disabled={editandoRevisaoBloqueado || achadosAplicados[index]} onChange={(event) => setAchadosRevisados((prev) => ({ ...prev, [index]: event.target.checked }))} className="mt-1" />Conferi este achado no exame original, incluindo data, valor e unidade, e aprovo sua inclusão.</label>
           <button type="button" className={`${buttonClass} mt-2`} disabled={ocupada || !itensDisponiveis.some((item) => item.tipo === "achado" && item.index === index)} onClick={() => incorporarResultado({ tipo: "achado", index })}>{achadosAplicados[index] ? "Achado adicionado" : "Adicionar achado aos dados clínicos"}</button>
         </div> : <p className="mt-2 text-xs text-amber-800">Confira ou complemente a fonte antes de usar este achado no prontuário.</p>}
       </article>)}</div> : null}

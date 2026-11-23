@@ -17,6 +17,8 @@ A homologação usou as rotas instaladas, o upload e a consulta no domínio púb
 
 ## Confirmação de identidade por exame
 
+As provas abaixo pertencem ao fluxo anterior de confirmação por documento. A verificação do comportamento solicitado em 22/11/2026 é acompanhada em [Vínculo dos anexos](../atendimento-vinculo-anexos/verify.md).
+
 | Critério | Status | Evidência |
 | --- | --- | --- |
 | Conferência por arquivo e retomada com os mesmos anexos | verificado localmente | Teste do painel verifica o link do original, exige declaração por arquivo, registra duas decisões e mostra o mesmo conjunto na fila. Nenhum upload é solicitado. |

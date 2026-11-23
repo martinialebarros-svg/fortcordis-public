@@ -86,16 +86,18 @@ class ValidationTests(unittest.TestCase):
         self.assertEqual(result["achados_exames"][0]["unidade"], "g/dL")
         self.assertEqual(result["fontes"][0]["data_exame"], "2026-10-26")
 
-    def test_wrong_patient_cannot_be_overridden_by_model_compatible_claim(self):
+    def test_uploaded_sources_keep_document_demographics_without_blocking_review(self):
         for field, value in [("paciente_nome", "Outro paciente"), ("especie", "Felina"), ("paciente_nome", None)]:
             with self.subTest(field=field, value=value):
                 payload = raw_output(True)
                 payload["fontes"][0][field] = value
                 result = checked(payload, [FILE])
-                self.assertTrue(result["bloqueado_integracao"])
-                self.assertEqual(result["campos"], [])
-                self.assertEqual(result["sugestoes"], [])
-                self.assertTrue(result["achados_exames"][0]["alertas"])
+                self.assertFalse(result["bloqueado_integracao"])
+                self.assertEqual(result["campos"][0]["evidencia"], TRANSCRIPT)
+                self.assertEqual(result["sugestoes"], payload["sugestoes"])
+                self.assertEqual(result["fontes"][0][field], value)
+                self.assertEqual(result["achados_exames"][0]["valor"], "12,3")
+                self.assertTrue(result["revisao_obrigatoria"])
 
     def test_missing_duplicate_or_unknown_source_is_rejected(self):
         for kind in ["missing", "duplicate", "unknown"]:

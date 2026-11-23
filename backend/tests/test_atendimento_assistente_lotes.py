@@ -385,6 +385,96 @@ class BatchTests(unittest.TestCase):
             self.assertEqual(synthesis.call_count,2)
             self.assertEqual(synthesis.call_args.kwargs,first_synthesis_args)
 
+    def test_historical_identity_block_projects_readings_and_resumes_only_synthesis(self):
+        from tests.test_atendimento_assistente import raw_output
+        from app.services.atendimento_assistente import AVISO_IDENTIDADE_ACHADO
+        manifest = self.manifest(1, 1)
+        job = self.create(manifest)
+        self.upload(job, manifest)
+        historical = raw_output(True)
+        historical.update(bloqueado_integracao=True, revisao_obrigatoria=True)
+        historical["fontes"][0].update(paciente_nome="Julli", identidade="divergente", motivo="Grafia e idade divergentes.")
+        historical["campos"] = []
+        historical["sugestoes"] = []
+        historical["achados_exames"][0]["alertas"] = [AVISO_IDENTIDADE_ACHADO, AVISO_IDENTIDADE_ACHADO, "Referência do laboratório ausente."]
+        historical["pendencias"] = ["Corrija ou remova os arquivos com identificação divergente ou não confirmada e refaça a análise."]
+        serialized = service._json(historical)
+        readings = {}
+        with self.session() as db:
+            stored = db.get(Lote, job["id"])
+            stored.status, stored.resultado_json = "completed", serialized
+            stored.erro = "Há identificações pendentes. Confira os documentos antes de continuar a análise."
+            stored.revisoes_identidade_json = '{"registro_historico_antigo":true}'
+            for item in service._files(db, job["id"]):
+                item.status = "completed"
+                reading = {"texto": "Relato de teste.", "avisos": []} if item.tipo == "audio" else {
+                    "arquivo": {"nome": "01_exame.pdf", "mime": item.mime, "paginas": 1}, "analise": historical}
+                item.resultado_json = service._json(reading)
+                readings[item.id] = (item.sha256, item.resultado_json)
+            db.commit()
+        state = self.client.get(f'{self.base}/{job["id"]}').json()
+        self.assertTrue(state["sintese_pendente"])
+        self.assertIsNone(state["erro"])
+        self.assertFalse(state["resultado"]["bloqueado_integracao"])
+        self.assertEqual(state["resultado"]["achados_exames"][0]["alertas"], ["Referência do laboratório ausente."])
+        self.assertEqual(state["resultado"]["fontes"][0]["paciente_nome"], "Julli")
+        with self.session() as db:
+            self.assertEqual(db.get(Lote, job["id"]).resultado_json, serialized)
+        self.context["paciente"].update(nome="Julie", especie="Canino", raca="SRD", idade="10a")
+        self.context["triagem"] = {"peso": "6,5"}
+        response = self.client.post(f'{self.base}/{job["id"]}/retomar')
+        self.assertEqual(response.status_code, 200, response.text)
+        module = "app.services.atendimento_assistente_lote_provider."
+        output = {**historical, "bloqueado_integracao": False, "avisos": []}
+        with patch(module + "processar_audio") as audio, patch(module + "processar_exame") as exam, patch(module + "sintetizar_lote", return_value=output) as synthesis:
+            service.run_once()
+            audio.assert_not_called()
+            exam.assert_not_called()
+            synthesis.assert_called_once()
+            self.assertEqual(synthesis.call_args.kwargs["context"]["paciente"]["nome"], "Julie")
+        with self.session() as db:
+            self.assertEqual({item.id: (item.sha256, item.resultado_json) for item in service._files(db, job["id"])}, readings)
+            self.assertEqual(json.loads(db.get(Lote, job["id"]).revisoes_identidade_json), {"registro_historico_antigo": True})
+        final = self.client.get(f'{self.base}/{job["id"]}').json()
+        self.assertEqual(final["status"], "completed")
+        self.assertFalse(final["sintese_pendente"])
+
+    def test_demographic_changes_during_processing_keep_patient_binding_and_snapshot(self):
+        job = self.create(self.manifest(0, 0))
+        self.client.post(f'{self.base}/{job["id"]}/iniciar')
+        def synthesize(**kwargs):
+            self.context["paciente"].update(nome="Julie", especie="Canino", raca="SRD", idade="9a")
+
+            return {"campos": [], "achados_exames": [], "avisos": []}
+        with patch("app.services.atendimento_assistente_lote_provider.sintetizar_lote", side_effect=synthesize):
+            service.run_once()
+        state = self.client.get(f'{self.base}/{job["id"]}').json()
+        self.assertEqual(state["status"], "completed")
+        self.assertFalse(state["resultado"]["bloqueado_integracao"])
+
+    def test_changed_clinical_weight_marks_synthesis_stale_and_reuses_same_sources(self):
+        manifest = self.manifest(0, 1)
+        self.context["triagem"] = {"peso": 6.2, "frequencia_cardiaca": 100}
+        job = self.create(manifest)
+        self.upload(job, manifest)
+        self.client.post(f'{self.base}/{job["id"]}/iniciar')
+        module = "app.services.atendimento_assistente_lote_provider."
+        with patch(module + "processar_exame", return_value={"analise": {"fontes": []}}) as exam, patch(module + "sintetizar_lote", return_value={"fontes": [], "achados_exames": [], "avisos": [], "bloqueado_integracao": False}) as synthesis:
+            service.run_once()
+            self.context["triagem"]["peso"] = 6.8
+            state = self.client.get(f'{self.base}/{job["id"]}').json()
+            self.assertTrue(state["resultado"]["revisao_desatualizada"])
+            self.assertTrue(state["resultado"]["bloqueado_integracao"])
+            self.assertTrue(state["sintese_pendente"])
+            self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/retomar').status_code, 200)
+            service.run_once()
+            self.assertEqual(exam.call_count, 1)
+            self.assertEqual(synthesis.call_count, 2)
+            self.assertEqual(synthesis.call_args.kwargs["context"]["triagem"]["peso"], 6.8)
+            fresh = self.client.get(f'{self.base}/{job["id"]}').json()
+            self.assertFalse(fresh["resultado"]["bloqueado_integracao"])
+            self.assertFalse(fresh["sintese_pendente"])
+
     def test_create_upload_and_start_are_idempotent_and_reject_changed_request(self):
         manifest=self.manifest()
         job=self.create(manifest)
@@ -451,14 +541,16 @@ class BatchTests(unittest.TestCase):
             process.assert_not_called()
         self.assertEqual(self.client.get(f'{self.base}/{job["id"]}').json()["status"],"queued")
 
-    def test_changed_saved_context_prevents_reusing_cached_processing(self):
+    def test_changed_saved_context_can_rebase_for_new_synthesis(self):
         job=self.create(self.manifest(0,0))
         with self.session() as db:
             db.get(Lote,job["id"]).status="failed"
             db.commit()
         self.context["consulta"]["anamnese"]="Relato atualizado"
-        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/retomar').status_code,409)
-        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/iniciar').status_code,409)
+        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/retomar').status_code,200)
+        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/iniciar').status_code,200)
+        with self.session() as db:
+            self.assertEqual(json.loads(db.get(Lote, job["id"]).context_json), self.context)
 
     def test_revoked_permission_stops_processing_before_provider(self):
         job=self.create(self.manifest(0,0))
@@ -528,7 +620,7 @@ class BatchTests(unittest.TestCase):
         self.assertEqual(state["status"],"failed")
         self.assertIn("mudou durante",state["erro"])
         self.assertIsNone(state["resultado"])
-        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/retomar').status_code,409)
+        self.assertEqual(self.client.post(f'{self.base}/{job["id"]}/retomar').status_code,200)
 
     def test_manifest_size_duplicates_and_consent_are_checked(self):
         data=self.manifest(1,1)

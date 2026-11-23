@@ -55,164 +55,48 @@ async function open(overrides: Partial<ComponentProps<typeof AtendimentoAssisten
   return { ...view, ...handlers };
 }
 const select = (items = files) => fireEvent.change(screen.getByLabelText("Áudios e PDFs do conjunto"), { target: { files: items } });
-const confirmBreed = () => {
-  fireEvent.click(screen.getByLabelText("Conferi o original de exame-0.pdf"));
-  fireEvent.click(screen.getByLabelText(/Confirmo que os documentos selecionados/));
-  fireEvent.click(screen.getByLabelText(/Confirmei que a única divergência/));
-};
-const breedButton = () => screen.getByRole("button", { name: "Confirmar documentos e revisar raça depois" });
-const saveBreedDecision = (confirmed = true) => {
-  stored!.revisao_raca!.fontes[0].confirmada = confirmed;
-  stored!.revisao_raca!.fontes[0].registrado_em = confirmed ? "2026-11-09T12:00:00Z" : null;
-  stored!.revisao_raca!.token = confirmed ? "snapshot-confirmado" : "snapshot-revogado";
-  stored!.resultado = null;
-};
-
 describe("análise de conjunto", () => {
-  it("retoma o conjunto existente após confirmar cada original no contexto atualizado", async () => {
-    stored = breedJob();
-    stored.status = "failed";
-    stored.resultado = null;
+  it("reaproveita lotes com diferenças documentais sem exigir confirmação por arquivo", async () => {
+    stored = { ...breedJob(), status: "failed", resultado: null };
     stored.revisao_identidade = {
-      ...stored.revisao_raca!, contexto_mudou: true, paciente_nome: "Paciente Teste", paciente_idade: "8a (estimada)",
-      fontes: stored.revisao_raca!.fontes.map((fonte, index) => ({
-        ...fonte, motivo: index === 0 ? "Grafia divergente." : "Idade divergente.",
-      })),
+      ...stored.revisao_raca!, contexto_mudou: false, paciente_nome: "Paciente Teste", paciente_idade: "8a",
+      fontes: stored.revisao_raca!.fontes.map((fonte) => ({ ...fonte, motivo: "Grafia e idade diferentes." })),
     };
-    delete stored.revisao_raca;
-    vi.mocked(api.post).mockImplementation(async (_url, body) => {
-      const id = (body as { arquivo_ids: string[] }).arquivo_ids[0];
-      const review = stored!.revisao_identidade!;
-      review.fontes.find((fonte) => fonte.arquivo_id === id)!.confirmada = true;
-      review.token = id;
-      review.contexto_mudou = false;
-      if (review.fontes.every((fonte) => fonte.confirmada)) stored!.status = "queued";
-      return response();
-    });
     await open();
-    expect(screen.getByText(/A primeira confirmação atualiza/)).toBeVisible();
-    expect(screen.getByRole("link", { name: "Baixar original de exame-0.pdf" })).toHaveAttribute("href",
-      "/api/v1/atendimentos/1/assistente/lotes/batch-1/arquivos/exam-0/original");
-    const first = screen.getByRole("button", { name: "Confirmar identidade de exame-0.pdf" });
-    const second = screen.getByRole("button", { name: "Confirmar identidade de exame-1.pdf" });
-    expect(first).toBeDisabled();
-    fireEvent.click(screen.getByLabelText(/Conferi o original de exame-0\.pdf/));
-    fireEvent.click(first);
-    await screen.findByText(/Vínculo confirmado pelo veterinário/);
-    expect(second).toBeDisabled();
-    expect(screen.getByRole("button", { name: "Retomar análise do conjunto" })).toBeDisabled();
-    fireEvent.click(screen.getByLabelText(/Conferi o original de exame-1\.pdf/));
-    fireEvent.click(second);
-    await screen.findByText("Conjunto na fila de processamento");
-    expect(api.post).toHaveBeenNthCalledWith(1, expect.stringContaining("/batch-1/revisar-identidade"),
-      { request_id: expect.any(String), revisao_token: "snapshot-original", arquivo_ids: ["exam-0"],
-        confirmo_mesmo_paciente: true, confirmo_apenas_nome_idade: true, consentimento: true, atualizar_contexto: true },
-      expect.any(Object));
-    expect(api.post).toHaveBeenNthCalledWith(2, expect.stringContaining("/batch-1/revisar-identidade"),
-      expect.objectContaining({ arquivo_ids: ["exam-1"], atualizar_contexto: false }), expect.any(Object));
-    expect(api.put).not.toHaveBeenCalled();
-  });
-
-  it("confirma documentos individualmente com duas declarações, preservando originais e leitura divergente", async () => {
-    stored = breedJob();
-    vi.mocked(api.post).mockImplementation(async () => { saveBreedDecision(); return response(); });
-    const { onResultInvalidated, onEnsureSaved } = await open();
-    expect(screen.getByText("Leitura concluída — identificação aguardando revisão")).toBeTruthy();
-    expect(screen.queryByText("Análise conjunta concluída")).toBeNull();
-    expect(breedButton().matches(":disabled")).toBe(true);
-    fireEvent.click(screen.getByLabelText("Conferi o original de exame-0.pdf"));
-    fireEvent.click(screen.getByLabelText(/Confirmo que os documentos selecionados/));
-    expect(breedButton().matches(":disabled")).toBe(true);
-    fireEvent.click(screen.getByLabelText(/Confirmei que a única divergência/));
-    expect(breedButton()).toBeEnabled();
-    fireEvent.click(breedButton()); fireEvent.click(breedButton());
-    await screen.findByText(/Decisão registrada. A raça continua pendente/);
-    expect(api.post).toHaveBeenCalledTimes(1);
-    expect(api.post).toHaveBeenCalledWith(expect.stringContaining("/batch-1/revisar-raca"), {
-      request_id: expect.any(String), revisao_token: "snapshot-original", arquivo_ids: ["exam-0"], confirmo_mesmo_paciente: true, confirmo_apenas_raca: true, consentimento: true,
-    }, expect.anything());
-    expect(onEnsureSaved).toHaveBeenCalledTimes(1);
-    expect(onResultInvalidated).toHaveBeenCalledWith("batch-1");
-    expect(api.put).not.toHaveBeenCalled();
+    expect(screen.queryByText("Confirmar paciente por arquivo")).toBeNull();
+    expect(screen.queryByText("Revisar a raça depois")).toBeNull();
     expect(screen.getAllByRole("link", { name: "Baixar original" })).toHaveLength(2);
-    expect(screen.getAllByText(/Identificação na leitura original: Raça diferente/)).toHaveLength(2);
-    expect(screen.getByText("Identidade confirmada pelo veterinário. Raça pendente de revisão.")).toBeTruthy();
-    expect(screen.getByLabelText("Conferi o original de exame-1.pdf")).toBeTruthy();
-  });
-
-  it("não oferece exceção para nome ou espécie incompatível e respeita consentimento e permissões", async () => {
-    stored = breedJob();
-    stored.revisao_raca!.fontes[1] = { ...stored.revisao_raca!.fontes[1], paciente_nome: "Outro paciente", elegivel: false, impedimento: "O nome do paciente não corresponde ao cadastro." };
-    const view = await open({ consentimento: false });
-    expect(screen.queryByLabelText("Conferi o original de exame-1.pdf")).toBeNull();
-    expect(screen.getByText("O nome do paciente não corresponde ao cadastro.")).toBeTruthy();
-    confirmBreed();
-    expect(breedButton().matches(":disabled")).toBe(true);
-    for (const restricted of [{ disabled: true }, { habilitado: false }]) {
-      view.rerender(<AtendimentoAssistenteLote {...props()} {...restricted} />);
-      expect(breedButton().matches(":disabled")).toBe(true);
-      fireEvent.click(breedButton());
-    }
-    expect(api.post).not.toHaveBeenCalled();
-  });
-
-  it("exige novas declarações ao mudar fontes e recusa token que mudou após salvar o atendimento", async () => {
-    stored = breedJob();
-    const onEnsureSaved = vi.fn(async () => { stored!.revisao_raca!.token = "novo-contexto"; return true; });
-    await open({ onEnsureSaved });
-    confirmBreed();
-    fireEvent.click(screen.getByLabelText("Conferi o original de exame-1.pdf"));
-    expect((screen.getByLabelText(/Confirmo que os documentos selecionados/) as HTMLInputElement).checked).toBe(false);
-    expect((screen.getByLabelText(/Confirmei que a única divergência/) as HTMLInputElement).checked).toBe(false);
-    fireEvent.click(screen.getByLabelText(/Confirmo que os documentos selecionados/));
-    fireEvent.click(screen.getByLabelText(/Confirmei que a única divergência/));
-    fireEvent.click(breedButton());
-    await screen.findByText(/O conjunto mudou desde a conferência/);
-    expect(api.post).not.toHaveBeenCalled();
-    expect((screen.getByLabelText("Conferi o original de exame-0.pdf") as HTMLInputElement).checked).toBe(false);
-  });
-
-  it("reconcilia confirmação salva com resposta perdida sem repetir solicitação", async () => {
-    stored = breedJob();
-    vi.mocked(api.post).mockImplementation(async () => { saveBreedDecision(); throw new Error("Resposta perdida"); });
-    await open(); confirmBreed(); fireEvent.click(breedButton());
-    await screen.findByText(/Decisão registrada. A raça continua pendente/);
-    expect(api.post).toHaveBeenCalledTimes(1);
-    expect(api.get).toHaveBeenCalledTimes(3);
+    fireEvent.click(screen.getByRole("button", { name: "Retomar análise do conjunto" }));
+    await screen.findByText("Conjunto na fila de processamento");
+    expect(api.post).toHaveBeenCalledWith(expect.stringContaining("/batch-1/retomar"), {}, expect.anything());
     expect(api.put).not.toHaveBeenCalled();
   });
 
-  it("reutiliza request_id após resposta e reconciliação incertas, sem retransmitir PDFs", async () => {
-    stored = breedJob();
-    vi.mocked(api.post).mockImplementationOnce(async () => {
-      vi.mocked(api.get).mockRejectedValueOnce(new Error("Consulta indisponível"));
-      throw new Error("Decisão sem resposta");
-    }).mockImplementationOnce(async () => { saveBreedDecision(); return response(); });
-    await open(); confirmBreed(); fireEvent.click(breedButton());
-    await screen.findByText("Decisão sem resposta");
-    fireEvent.click(breedButton());
-    await screen.findByText(/Decisão registrada. A raça continua pendente/);
-    const requests = vi.mocked(api.post).mock.calls.map((call) => call[1] as { request_id: string });
-    expect(requests).toHaveLength(2);
-    expect(requests[1].request_id).toBe(requests[0].request_id);
-    expect(api.put).not.toHaveBeenCalled();
-  });
-
-  it("recupera decisão persistida e permite retirá-la sem acionar nova análise", async () => {
-    stored = breedJob(); saveBreedDecision();
-    vi.mocked(api.post).mockImplementation(async () => { saveBreedDecision(false); return response(); });
-    const { onResultInvalidated } = await open({ consentimento: false });
-    expect(screen.getByText("Identidade confirmada pelo veterinário. Raça pendente de revisão.")).toBeTruthy();
-    expect(api.post).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: "Retirar confirmação de exame-0.pdf" }));
-    await screen.findByText(/Confirmação retirada. A análise anterior precisa ser revista/);
-    expect(api.post).toHaveBeenCalledWith(expect.stringContaining("/batch-1/revogar-revisao-raca"), {
-      request_id: expect.any(String), revisao_token: "snapshot-confirmado", arquivo_ids: ["exam-0"],
-    }, expect.anything());
-    expect(api.post).toHaveBeenCalledTimes(1);
-    expect(api.put).not.toHaveBeenCalled();
+  it("atualiza a síntese pendente de um lote concluído usando as leituras existentes", async () => {
+    stored = { ...breedJob(), sintese_pendente: true, resultado: result };
+    const { onResultInvalidated } = await open();
+    expect(screen.getByText("Leituras disponíveis — análise aguardando atualização")).toBeVisible();
+    const button = screen.getByRole("button", { name: "Atualizar análise com arquivos processados" });
+    fireEvent.click(button);
+    fireEvent.click(button);
+    await screen.findByText("Conjunto na fila de processamento");
     expect(onResultInvalidated).toHaveBeenCalledWith("batch-1");
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.post).toHaveBeenCalledWith(expect.stringContaining("/batch-1/retomar"), {}, expect.anything());
+    expect(api.put).not.toHaveBeenCalled();
   });
+
+  it.each([{ consentimento: false }, { disabled: true }, { habilitado: false }])(
+    "preserva autorização e disponibilidade para atualizar análise ($consentimento, $disabled, $habilitado)",
+    async (restriction) => {
+      stored = { ...breedJob(), sintese_pendente: true, resultado: result };
+      await open(restriction);
+      const button = screen.getByRole("button", { name: "Atualizar análise com arquivos processados" });
+      expect(button).toBeDisabled();
+      fireEvent.click(button);
+      expect(api.post).not.toHaveBeenCalled();
+    },
+  );
 
   it("envia todos os arquivos com uma ação e abre o resultado somente para revisão explícita", async () => {
     const { onReview } = await open();

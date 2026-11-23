@@ -259,7 +259,7 @@ describe("AtendimentoAssistenteIA", () => {
     expect((screen.getByRole("button", { name: "Adicionar ao atendimento" }) as HTMLButtonElement).disabled).toBe(true);
     expect(onApplyFields).not.toHaveBeenCalled();
   });
-  it("bloqueia incorporação quando a identidade da fonte não confere", async () => {
+  it("preserva o bloqueio explícito de resultado indisponível para inclusão", async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { ...resultado, bloqueado_integracao: true } });
     const { onApplyFields } = await preparar();
     fireEvent.click(screen.getByRole("button", { name: "Organizar e sugerir para revisão" }));
@@ -346,9 +346,9 @@ describe("AtendimentoAssistenteIA", () => {
     expect((screen.getByLabelText("Transcrição para revisão") as HTMLTextAreaElement).value).toBe("Primeiro trecho revisado\n\nSegundo trecho");
     expect(api.post).toHaveBeenCalledTimes(2);
   });
-  it("só incorpora achado com revisão e mantém arquivo, página, data e unidade", async () => {
+  it("revisa achado de documento com grafia divergente e mantém arquivo, página, data e unidade", async () => {
     vi.mocked(api.post).mockResolvedValue({ data: { ...resultado, campos: [],
-      fontes: [{ arquivo: "01_exame.pdf", paciente_nome: "Paciente Teste", especie: "canino", data_exame: "2026-10-25", identidade: "compativel", motivo: "Identificação compatível" }],
+      fontes: [{ arquivo: "01_exame.pdf", paciente_nome: "Jully", especie: "canino", data_exame: "2026-10-25", identidade: "divergente", motivo: "Grafia e idade diferentes do cadastro." }],
       achados_exames: [{ arquivo: "01_exame.pdf", pagina: 2, descricao: "Creatinina", evidencia: "Creatinina 1,2 mg/dL", valor: "1,2", unidade: "mg/dL", referencia: "0,5–1,5 mg/dL", confianca: "alta", alertas: [] }],
     } });
     const { onApplyFields } = await preparar();

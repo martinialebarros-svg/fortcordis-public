@@ -1,6 +1,7 @@
 """Identity checks shared by clinical validation and explicit veterinary review."""
 from __future__ import annotations
 
+from copy import deepcopy
 import unicodedata
 
 
@@ -57,3 +58,33 @@ def revisao_identidade_aplicavel(fonte: dict, context: dict, revisao: dict | Non
 def revisao_raca_aplicavel(fonte: dict, context: dict, revisao: dict | None) -> bool:
     """Only consume a server-bound review, never a model-generated assertion."""
     return _decisao_registrada(revisao, DECISAO_RACA_PENDENTE) and impedimento_revisao_raca(fonte, context) is None
+
+
+AVISO_IDENTIDADE_ACHADO = "Identidade não confirmada: este achado não pode ser incorporado ao paciente."
+PENDENCIA_IDENTIDADE_LEGADA = "Corrija ou remova os arquivos com identificação divergente ou não confirmada e refaça a análise."
+ERROS_IDENTIDADE_LEGADOS = {
+    "Há identificações pendentes. Confira os documentos antes de continuar a análise.",
+    "Há exames aguardando conferência no contexto atualizado.",
+    "O contexto da revisão mudou. Confira novamente a identificação.",
+    "A revisão mudou durante a análise. Confira novamente a identificação.",
+}
+
+
+def normalizar_vinculo_anexos(resultado: dict) -> dict:
+    """Project historical readings under the attachment association policy.
+
+    The document's demographics remain source evidence. Only messages created by
+    the former identity gate are removed, and no clinical value is reconstructed.
+    """
+    result = deepcopy(resultado)
+    result["bloqueado_integracao"] = False
+    for finding in result.get("achados_exames", []):
+        finding["alertas"] = list(dict.fromkeys(
+            notice for notice in finding.get("alertas", []) if notice != AVISO_IDENTIDADE_ACHADO
+        ))
+    for field in ("pendencias", "avisos"):
+        result[field] = list(dict.fromkeys(
+            notice for notice in result.get(field, [])
+            if notice not in {AVISO_IDENTIDADE_ACHADO, PENDENCIA_IDENTIDADE_LEGADA}
+        ))
+    return result
