@@ -56,12 +56,17 @@ describe("Tutores e mesclagem assistida", () => {
   });
 
   it("cria outro cadastro com identificação pendente e origem, sem reutilizar um homônimo", async () => {
+    mocks.get.mockImplementation((path: string) => Promise.resolve({ data: path === "/clinicas"
+      ? { items: [{ id: 7, nome: "Clínica Gama" }], total: 1 } : { items, total: 2 } }));
     render(<TutoresPage />);
     fireEvent.click(screen.getByRole("button", { name: "Novo tutor" }));
     expect(screen.queryByRole("checkbox", { name: "Identificação pendente" })).not.toBeInTheDocument();
     expect(screen.getByText("Pode continuar com o primeiro nome. Os demais dados podem ser completados no atendimento.")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Nome"), { target: { value: "Cristiane" } });
-    fireEvent.change(screen.getByLabelText("Origem do cadastro / clínica informante"), { target: { value: "Clínica Gama" } });
+    fireEvent.click(screen.getByText("Origem e observações (opcional)"));
+    const origem = screen.getByLabelText("Origem do cadastro / clínica informante");
+    await waitFor(() => expect(document.getElementById(origem.getAttribute("list")!)?.querySelector('option[value="Clínica Gama"]')).toBeTruthy());
+    fireEvent.change(origem, { target: { value: "Clínica Gama" } });
     fireEvent.click(screen.getByRole("button", { name: "Salvar cadastro" }));
     await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("/tutores", expect.objectContaining({ nome: "Cristiane", identificacao_pendente: true, origem_cadastro: "Clínica Gama" })));
   });
