@@ -30,3 +30,5 @@ Sem commit, push, homologação remota ou publicação neste ciclo. Publicação
 Em 23/11/2026, o usuário autorizou publicar esta alteração. Baselines reconferidos: produção `9afca565621103f6af243b38c0098deabd4796a2` e Stage `812c5adb35f5802c86d45f619a4308d09b33745f`. Os 38 caminhos de trabalhos paralelos são preservados em snapshot e excluídos temporariamente da árvore de promoção; serão restaurados em Stage após a produção. Somente os oito caminhos próprios podem diferir da produção anterior. Sem alteração de workflow, banco ou configurações de ambiente.
 
 Homologação remota e resultados finais do deploy serão registrados após execução.
+
+Pré-publicação da árvore isolada: `npm test` aprovado com 164 arquivos / 2.900 testes Vitest e 23 testes Node. `npm run lint`, `npx tsc --noEmit`, guardrail SDD contra Stage e produção e guard de critérios da promoção aprovados. Preflight remoto confirmou serviços ativos, sete filas por ambiente sem trabalhos ativos e configuração/runtime preservados em manifesto privado. O delta de produção contém exatamente os oito caminhos próprios.
