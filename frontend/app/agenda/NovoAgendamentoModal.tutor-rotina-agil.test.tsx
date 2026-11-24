@@ -19,7 +19,10 @@ beforeEach(() => {
   apiGet.mockImplementation(async (url: string) => {
     if (url.includes("/panorama")) return { data: { tutor, pets: [], resumo: { total_pets: 0 } } };
     if (url.startsWith("/tutores")) return { data: { items: [tutor] } };
-    if (url.startsWith("/clinicas")) return { data: { items: [{ id: 7, nome: "Clínica Alfa", latitude: -3.7, longitude: -38.5 }] } };
+    if (url.startsWith("/clinicas")) return { data: { items: [
+      { id: 7, nome: "Clínica Alfa", latitude: -3.7, longitude: -38.5 },
+      { id: 8, nome: "Clínica Gama" },
+    ] } };
     if (url.startsWith("/servicos")) return { data: { items: [{ id: 3, nome: "Ecocardiograma", duracao_minutos: 30 }] } };
     if (url.startsWith("/pacientes")) return { data: { items: [] } };
     return { data: {} };
@@ -38,6 +41,11 @@ describe("cadastro ágil na Agenda", () => {
     const dialog = screen.getByRole("dialog", { name: "Cadastrar Tutor" });
     fireEvent.change(within(dialog).getByPlaceholderText("Nome do tutor"), { target: { value: "Cristiane" } });
     expect(within(dialog).getByText("Contato e documento — preencher se disponíveis").closest("details")).not.toHaveAttribute("open");
+    fireEvent.click(within(dialog).getByText("Origem e observações (opcional)"));
+    const origem = within(dialog).getByLabelText("Origem do cadastro / clínica informante");
+    expect(origem).toHaveValue("Clínica Alfa");
+    await waitFor(() => expect(document.getElementById(origem.getAttribute("list")!)?.querySelector('option[value="Clínica Gama"]')).toBeTruthy());
+    fireEvent.change(origem, { target: { value: "Clínica Gama" } });
     apiPost.mockRejectedValueOnce(new Error("resposta perdida"));
     fireEvent.click(within(dialog).getByRole("button", { name: "Criar Tutor" }));
     await waitFor(() => expect(apiPost).toHaveBeenCalledTimes(1));
@@ -46,7 +54,7 @@ describe("cadastro ágil na Agenda", () => {
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Cadastrar Tutor" })).not.toBeInTheDocument());
     const attempts = apiPost.mock.calls.filter(([url]) => url === "/tutores");
     expect(attempts).toHaveLength(2);
-    expect(attempts[0][1]).toMatchObject({ nome: "Cristiane", identificacao_pendente: true, telefone: null, cpf: null });
+    expect(attempts[0][1]).toMatchObject({ nome: "Cristiane", identificacao_pendente: true, origem_cadastro: "Clínica Gama", telefone: null, cpf: null });
     expect(attempts[0][1].chave_operacao).toBe(attempts[1][1].chave_operacao);
     fireEvent.click(screen.getByRole("button", { name: "Novo animal" }));
     const animal = screen.getByRole("dialog", { name: "Cadastrar Animal" });
