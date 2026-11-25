@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NovoLaudoPage from "./novo/page";
-import type { EchoEditorDraftResponse, EchoEditorDraftSnapshot } from "@/lib/echo-editor-draft";
+import { echoDraftStorageKey, type EchoEditorDraftResponse, type EchoEditorDraftSnapshot } from "@/lib/echo-editor-draft";
 
 const mocks = vi.hoisted(() => ({
   get: vi.fn(), put: vi.fn(), post: vi.fn(), router: { push: vi.fn() },
@@ -297,6 +297,56 @@ describe("novo ecocardiograma: recuperação e emissão explícita", () => {
     expect(screen.getByRole("button", { name: "Emitir laudo" })).toBeDisabled();
     fireEvent.click(screen.getByRole("button", { name: "Preparar ditado sintético" }));
     expect(clinicalWrites()).toEqual([]); expect(draftWrites()).toEqual([]);
+  });
+
+  it.each(["Voltar", "menu"] as const)("sai pelo %s com recuperação pendente sem substituir o rascunho salvo", async (action) => {
+    let view = await open();
+    fireEvent.change(input("Nome do Paciente"), { target: { value: "QA NOVO PRIVADO PARA RETOMAR" } });
+    mocks.imported = { Aorta: "10", Atrio_esquerdo: "14", AE_Ao: "1.46", Onda_E: "", Onda_A: "0", Diastolica_ondas: "fundidas" };
+    fireEvent.click(screen.getByRole("button", { name: "Importar estudo sintético" }));
+    await saveDraft(); view.unmount();
+    const saved = structuredClone([...mocks.records.values()][0]); const storageKey = echoDraftStorageKey(7, saved.context_key);
+    mocks.put.mockClear(); view = render(<NovoLaudoPage />);
+    await screen.findByRole("button", { name: "Retomar rascunho" }); expect(input("Nome do Paciente")).toBeDisabled();
+    const link = document.createElement("a"); link.href = "/agenda"; link.textContent = "Menu Agenda QA"; document.body.append(link);
+    try {
+      fireEvent.click(action === "menu" ? link : screen.getByRole("button", { name: "Voltar para laudos" }));
+      await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith(action === "menu" ? "/agenda" : "/laudos"));
+      expect(mocks.put).not.toHaveBeenCalled(); expect(mocks.post).not.toHaveBeenCalled();
+      expect(mocks.records.size).toBe(1); expect(mocks.records.get(saved.draft_id)).toEqual(saved);
+      expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      view.unmount(); view = render(<NovoLaudoPage />);
+      fireEvent.click(await screen.findByRole("button", { name: "Retomar rascunho" }));
+      await screen.findByDisplayValue("QA NOVO PRIVADO PARA RETOMAR");
+      await waitFor(() => expect(screen.getByRole("button", { name: "Emitir laudo" })).toBeEnabled());
+      expect(mocks.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      expect(mocks.put).not.toHaveBeenCalled(); expect(mocks.post).not.toHaveBeenCalled();
+      fireEvent.click(screen.getByRole("button", { name: "Referências" }));
+      expect(JSON.parse(screen.getByTestId("draft-measurements").textContent!)).toMatchObject(saved.snapshot.measurementState.measurements);
+    } finally { link.remove(); view.unmount(); }
+  });
+
+  it("sai pelo menu com emissão pendente recuperável sem reenviar ou encerrar a tentativa", async () => {
+    let view = await open(); fireEvent.change(input("Nome do Paciente"), { target: { value: "QA EMISSÃO PENDENTE PRESERVADA" } });
+    await saveDraft(); view.unmount();
+    const record = [...mocks.records.values()][0]; record.snapshot.submission = { status: "pending", laudoId: null };
+    const saved = structuredClone(record); const storageKey = echoDraftStorageKey(7, saved.context_key);
+    mocks.put.mockClear(); view = render(<NovoLaudoPage />);
+    await screen.findByRole("button", { name: "Retomar rascunho" });
+    expect(screen.queryByRole("button", { name: "Continuar com preenchimento atual" })).not.toBeInTheDocument();
+    const link = document.createElement("a"); link.href = "/agenda"; document.body.append(link);
+    try {
+      fireEvent.click(link); await waitFor(() => expect(mocks.router.push).toHaveBeenCalledWith("/agenda"));
+      expect(mocks.put).not.toHaveBeenCalled(); expect(mocks.post).not.toHaveBeenCalled();
+      expect(mocks.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      view.unmount(); view = render(<NovoLaudoPage />);
+      fireEvent.click(await screen.findByRole("button", { name: "Retomar rascunho" }));
+      await screen.findByDisplayValue("QA EMISSÃO PENDENTE PRESERVADA");
+      await screen.findByText(/Há uma tentativa de salvamento sem resposta confirmada/);
+      expect(screen.getByRole("button", { name: "Emitir laudo" })).toBeDisabled();
+      expect(mocks.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      expect(mocks.put).not.toHaveBeenCalled(); expect(mocks.post).not.toHaveBeenCalled();
+    } finally { link.remove(); view.unmount(); }
   });
 
   it("conclui o flush antes de sair pelo botão Voltar, mesmo antes do debounce", async () => {
