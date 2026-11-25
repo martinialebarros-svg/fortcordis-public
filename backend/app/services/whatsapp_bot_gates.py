@@ -57,7 +57,7 @@ def is_whatsapp_bot_enabled() -> bool:
         return False
     db = SessionLocal()
     try:
-        config = db.query(Configuracao).first()
+        config = db.query(Configuracao.whatsapp_bot_atendimento_habilitado).first()
         return bool(config and config.whatsapp_bot_atendimento_habilitado)
     except Exception:
         logger.exception("Falha ao consultar configuracao do bot de atendimento do WhatsApp.")
@@ -78,7 +78,7 @@ def resolve_conversation_state(db, wa_identity: str) -> Optional[WhatsAppBotConv
 
 
 def _institutional_default_mode(db) -> str:
-    config = db.query(Configuracao).first()
+    config = db.query(Configuracao.whatsapp_bot_modo).first()
     modo = str(getattr(config, "whatsapp_bot_modo", None) or "suggest").strip().lower()
     return modo if modo in MODOS_VALIDOS else "suggest"
 
@@ -90,7 +90,7 @@ def resolve_participacao(db) -> str:
     seguro aqui e o que NAO muda comportamento; `piloto` e uma decisao
     deliberada, nunca um acidente de leitura.
     """
-    config = db.query(Configuracao).first()
+    config = db.query(Configuracao.whatsapp_bot_participacao).first()
     valor = str(getattr(config, "whatsapp_bot_participacao", None) or "todos").strip().lower()
     return valor if valor in PARTICIPACOES_VALIDAS else "todos"
 
