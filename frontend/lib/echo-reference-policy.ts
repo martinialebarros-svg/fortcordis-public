@@ -1,8 +1,10 @@
 import type { EchoRangeMetadata, ReferenciaEco } from "@/app/laudos/types/referencia-eco";
-import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
+import { isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { applyLowWeightReference, makeLowWeightReference } from "./echo-low-weight-reference";
+import { applyFelinePediatricReference, isFelinePediatricContext } from "./echo-feline-pediatric-reference";
 
 export const ECHO_REFERENCE_METHOD_VALUES = {
+  Pediatria_protocolo: ["gunther_harrington_2021_sem_sedacao", "outro"],
   TAPSE_metodo: ["modo_m_apical", "2d"],
   AE_Ao_metodo: ["2d_eixo_curto_diastole_inicial", "2d_eixo_curto_diastole_inicial_sueco", "outro"],
   Diastolica_metodo: ["canino_nao_sedado_pw_apical", "canino_2a6_anos_nao_sedado_pw_apical_fim_fluxo", "felino_adulto_nao_sedado_pw_apical_clique_aortico", "felino_adulto_nao_sedado_pw_apical_fim_fluxo", "felino_adulto_nao_sedado_pw_clique_aortico", "felino_adulto_nao_sedado_pw_fim_fluxo", "outro"],
@@ -45,6 +47,17 @@ export function resolveEchoReferenceForMeasurements(
   resolved.patient_weight_kg = weight ?? undefined;
   const currentAge = age === undefined ? reference.patient_age : age;
   if (currentAge !== undefined) resolved.patient_age = currentAge;
+  // Preserve raw catalog bounds before any weight/model policy clears them.
+  // Pediatric comparisons have their own protocol and never use adult ranges.
+  if (isFelinePediatricContext(reference.especie, currentAge)) {
+    return applyFelinePediatricReference(resolved, measurements, weight, currentAge);
+  }
+  if (resolved.pediatric_reference) {
+    delete resolved.pediatric_reference;
+    for (const [prefix, info] of Object.entries(metadata)) {
+      metadata[prefix] = { ...info, reason: "Referência do contexto anterior indisponível; consulte novamente para a idade e o peso atuais." };
+    }
+  }
 
   const domain = WEIGHT_DOMAINS[normalizedSpecies(reference.especie)];
   const outsideStudy = domain && weight !== null && (weight < domain[0] || weight > domain[1]
@@ -109,7 +122,7 @@ export function resolveEchoReferenceForMeasurements(
   for (const prefix of ["vmax_ao", "vmax_pulm"]) {
     if (!metadata[prefix]) setRange(resolved, prefix, null, null);
   }
-  if (isCanineEchoSpecies(reference.especie)) {
+  if (/^canin/i.test(reference.especie)) {
     for (const [prefix, min, maxima] of [
       ["mv_e", 0.5, [1.09, 1.1]], ["mv_a", 0.3, [0.8]], ["mv_dt", 0, [160]],
     ] as const) {

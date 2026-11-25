@@ -35,6 +35,7 @@ export interface ReferenciaEco {
   catalog_weight_max?: number | null;
   catalog_ranges?: Record<string, { min?: number | null; max?: number | null }>;
   range_metadata?: Record<string, EchoRangeMetadata>;
+  pediatric_reference?: FelinePediatricReference;
   
   // Medidas estruturais (VE - Modo M)
   lvid_d_min?: number | null;
@@ -105,6 +106,30 @@ export interface ReferenciaEco {
   esv_max?: number;
   sv_min?: number;
   sv_max?: number;
+}
+
+/** Published cohort intervals remain separate from patient comparison bounds. */
+export interface FelinePediatricRange {
+  status: "descriptive" | "requires_method" | "unavailable";
+  lower: number | null;
+  upper: number | null;
+  unit: string;
+  text: string;
+  reason: string;
+  source: string;
+  doi: string;
+  statistic: "published_cohort_reference_interval";
+}
+
+export interface FelinePediatricReference {
+  source: string;
+  doi: string;
+  population: string;
+  patient_age_weeks: number | null;
+  min_age_weeks: 6;
+  max_age_weeks: 16;
+  reason: string;
+  ranges: Record<string, FelinePediatricRange>;
 }
 
 export interface ComparacaoMedida {
