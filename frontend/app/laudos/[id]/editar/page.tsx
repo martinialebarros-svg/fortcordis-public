@@ -1213,7 +1213,10 @@ export default function EditarLaudoPage() {
     if (draftApplies && readEditorOwner() !== draftUserId) { setSessionChanged(true); return; }
     setLeaving(true);
     try {
-      if (draftApplies && !submission && editorDraft.status !== "closed") await editorDraft.flush();
+      // A recovery choice already has a saved copy; leaving must not overwrite it.
+      if (draftApplies && !submission && editorDraft.status !== "closed" && editorDraft.status !== "recovery") {
+        await editorDraft.flush();
+      }
       if (draftApplies && (imageUploadActive || editorDraft.pendingImages > 0)
         && !window.confirm("Há imagens não recebidas que precisarão ser reenviadas ao retomar. Sair mesmo assim?")) return;
       router.push(href);

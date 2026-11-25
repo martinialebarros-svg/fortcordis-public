@@ -1280,7 +1280,8 @@ export default function NovoLaudoPage() {
     try {
       if (draftPromiseRef.current) await draftPromiseRef.current;
       if (!stillAtEditor()) return;
-      if (draftApplies && !submission) {
+      // A recovery choice already has a saved copy; leaving must not overwrite it.
+      if (draftApplies && !submission && editorDraft.status !== "recovery") {
         await editorDraft.flush();
         trace("rascunho-confirmado");
         if (!stillAtEditor()) return;
