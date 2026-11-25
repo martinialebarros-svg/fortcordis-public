@@ -380,6 +380,27 @@ export default function NovoLaudoPage() {
   
   // Mensagem de sucesso
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const mensagemSucessoTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const mensagemSucessoAtiva = useRef(false);
+  useEffect(() => {
+    mensagemSucessoAtiva.current = true;
+    const timers = mensagemSucessoTimers.current;
+    return () => {
+      mensagemSucessoAtiva.current = false;
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+  const mostrarMensagemSucessoTemporaria = (mensagem: string, duracao: number) => {
+    // A consulta inicial pode terminar depois da saída do editor.
+    if (!mensagemSucessoAtiva.current) return;
+    setMensagemSucesso(mensagem);
+    const timer = setTimeout(() => {
+      mensagemSucessoTimers.current.delete(timer);
+      if (mensagemSucessoAtiva.current) setMensagemSucesso(null);
+    }, duracao);
+    mensagemSucessoTimers.current.add(timer);
+  };
   
   // Imagens do laudo
   const [imagens, setImagens] = useState<any[]>([]);
@@ -711,8 +732,7 @@ export default function NovoLaudoPage() {
         }));
       }
 
-      setMensagemSucesso(`Atendimento #${atendimentoId} vinculado ao laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Atendimento #${atendimentoId} vinculado ao laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar atendimento para laudo:", error);
     }
@@ -768,8 +788,7 @@ export default function NovoLaudoPage() {
         }));
       }
 
-      setMensagemSucesso(`Agendamento #${agendamentoId} vinculado ao laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Agendamento #${agendamentoId} vinculado ao laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar agendamento para laudo:", error);
     }
@@ -797,8 +816,7 @@ export default function NovoLaudoPage() {
         data_exame: prev.data_exame || operationalTodayDateInput(),
       }));
 
-      setMensagemSucesso(`Paciente #${pacienteId} carregado para novo laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Paciente #${pacienteId} carregado para novo laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar paciente para laudo:", error);
     }
@@ -855,8 +873,7 @@ export default function NovoLaudoPage() {
       }
     }
     
-    setMensagemSucesso("Dados importados com sucesso!");
-    setTimeout(() => setMensagemSucesso(null), 5000);
+    mostrarMensagemSucessoTemporaria("Dados importados com sucesso!", 5000);
   };
 
   const pasValores = [

@@ -35,3 +35,9 @@ Não houve teste manual em navegador autenticado nem homologação remota. Inter
 ## Estado de publicação
 
 Publicação autorizada pelo usuário em 25/11/2026 ("pode publicar"). Segue o fluxo de PR de feature para Stage, homologação e promoção direta `stage -> main` com merge commit. A diferença preexistente entre `origin/main` (`b0c1f51`) e `origin/stage` (`ae266e3`) contém 38 caminhos paralelos: o candidato de produção isola esta feature; o conteúdo paralelo será preservado e restaurado em Stage após a promoção. Resultados remotos serão registrados na evidência de release; autorização não é evidência de deploy concluído.
+
+## Ocorrências de CI durante a publicação
+
+- PR #72, primeira tentativa: falha isolada no teste fiscal preexistente (estado de botão). Os 12 arquivos relacionados são idênticos a `main`; 12 repetições do caso e três execuções do arquivo fiscal completo passaram localmente. Causa exata não reproduzida; nenhuma fonte fiscal alterada.
+- Segunda tentativa: todos os 2.938 testes Vitest aprovados, mas erro assíncrono em temporizador de novo laudo após desmontagem (`window is not defined`). Duas regressões locais reproduziram temporizador pendente e agendamento por resposta tardia. A correção cancela os quatro temporizadores temporários na saída e impede novo agendamento após desmontagem, preservando as durações e os critérios de teste.
+- Correção de temporizadores: 120 testes das cinco páginas afetadas aprovados, incluindo as duas regressões; lint dos arquivos aprovado e revisão independente sem bloqueador. Regressões usam os handles reais dos avisos, evitando interferência do relógio global nos testes existentes.

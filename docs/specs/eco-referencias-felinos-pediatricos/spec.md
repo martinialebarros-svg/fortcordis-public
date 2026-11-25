@@ -34,3 +34,7 @@ Conversão etária determinística: mês = 30,4375 dias, ano = 365,25 dias. O su
 Faixas numéricas simples como `1–2 meses` acionam proteção conservadora contra dados adultos, mas não autorizam intervalos pediátricos: a idade em semanas permanece não confirmada. Uma faixa exclusivamente adulta como `1–2 anos` não é convertida em contexto pediátrico. Ao resolver referência armazenada, omitir a idade preserva o contexto; passar `None`/`null` explicitamente remove a idade anterior e a referência pediátrica.
 
 O parser legado pode identificar modo M/2D ao reabrir um registro contendo apenas uma família de medidas. Essa inferência existente não confirma o novo protocolo pediátrico: sem a ação explícita `Pediatria_protocolo`, nenhum intervalo pediátrico é disponibilizado. O operador confirma o protocolo para as técnicas exibidas/obtidas no exame.
+
+## Estabilidade do editor durante a publicação
+
+A suíte remota revelou um temporizador de mensagem de sucesso da tela de novo laudo que continuava após desmontar o editor. Os quatro avisos temporários mantêm as durações existentes de 4/5 segundos, mas seus temporizadores são cancelados ao sair da tela; respostas tardias não agendam novos avisos após desmontagem. Não altera carregamento de pacientes, edição clínica, emissão ou os dados das referências.
