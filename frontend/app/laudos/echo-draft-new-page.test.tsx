@@ -81,6 +81,61 @@ describe("novo ecocardiograma: recuperação e emissão explícita", () => {
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); window.history.replaceState(null, "", "/"); });
 
+  it("cancela os avisos temporários de paciente e importação ao desmontar o editor", async () => {
+    const timeouts = vi.spyOn(globalThis, "setTimeout");
+    const clear = vi.spyOn(globalThis, "clearTimeout");
+    const view = await open();
+    try {
+      expect(screen.getByText("Paciente #901 carregado para novo laudo.")).toBeInTheDocument();
+      fireEvent.click(screen.getByRole("button", { name: "Importar estudo sintético" }));
+      expect(screen.getByText("Dados importados com sucesso!")).toBeInTheDocument();
+      const timers = timeouts.mock.calls.flatMap(([, delay], index) => delay === 4000 || delay === 5000
+        ? [timeouts.mock.results[index].value] : []);
+      expect(timers).toHaveLength(2);
+      view.unmount();
+      for (const timer of timers) expect(clear).toHaveBeenCalledWith(timer);
+      expect(clinicalWrites()).toEqual([]);
+    } finally {
+      view.unmount();
+      clear.mockRestore(); timeouts.mockRestore();
+    }
+  });
+
+  it("não agenda aviso se a resposta do paciente chega depois de desmontar", async () => {
+    const slow = deferred<{ data: typeof patient }>();
+    const original = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url, ...args) => url === "/pacientes/901" ? slow.promise : original(url, ...args));
+    const timeouts = vi.spyOn(globalThis, "setTimeout");
+    const view = render(<NovoLaudoPage />);
+    try {
+      expect(mocks.get).toHaveBeenCalledWith("/pacientes/901");
+      view.unmount();
+      await act(async () => { slow.resolve({ data: patient }); });
+      expect(timeouts.mock.calls.filter(([, delay]) => delay === 4000 || delay === 5000)).toHaveLength(0);
+      expect(clinicalWrites()).toEqual([]);
+    } finally {
+      view.unmount();
+      timeouts.mockRestore();
+    }
+  });
+
+  it.each(["Dog", "Cão"])("emite índice recalculado após editar DIVEd de paciente %s", async (species) => {
+    const original = mocks.get.getMockImplementation()!;
+    mocks.get.mockImplementation((url, ...args) => url === "/pacientes/901"
+      ? Promise.resolve({ data: { ...patient, especie: species, peso_kg: 10 } }) : original(url, ...args));
+    const view = await open();
+    mocks.imported = { DIVEd: "25", DIVEd_normalizado: "0.9" };
+    fireEvent.click(screen.getByRole("button", { name: "Importar estudo sintético" }));
+    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
+    fireEvent.change(input("DIVEd (mm - Diâmetro interno do VE em diástole)"), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("button", { name: "Emitir laudo" }));
+    await waitFor(() => expect(mocks.post.mock.calls.some(([url]) => url === "/laudos")).toBe(true));
+    const payload = mocks.post.mock.calls.find(([url]) => url === "/laudos")![1];
+    expect(payload).toMatchObject({ paciente: { especie: species }, medidas: { DIVEd: "30", DIVEd_normalizado: "1.52" } });
+    expect(input("DIVEd normalizado (DIVEd [cm] / peso^0,294)")).toHaveValue("1.52");
+    view.unmount();
+  });
+
   it("prévia usa o mesmo payload da emissão, salva só a cópia privada e não emite ao conferir", async () => {
     vi.stubGlobal("URL", Object.assign(class extends URL {}, {
       createObjectURL: vi.fn(() => "blob:qa-preview"), revokeObjectURL: vi.fn(),

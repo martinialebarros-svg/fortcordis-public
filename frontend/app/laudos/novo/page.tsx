@@ -55,7 +55,7 @@ import {
 import { criarMensagemAlertaSalvamentoEcocardiograma } from "@/lib/ecocardiograma-save-alert";
 import { calendarDateInput, operationalTodayDateInput } from "@/lib/calendar-date";
 import { confirmedUnitKey, echoLengthInMm, echoLengthInputLabel } from "@/lib/echo-unit-provenance";
-import { isCanineEchoSpecies, isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
+import { isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
 import { useEchoMeasurements } from "../hooks/useEchoMeasurements";
 import { NEW_REPORT_PROTOCOL_KEYS } from "@/lib/echo-new-report-defaults";
 import { useEchoEditorDraft } from "../hooks/useEchoEditorDraft";
@@ -380,6 +380,27 @@ export default function NovoLaudoPage() {
   
   // Mensagem de sucesso
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const mensagemSucessoTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const mensagemSucessoAtiva = useRef(false);
+  useEffect(() => {
+    mensagemSucessoAtiva.current = true;
+    const timers = mensagemSucessoTimers.current;
+    return () => {
+      mensagemSucessoAtiva.current = false;
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+  const mostrarMensagemSucessoTemporaria = (mensagem: string, duracao: number) => {
+    // A consulta inicial pode terminar depois da saída do editor.
+    if (!mensagemSucessoAtiva.current) return;
+    setMensagemSucesso(mensagem);
+    const timer = setTimeout(() => {
+      mensagemSucessoTimers.current.delete(timer);
+      if (mensagemSucessoAtiva.current) setMensagemSucesso(null);
+    }, duracao);
+    mensagemSucessoTimers.current.add(timer);
+  };
   
   // Imagens do laudo
   const [imagens, setImagens] = useState<any[]>([]);
@@ -642,7 +663,7 @@ export default function NovoLaudoPage() {
         : null;
 
     const divedNormalizadoCalculado =
-      isCanineEchoSpecies(paciente.especie) && divedMm !== null && divedMm > 0 && peso !== null && peso > 0
+      normalizeEchoSpecies(paciente.especie) === "Canina" && divedMm !== null && divedMm > 0 && peso !== null && peso > 0
         ? formatar2Casas((divedMm / 10.0) / Math.pow(peso, 0.294))
         : null;
 
@@ -711,8 +732,7 @@ export default function NovoLaudoPage() {
         }));
       }
 
-      setMensagemSucesso(`Atendimento #${atendimentoId} vinculado ao laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Atendimento #${atendimentoId} vinculado ao laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar atendimento para laudo:", error);
     }
@@ -768,8 +788,7 @@ export default function NovoLaudoPage() {
         }));
       }
 
-      setMensagemSucesso(`Agendamento #${agendamentoId} vinculado ao laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Agendamento #${agendamentoId} vinculado ao laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar agendamento para laudo:", error);
     }
@@ -797,8 +816,7 @@ export default function NovoLaudoPage() {
         data_exame: prev.data_exame || operationalTodayDateInput(),
       }));
 
-      setMensagemSucesso(`Paciente #${pacienteId} carregado para novo laudo.`);
-      setTimeout(() => setMensagemSucesso(null), 4000);
+      mostrarMensagemSucessoTemporaria(`Paciente #${pacienteId} carregado para novo laudo.`, 4000);
     } catch (error) {
       console.error("Erro ao carregar paciente para laudo:", error);
     }
@@ -855,8 +873,7 @@ export default function NovoLaudoPage() {
       }
     }
     
-    setMensagemSucesso("Dados importados com sucesso!");
-    setTimeout(() => setMensagemSucesso(null), 5000);
+    mostrarMensagemSucessoTemporaria("Dados importados com sucesso!", 5000);
   };
 
   const pasValores = [
@@ -1661,7 +1678,7 @@ export default function NovoLaudoPage() {
                         >
                           <option value="Canina">Canina</option>
                           <option value="Felina">Felina</option>
-                          {isCanineEchoSpecies(paciente.especie) && paciente.especie !== "Canina" && (
+                          {normalizeEchoSpecies(paciente.especie) === "Canina" && paciente.especie !== "Canina" && (
                             <option value={paciente.especie}>{paciente.especie} (canina)</option>
                           )}
                           {isFelineEchoSpecies(paciente.especie) && paciente.especie !== "Felina" && (
@@ -1880,12 +1897,12 @@ export default function NovoLaudoPage() {
                           value={medidas["DIVEd"] || ""}
                           onChange={(v) => handleMedidaChange("DIVEd", v)}
                         />
-                        {isCanineEchoSpecies(paciente.especie) && <MedidaInput
+                        {normalizeEchoSpecies(paciente.especie) === "Canina" && <MedidaInput
                           label="DIVEd normalizado (DIVEd [cm] / peso^0,294)"
                           value={medidas["DIVEd_normalizado"] || ""}
                           onChange={(v) => handleMedidaChange("DIVEd_normalizado", v)}
                           readOnly
-                          reference={isCanineEchoSpecies(paciente.especie) && (parsePesoKg(paciente.peso) ?? 0) >= 2.2 && (parsePesoKg(paciente.peso) ?? 0) <= 95
+                          reference={normalizeEchoSpecies(paciente.especie) === "Canina" && (parsePesoKg(paciente.peso) ?? 0) >= 2.2 && (parsePesoKg(paciente.peso) ?? 0) <= 95
                             ? "Cornell 2004 (amostra de cães adultos, Modo M): 1,27–1,85"
                             : "Faixa aplicável não cadastrada"}
                         />}

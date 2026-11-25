@@ -1,5 +1,6 @@
 import type { EchoRangeMetadata, ReferenciaEco } from "@/app/laudos/types/referencia-eco";
 import { normalizeEchoSpecies } from "./echo-species";
+import { felineAgeRangeMayIncludeJuvenile } from "./echo-feline-pediatric-age";
 
 export const LOW_WEIGHT_PREFIXES = ["lvid_d", "lvid_s", "ivs_d", "ivs_s", "lvpw_d", "lvpw_s"] as const;
 type Prefix = typeof LOW_WEIGHT_PREFIXES[number];
@@ -119,7 +120,8 @@ export function makeLowWeightReference(species: string | null | undefined, weigh
   catalogRanges: ReferenciaEco["catalog_ranges"] = {}, age?: unknown): ReferenciaEco | null {
   const normalized = normalizeEchoSpecies(species);
   const weight = validWeight(weightValue);
-  if (!["Canina", "Felina"].includes(normalized) || weight === null || weight >= 3) return null;
+  if (!["Canina", "Felina"].includes(normalized) || weight === null
+    || (weight >= 3 && !(normalized === "Felina" && (lowWeightAgeContext(age) === "juvenile" || felineAgeRangeMayIncludeJuvenile(age))))) return null;
   return { id, especie: normalized as ReferenciaEco["especie"], peso_kg: weight, patient_weight_kg: weight,
     patient_age: age == null ? undefined : String(age), reference_origin: "computed", catalog_ranges: structuredClone(catalogRanges) };
 }
