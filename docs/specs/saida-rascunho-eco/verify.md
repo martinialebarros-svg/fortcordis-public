@@ -51,3 +51,12 @@ Base: `origin/stage` `ae266e31fa3be8e3b2140c892e6fdcade334d18b`, worktree `echo-
 ## Publicação autorizada — 25/11/2026
 
 Martiniano solicitou publicar após concluir as tarefas em andamento no GitHub. Preparação do release iniciada, com monitoramento das filas e de outra publicação Fort Cordis em curso. A correção será isolada dos trabalhos paralelos de Stage e estes serão restaurados após a promoção. Evidências de instalação e homologação serão registradas ao final; ainda não há afirmação de publicação desta revisão.
+
+
+### Candidata isolada atualizada — 25/11/2026
+
+Base da produção em instalação: `76b572970420003c8e4feee79a965c10f0b36a9d`, que contém as referências pediátricas e o cancelamento dos avisos temporários. A correção de recuperação foi reaplicada sem conflito, mantendo somente os dez caminhos próprios no diff contra essa base.
+
+Validação sobre a candidata isolada: 89 testes nos três arquivos focais; suíte completa com 166 arquivos e 2.951 testes Vitest; 23 testes Node; lint, TypeScript, build e guardrail SDD aprovados. A diferença de contagem em relação à suíte Stage acima decorre do isolamento dos trabalhos paralelos, sem promoção desses trabalhos.
+
+Os ajustes de temporizadores da entrega anterior permanecem preservados. Esta candidata continua local enquanto a publicação anterior e sua restauração de Stage terminam; nenhum push próprio foi feito nessa preparação.
