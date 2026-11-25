@@ -318,6 +318,40 @@ describe("workspace de rascunho eco", () => {
     expect(hook.result.current.canEmit).toBe(false);
   });
 
+  it.each(["new-echo", "existing-echo"] as const)("beforeunload permite sair da recuperação %s e protege edições após retomar", async (editor) => {
+    const previous = editor === "existing-echo" ? existing() : snapshot("cópia salva");
+    const contextKey = editor === "existing-echo" ? "edit:laudo:901" : "agendamento:77";
+    const key = echoDraftStorageKey(1, contextKey);
+    const saved = response(previous, 3, contextKey);
+    sessionStorage.setItem(key, ID);
+    mocks.get.mockResolvedValue(saved);
+    let apply!: (value: EchoEditorDraftSnapshot) => void;
+    const initial = { ...options({ ...previous, conteudo: { conclusao: "formulário inicial diferente" } }), contextKey,
+      onRestore: vi.fn(async (value: EchoEditorDraftSnapshot) => { apply(value); return value; }) };
+    const hook = renderHook((props) => useEchoEditorDraft(props), { initialProps: initial });
+    apply = (value) => hook.rerender({ ...initial, snapshot: value });
+    await settle();
+
+    expect(hook.result.current.status).toBe("recovery");
+    const recoveryExit = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(recoveryExit);
+    expect(recoveryExit.defaultPrevented).toBe(false);
+    expect(hook.result.current.recovery).toEqual(saved.data);
+    expect(hook.result.current.draftId).toBe(ID); expect(sessionStorage.getItem(key)).toBe(ID);
+    expect(mocks.put).not.toHaveBeenCalled(); expect(mocks.post).not.toHaveBeenCalled();
+
+    await act(async () => { await hook.result.current.resumeRecovered(); });
+    await advance(3000);
+    expect(hook.result.current.status).toBe("saved"); expect(mocks.put).not.toHaveBeenCalled();
+    hook.rerender({ ...initial, snapshot: { ...previous, conteudo: { conclusao: "edição após retomar" } } });
+    const editedExit = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(editedExit);
+    expect(editedExit.defaultPrevented).toBe(true);
+    expect(sessionStorage.getItem(key)).toBe(ID);
+    expect(saved.data.snapshot).toEqual(previous);
+    await advance();
+    const confirmedExit = new Event("beforeunload", { cancelable: true }); window.dispatchEvent(confirmedExit);
+    expect(confirmedExit.defaultPrevented).toBe(false);
+  });
+
   it("beforeunload avisa mudança ainda não confirmada, sem transmitir dados clínicos pelo storage", async () => {
     const initial = options(); const hook = renderHook((props) => useEchoEditorDraft(props), { initialProps: initial });
     await settle(); hook.rerender({ ...initial, snapshot: snapshot("não salvo") });

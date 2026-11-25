@@ -3,7 +3,7 @@ import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import EditarLaudoPage from "./[id]/editar/page";
 import { montarDescricaoEcocardiograma, criarEcocardiogramaEstruturadoInicial } from "@/lib/ecocardiograma-estruturado";
-import type { EchoEditorDraftResponse } from "@/lib/echo-editor-draft";
+import { echoDraftStorageKey, type EchoEditorDraftResponse } from "@/lib/echo-editor-draft";
 import { makePulmonaryReviewStamp } from "@/lib/echo-pulmonary-probability";
 
 const qa = vi.hoisted(() => ({ get: vi.fn(), put: vi.fn(), post: vi.fn(), delete: vi.fn(),
@@ -101,6 +101,23 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
   });
   afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); localStorage.clear(); sessionStorage.clear(); });
 
+  it.each(["Dog", "Cão"])("atualiza índice recalculado após editar DIVEd de paciente %s", async (species) => {
+    official.paciente = { ...patient, especie: species, peso_kg: 10 };
+    official.medidas = { DIVEd: "25", DIVEd_normalizado: "0.9" };
+    official.descricao = montarDescricaoEcocardiograma(official.medidas, { valvas: "", camaras: "", funcao: "", pericardio: "", vasos: "", ad_vd: "" });
+    const view = await open();
+    fireEvent.click(screen.getByRole("button", { name: "Medidas" }));
+    fireEvent.change(input("DIVEd (mm - Diâmetro interno do VE em diástole)"), { target: { value: "30" } });
+    fireEvent.click(screen.getByRole("button", { name: "Atualizar laudo" }));
+    await waitFor(() => expect(updates()).toHaveLength(1));
+    const body = updates()[0][1];
+    expect(body.payload_laudo.descricao).toContain("DIVEd_normalizado: 1.52");
+    expect(body.paciente).toBeUndefined();
+    expect(official.paciente.especie).toBe(species);
+    expect(input("DIVEd normalizado (DIVEd [cm] / peso^0,294)")).toHaveValue("1.52");
+    view.unmount();
+  });
+
   it("prévia preserva o oficial e compartilha payload, cadastro e imagens com a atualização explícita", async () => {
     vi.stubGlobal("URL", Object.assign(class extends URL {}, {
       createObjectURL: vi.fn(() => "blob:qa-existing-preview"), revokeObjectURL: vi.fn(),
@@ -130,6 +147,82 @@ describe("ecocardiograma existente: cópia privada e atualização explícita", 
     expect(body.paciente).toEqual(preview[1].paciente);
     expect(body.imagens).toEqual(preview[1].imagens);
     view.unmount();
+  });
+
+  it.each(["Voltar", "menu"] as const)("sai pelo %s com recuperação pendente e preserva a cópia para retomar", async (action) => {
+    let view = await open();
+    fireEvent.change(input("Nome do Paciente"), { target: { value: "QA CÓPIA PRIVADA PARA RETOMAR" } });
+    await saveDraft(); view.unmount();
+    const saved = structuredClone([...qa.records.values()][0]);
+    const storageKey = echoDraftStorageKey(7, saved.context_key);
+    qa.put.mockClear(); view = render(<EditarLaudoPage />);
+    await screen.findByRole("button", { name: "Retomar rascunho" });
+    expect(input("Nome do Paciente")).toBeDisabled();
+    const link = document.createElement("a"); link.href = "/agenda"; link.textContent = "Menu Agenda QA"; document.body.append(link);
+    try {
+      fireEvent.click(action === "menu" ? link : screen.getByRole("button", { name: "Voltar para o laudo" }));
+      await waitFor(() => expect(qa.router.push).toHaveBeenCalledWith(action === "menu" ? "/agenda" : "/laudos/905"));
+      expect(qa.put).not.toHaveBeenCalled(); expect(qa.post).not.toHaveBeenCalled(); expect(qa.delete).not.toHaveBeenCalled();
+      expect(qa.records.size).toBe(1); expect(qa.records.get(saved.draft_id)).toEqual(saved);
+      expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      view.unmount(); view = render(<EditarLaudoPage />);
+      const resume = await screen.findByRole("button", { name: "Retomar rascunho" });
+      expect(qa.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      fireEvent.click(resume); await screen.findByDisplayValue("QA CÓPIA PRIVADA PARA RETOMAR");
+      await waitFor(() => expect(screen.getByRole("button", { name: "Atualizar laudo" })).toBeEnabled());
+      expect(JSON.parse(screen.getByTestId("measurements").textContent!)).toMatchObject(saved.snapshot.measurementState.measurements);
+      expect(qa.put).not.toHaveBeenCalled(); expect(qa.post).not.toHaveBeenCalled(); expect(official.paciente.nome).toBe(patient.nome);
+    } finally { link.remove(); view.unmount(); }
+  });
+
+  it.each(["origem obsoleta", "atualização pendente"] as const)("preserva recuperação com %s ao sair pelo menu", async (scenario) => {
+    let view = await open();
+    fireEvent.change(input("Nome do Paciente"), { target: { value: "QA RECUPERAÇÃO PROTEGIDA" } });
+    await saveDraft(); view.unmount();
+    const record = [...qa.records.values()][0];
+    if (scenario === "origem obsoleta") official.editor_revision = "echo-v1:" + "b".repeat(64);
+    else record.snapshot.submission = { status: "pending", laudoId: 905 };
+    const saved = structuredClone(record); const storageKey = echoDraftStorageKey(7, saved.context_key);
+    qa.put.mockClear(); view = render(<EditarLaudoPage />);
+    await screen.findByRole("button", { name: "Retomar rascunho" });
+    expect(screen.queryByRole("button", { name: "Continuar com preenchimento atual" })).not.toBeInTheDocument();
+    const link = document.createElement("a"); link.href = "/agenda"; document.body.append(link);
+    try {
+      fireEvent.click(link); await waitFor(() => expect(qa.router.push).toHaveBeenCalledWith("/agenda"));
+      expect(qa.put).not.toHaveBeenCalled(); expect(qa.post).not.toHaveBeenCalled(); expect(qa.delete).not.toHaveBeenCalled();
+      expect(qa.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      view.unmount(); view = render(<EditarLaudoPage />);
+      fireEvent.click(await screen.findByRole("button", { name: "Retomar rascunho" }));
+      await screen.findByDisplayValue("QA RECUPERAÇÃO PROTEGIDA");
+      expect(screen.getByRole("button", { name: "Atualizar laudo" })).toBeDisabled();
+      expect(qa.records.get(saved.draft_id)).toEqual(saved); expect(sessionStorage.getItem(storageKey)).toBe(saved.draft_id);
+      expect(qa.put).not.toHaveBeenCalled(); expect(qa.post).not.toHaveBeenCalled();
+      if (scenario === "origem obsoleta") expect(screen.getByText(/A versão oficial mudou desde o início/)).toBeInTheDocument();
+      else expect(screen.getByText(/Há uma tentativa de atualização sem resposta confirmada/)).toBeInTheDocument();
+    } finally { link.remove(); view.unmount(); }
+  });
+
+  it("aguarda confirmar a edição ativa antes de sair pelo botão Voltar", async () => {
+    const view = await open(); const slow = pending<{ data: unknown }>(); const original = qa.put.getMockImplementation()!;
+    qa.put.mockImplementation((url, ...args) => url.startsWith("/laudos/editor-drafts/") ? slow.promise : original(url, ...args));
+    fireEvent.change(input("Nome do Paciente"), { target: { value: "QA SAÍDA ATIVA" } });
+    fireEvent.click(screen.getByRole("button", { name: "Voltar para o laudo" }));
+    await waitFor(() => expect(qa.put).toHaveBeenCalledOnce()); expect(qa.router.push).not.toHaveBeenCalled();
+    const [url, body] = qa.put.mock.calls[0];
+    await act(async () => slow.resolve(await original(url, body)));
+    await waitFor(() => expect(qa.router.push).toHaveBeenCalledWith("/laudos/905"));
+    expect(lastSnapshot().paciente.nome).toBe("QA SAÍDA ATIVA"); expect(updates()).toHaveLength(0); view.unmount();
+  });
+
+  it("mantém a edição ativa na tela se salvar antes de seguir o menu falhar", async () => {
+    const view = await open(); const link = document.createElement("a"); link.href = "/agenda"; document.body.append(link);
+    try {
+      qa.put.mockRejectedValueOnce(failure(503));
+      fireEvent.change(input("Nome do Paciente"), { target: { value: "QA SAÍDA ATIVA BLOQUEADA" } });
+      fireEvent.click(link); await screen.findByText(/Não foi possível confirmar o rascunho antes de sair/);
+      expect(qa.router.push).not.toHaveBeenCalled(); expect(input("Nome do Paciente")).toBeEnabled();
+      expect(input("Nome do Paciente")).toHaveValue("QA SAÍDA ATIVA BLOQUEADA"); expect(qa.post).not.toHaveBeenCalled(); expect(updates()).toHaveLength(0);
+    } finally { link.remove(); view.unmount(); }
   });
 
   it("salva e retoma valores literais, status e flags sem modificar o documento oficial", async () => {

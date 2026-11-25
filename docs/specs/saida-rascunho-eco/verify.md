@@ -20,3 +20,43 @@ npm run test:echo-draft-navigation
 ```
 
 O teste inicia o Next.js compilado na porta 19465 e uma API simulada na porta 19464, ambas no loopback. Dados do teste ficam em memória.
+
+
+## Correção de recuperação pendente — 25/11/2026
+
+A autorização atual é corrigir localmente a navegação sem perder o rascunho. Os resultados acima são históricos e não homologam esta revisão.
+
+| Critério | Estado | Evidência desta revisão |
+| --- | --- | --- |
+| CA-005 | aprovado localmente | Nos dois editores, Voltar e Agenda navegam durante recovery sem PUT/POST/close, preservando UUID, revisão, snapshot e ponteiro. A reabertura oferece a mesma cópia e a retomada recupera valores literais. O hook libera beforeunload nessa condição. |
+| CA-006 | aprovado localmente | Edição ativa espera salvamento; HTTP 503 mantém dados e tela. Após retomada, beforeunload protege mudanças e volta a liberar após confirmação. Origem obsoleta e emissão/atualização pendente permanecem preservadas sem reenviar ou alterar o oficial. |
+
+Stage, produção e navegação autenticada no Safari não foram executados nesta etapa. A causa deste bloqueio de recuperação foi identificada; isso não resolve retrospectivamente a indeterminação do episódio de navegação registrado acima.
+
+### Verificações desta revisão
+
+- `vitest run app/laudos/echo-draft-existing-page.test.tsx app/laudos/echo-draft-new-page.test.tsx`: 47 testes aprovados, incluindo nove regressões novas.
+- `vitest run app/laudos/hooks/useEchoEditorDraft.test.tsx`: 36 testes aprovados, incluindo dois casos novos (novo e existente) de beforeunload antes/depois da retomada.
+- `vitest run --maxWorkers=4`: 168 arquivos e 2.994 testes aprovados.
+- `node --test`: 23 testes aprovados.
+- `npm run lint`, `tsc --noEmit` e `npm run build`: aprovados.
+- `git diff --check` e `evaluate_guardrail` sobre os arquivos do diff de trabalho: aprovados; feature SDD qualificada `saida-rascunho-eco`.
+- Revisão adicional do diff sem achados acionáveis.
+
+Os testes de página usam jsdom com API e roteador simulados; comprovam a decisão de navegação e a preservação da cópia, não a navegação real autenticada do build candidato. Não foi operado um laudo real para teste manual desta revisão. Homologação em Stage e publicação ficam para a etapa solicitada de release.
+
+Base: `origin/stage` `ae266e31fa3be8e3b2140c892e6fdcade334d18b`, worktree `echo-draft-exit-recovery`, branch `codex/echo-draft-exit-recovery`. A validação acima foi concluída antes de commit, push ou deploy.
+
+
+## Publicação autorizada — 25/11/2026
+
+Martiniano solicitou publicar após concluir as tarefas em andamento no GitHub. Preparação do release iniciada, com monitoramento das filas e de outra publicação Fort Cordis em curso. A correção será isolada dos trabalhos paralelos de Stage e estes serão restaurados após a promoção. Evidências de instalação e homologação serão registradas ao final; ainda não há afirmação de publicação desta revisão.
+
+
+### Candidata isolada atualizada — 25/11/2026
+
+Base da produção em instalação: `76b572970420003c8e4feee79a965c10f0b36a9d`, que contém as referências pediátricas e o cancelamento dos avisos temporários. A correção de recuperação foi reaplicada sem conflito, mantendo somente os dez caminhos próprios no diff contra essa base.
+
+Validação sobre a candidata isolada: 89 testes nos três arquivos focais; suíte completa com 166 arquivos e 2.951 testes Vitest; 23 testes Node; lint, TypeScript, build e guardrail SDD aprovados. A diferença de contagem em relação à suíte Stage acima decorre do isolamento dos trabalhos paralelos, sem promoção desses trabalhos.
+
+Os ajustes de temporizadores da entrega anterior permanecem preservados. Esta candidata continua local enquanto a publicação anterior e sua restauração de Stage terminam; nenhum push próprio foi feito nessa preparação.

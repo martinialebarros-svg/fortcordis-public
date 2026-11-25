@@ -290,7 +290,7 @@ export function useEchoEditorDraft(options: UseEchoEditorDraftOptions) {
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       const current = session.current;
-      if (!current?.active || current.closed) return;
+      if (!current?.active || current.closed || current.decisionPending) return;
       if (current.saving || current.write || (latest.current && (echoDraftFingerprint(latest.current) !== current.baseline
         || pendingEchoDraftImages(latest.current) > 0))) {
         event.preventDefault();
