@@ -19,6 +19,7 @@ import { extrairQualitativaEcoDaDescricao, type QualitativaEcoLegada } from "@/l
 import { buildEchoReportGroups, prepareEchoReportMeasurements, splitReportObservations } from "@/lib/echo-report-presentation";
 import { useReferenciaEco } from "../hooks/useReferenciaEco";
 import { makeLowWeightReference } from "@/lib/echo-low-weight-reference";
+import { resolveEchoReferenceForMeasurements } from "@/lib/echo-reference-policy";
 import type { ReferenciaEco } from "../types/referencia-eco";
 import {
   getTituloBotaoAvisoWhatsApp,
@@ -183,7 +184,9 @@ export default function VisualizarLaudoPage() {
   const laudoEhPressao = laudo?.tipo === TIPO_LAUDO_PRESSAO_ARTERIAL;
   const laudoEhEco = laudo?.tipo === TIPO_LAUDO_ECOCARDIOGRAMA;
   const { measurements: medidasExibidas, alerts: alertasCalculo, ambiguousKeys } = prepareEchoReportMeasurements(medidas, paciente?.peso_kg, paciente?.especie, paciente?.idade);
-  const referenciaParaPrevia = referenciaEco || makeLowWeightReference(paciente?.especie, paciente?.peso_kg, 0, {}, paciente?.idade);
+  const referenciaParaPrevia = resolveEchoReferenceForMeasurements(
+    referenciaEco || makeLowWeightReference(paciente?.especie, paciente?.peso_kg, 0, {}, paciente?.idade), medidasExibidas, paciente?.peso_kg, paciente?.idade,
+  );
   const gruposMedidas = buildEchoReportGroups(medidasExibidas, referenciaParaPrevia, ambiguousKeys, paciente?.peso_kg, paciente?.especie, paciente?.idade);
   const observacoes = splitReportObservations(laudo?.observacoes || "");
 
@@ -815,6 +818,8 @@ export default function VisualizarLaudoPage() {
               <p className="mb-3 text-xs text-gray-600">
                 {carregandoReferencia
                   ? "Consultando faixas de referência por espécie e peso..."
+                  : referenciaParaPrevia?.pediatric_reference
+                  ? "Referências pediátricas da coorte de 6–16 semanas: não ajustadas ao peso e sem classificação automática; técnica e limitações indicadas nas medidas."
                   : referenciaParaPrevia?.reference_origin === "computed"
                   ? `Referência calculada para ${referenciaParaPrevia.especie}, ${paciente?.peso_kg} kg; confirme a população adulta e o contexto de cada medida.`
                   : referenciaEco
@@ -823,8 +828,8 @@ export default function VisualizarLaudoPage() {
                   ? "Referências específicas da técnica estão indicadas nas medidas abaixo."
                   : "Faixas de referência indisponíveis nesta prévia."}
               </p>
-              {referenciaEco?.fs_source && medidasExibidas.DeltaD_FS && medidasExibidas.VE_tecnica_relatorio !== "2d" && (
-                <p className="mb-2 text-xs text-gray-600">FS (modo M): {referenciaEco.fs_source}.</p>
+              {referenciaParaPrevia?.fs_source && medidasExibidas.DeltaD_FS && medidasExibidas.VE_tecnica_relatorio !== "2d" && (
+                <p className="mb-2 text-xs text-gray-600">FS (modo M): {referenciaParaPrevia.fs_source}.</p>
               )}
               {medidas.Remodelamento_AD && (
                 <p className="mb-3 text-xs text-gray-600">Premissa registrada para estimativa da pressão atrial direita: remodelamento de AD {medidas.Remodelamento_AD}.</p>

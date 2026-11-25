@@ -144,7 +144,9 @@ def low_weight_m_mode_ranges(species: Any, weight: float | None, age: Any = None
 
 def low_weight_reference_seed(species: Any, weight: float | None, age: Any = None) -> dict[str, Any] | None:
     """An ephemeral carrier, never a row inserted into the editable catalog."""
+    from app.utils.echo_feline_pediatric_reference import is_feline_pediatric_context
     normalized = normalizar_especie_referencia(species)
-    if not low_weight_m_mode_ranges(normalized, weight):
+    pediatric = is_feline_pediatric_context(normalized, age)
+    if not pediatric and not low_weight_m_mode_ranges(normalized, weight):
         return None
     return {"id": 0, "especie": normalized, "peso_kg": weight, "reference_origin": "computed", "patient_age": age}

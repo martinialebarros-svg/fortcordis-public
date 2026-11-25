@@ -39,6 +39,9 @@ from app.utils.echo_ae_ao_reference import (
 from app.utils.echo_low_weight_reference import (
     LOW_WEIGHT_PREFIXES, low_weight_age_context, low_weight_reference_seed,
 )
+from app.utils.echo_feline_pediatric_reference import (
+    PEDIATRIC_DOI, PEDIATRIC_NOTE, is_feline_pediatric_context, pediatric_range_text,
+)
 from app.utils.echo_diastolic import (
     diastolic_references, diastolic_notes, diastolic_indices_awaiting_confirmation,
 )
@@ -346,6 +349,15 @@ def aplicar_referencia_eco(parametros: List[Dict], referencia_eco: Optional[Dict
                     ref_max = float(ref_max) / 100
                 atualizado["ref_min"] = ref_min
                 atualizado["ref_max"] = ref_max
+
+        pediatric = (referencia_eco or {}).get("pediatric_reference", {}).get("ranges", {}).get(param.get("chave"), {})
+        if pediatric.get("status") == "descriptive":
+            # Descriptive cohort lookup stays neutral, with no thresholds that
+            # the generic color/classification renderer could interpret.
+            atualizado["ref_min"] = atualizado["ref_max"] = None
+            atualizado["ref_text"] = pediatric_range_text(
+                pediatric["lower"], pediatric["upper"], pediatric["unit"], compact=True,
+            )
 
         params_atualizados.append(atualizado)
 
@@ -1205,6 +1217,23 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
     medidas_m = [(chave, prefixo) for chave, prefixo in MAPEAMENTO_REFERENCIA_ECO.items()
                  if prefixo in LOW_WEIGHT_PREFIXES]
     metadados_m = referencia.get("range_metadata", {})
+    juvenil_felino = is_feline_pediatric_context(especie, paciente.get("idade"))
+    pediatrica = referencia.get("pediatric_reference", {})
+
+    def _pediatrica_exibida(chave: str, intervalo: Dict[str, Any]) -> bool:
+        valor = _to_float(medidas.get(chave))
+        if (intervalo.get("status") != "descriptive" or chave in (dados_pdf.get("unidades_ambiguas") or set())
+                or valor is None or not math.isfinite(valor) or valor <= 0):
+            return False
+        if chave.endswith("_2D") and modo_m:
+            return False
+        if chave in {"DIVEd", "DIVES", "SIVd", "SIVs", "PLVEd", "PLVES", "DeltaD_FS"} and not modo_m:
+            return False
+        return True
+
+    tem_referencia_pediatrica = juvenil_felino and any(
+        _pediatrica_exibida(chave, intervalo) for chave, intervalo in pediatrica.get("ranges", {}).items()
+    )
 
     def _medida_m_exibida(chave: str) -> bool:
         valor = _to_float(medidas.get(chave))
@@ -1266,7 +1295,7 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
                            for _, prefixo in medidas_m)
         # The new carrier alone does not make an adult source applicable.
         # Preserve the pre-existing bibliography contract for legacy catalogs.
-        tem_fonte_m = tem_modo_m and (not tem_modelo_m or any(
+        tem_fonte_m = not juvenil_felino and tem_modo_m and (not tem_modelo_m or any(
             _modelo_m_exibido(chave, prefixo, "10.1111/jvim.14569") for chave, prefixo in medidas_m))
         la_ao_metadata = referencia.get("range_metadata", {}).get("la_ao", {})
         if (tem_fonte_m or (modo_m and referencia.get("fs_source") and _to_float(medidas.get("DeltaD_FS")) is not None)
@@ -1329,7 +1358,7 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
             "0,95 ± 0,18 m/s (médias ± DP). "
             "DOI: 10.1590/S0100-736X2010000700013."
         )
-    elif tem_fluxo_saida and especie == "Felina":
+    elif tem_fluxo_saida and especie == "Felina" and not tem_referencia_pediatrica:
         estudos.append(
             "Domanjko Petric et al. (2012). Fluxos aórtico e pulmonar por Doppler "
             "pulsado em 53 gatos domésticos saudáveis sem sedação; Ao 0,77–1,40 "
@@ -1337,6 +1366,12 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
             "DOI: 10.1016/j.jvc.2012.04.004."
         )
 
+    if tem_referencia_pediatrica:
+        estudos.append(
+            "Gunther-Harrington et al. (2021). Reference intervals for radiographic, "
+            "echocardiographic and N-terminal pro B-type natriuretic peptide values "
+            "in healthy kittens. Tabela suplementar 1. DOI: " + PEDIATRIC_DOI + "."
+        )
     estudos.extend(bibliografia_diastolica)
     if tem_avaliacao_hp:
         estudos.append(HP_REFERENCE)
@@ -1350,6 +1385,8 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
     elementos = [Spacer(1, 3 * mm)]
     elementos.append(Paragraph("REFERÊNCIAS BIBLIOGRÁFICAS", styles["ReferenciaTitulo"]))
     elementos.extend(Paragraph(_esc(estudo.replace("&amp;", "&")), styles["ReferenciaTexto"]) for estudo in estudos)
+    if tem_referencia_pediatrica:
+        elementos.append(Paragraph(_esc(PEDIATRIC_NOTE), styles["ReferenciaTexto"]))
     if referencia.get("reference_origin") == "computed" and tem_modo_m:
         model_metadata = [metadados_m.get(prefixo, {}) for chave, prefixo in medidas_m
                           if any(_modelo_m_exibido(chave, prefixo, doi)
@@ -1368,7 +1405,8 @@ def criar_secao_referencias_eco(dados_pdf: Dict[str, Any]) -> List:
         ):
             notes.append("* Adultos: limites publicados para adultos, apenas para consulta; confirmar idade/maturidade antes de aplicar ao paciente.")
         if any(meta.get("status") == "unavailable" and meta.get("model_weight_kg") for meta in measured_metadata):
-            notes.append("Referência de adultos não aplicada a paciente em crescimento; sem referência pediátrica reconciliada.")
+            notes.append("Referência de adultos não aplicada a paciente em crescimento." if pediatrica else
+                         "Referência de adultos não aplicada a paciente em crescimento; sem referência pediátrica reconciliada.")
         notes.append("Interpretar dimensões e espessuras em conjunto com morfologia, técnica e demais achados; os limites não são cortes diagnósticos isolados.")
         elementos.extend(Paragraph(_esc(note), styles["ReferenciaTexto"]) for note in notes)
     return elementos

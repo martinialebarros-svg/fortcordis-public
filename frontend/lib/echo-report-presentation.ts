@@ -8,6 +8,7 @@ import { FELINE_DIASTOLIC_KEYS } from "./echo-feline-diastolic-reference";
 import { isFelineEchoSpecies, normalizeEchoSpecies } from "./echo-species";
 import { deriveOutflowGradients, ECHO_OUTFLOW_KEYS, formatOutflowValue, isOutflowMetadataKey, outflowMeasurementLabel } from "./echo-outflow";
 import { lowWeightAgeContext, lowWeightEstimateText, makeLowWeightReference } from "./echo-low-weight-reference";
+import { canonicalPediatricMeasurement } from "./echo-feline-pediatric-reference";
 
 type Parameter = { key: string; label: string; unit?: string; reference?: string };
 export type EchoReportReferenceMetadata = Pick<EchoDiastolicReference, "source" | "doi" | "statistic" | "note" | "kind">;
@@ -112,6 +113,8 @@ function number(value: unknown): number | null {
 }
 
 function referenceRange(reference: ReferenciaEco | null, item: Parameter): string {
+  const pediatric = reference?.pediatric_reference?.ranges[canonicalPediatricMeasurement(item.key)];
+  if (pediatric) return pediatric.text;
   if (!reference || !item.reference) return "—";
   const estimate = lowWeightEstimateText(reference.range_metadata?.[item.reference]);
   if (estimate) return estimate;
@@ -245,6 +248,8 @@ export function buildEchoReportGroups(measurements: Record<string, string>, refe
       const diastolicReference = ambiguousKeys.has(item.key) && referenceForKey?.kind !== "uninterpretable"
         ? undefined : diastolicReferences[canonicalEchoDiastolicKey(item.key)];
       const model = item.reference ? safeReference?.range_metadata?.[item.reference] : undefined;
+      const pediatric = safeReference?.pediatric_reference;
+      const cohort = pediatric?.ranges[canonicalPediatricMeasurement(item.key)];
       return {
         key: item.key,
         label: outflowMeasurementLabel(item.key, item.label, measurements),
@@ -263,7 +268,11 @@ export function buildEchoReportGroups(measurements: Record<string, string>, refe
           return twoD ? `${twoD.min.toFixed(2)}–${twoD.max.toFixed(2)}${item.unit ? ` ${item.unit}` : ""}`
             : referenceRange(safeReference, item);
         })(),
-        ...(diastolicReference ? { referenceMetadata: {
+        ...(cohort ? { referenceMetadata: {
+          source: cohort.source, doi: cohort.doi, statistic: cohort.statistic,
+          note: `${pediatric!.population} ${cohort.reason}`,
+          kind: cohort.status === "descriptive" ? "descriptive" as const : "unconfirmed" as const,
+        } } : diastolicReference ? { referenceMetadata: {
           source: diastolicReference.source,
           doi: diastolicReference.doi,
           statistic: diastolicReference.statistic,

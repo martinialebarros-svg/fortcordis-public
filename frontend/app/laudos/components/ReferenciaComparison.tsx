@@ -11,6 +11,8 @@ import type { Echo2DView } from "@/lib/echo-2d-reference";
 import { EchoDiastolicProtocol } from "./EchoDiastolicProtocol";
 import { resolveEchoReferenceForMeasurements } from "@/lib/echo-reference-policy";
 import { makeLowWeightReference } from "@/lib/echo-low-weight-reference";
+import { FelinePediatricProtocol } from "./FelinePediatricProtocol";
+import { isFelinePediatricContext } from "@/lib/echo-feline-pediatric-reference";
 
 interface ReferenciaComparisonProps {
   especie?: "Canina" | "Felina" | string;
@@ -52,6 +54,9 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
     () => ({ ...medidasSeguras, ...medidasDerivadasParaReferencia }),
     [medidasSeguras, medidasDerivadasParaReferencia]
   );
+  const referenciaAtual = useMemo(() => resolveEchoReferenceForMeasurements(referencia, medidasParaReferencia, peso, idade),
+    [referencia, medidasParaReferencia, peso, idade]);
+  const pediatrico = isFelinePediatricContext(especie, idade);
   const referenciasDiastolicas = useMemo(
     () => compararMedidasDiastolicas(medidasParaReferencia, especie ?? ""),
     [medidasParaReferencia, especie],
@@ -61,7 +66,7 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
   const aeAoCanino = Number(String(medidasSeguras.AE_Ao ?? medidasSeguras.LA_Ao ?? "").replace(",", "."));
   const limiteAeAoCanino = canineAeAoClinicalReference(medidasSeguras, especie ?? "", unidadesAmbiguas);
   const comparacoes = useMemo(() => {
-    const catalogo = referencia ? compararMedidas(medidasParaReferencia, referencia, plano2D, peso) : {};
+    const catalogo = referenciaAtual ? compararMedidas(medidasParaReferencia, referenciaAtual, plano2D, peso) : {};
     const linhas: Record<string, ComparacaoMedida> = { ...catalogo, ...referenciasDiastolicas };
     if (limiteAeAoCanino) {
       delete linhas.LA_Ao;
@@ -80,7 +85,7 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
       };
     }
     return linhas;
-  }, [referencia, compararMedidas, medidasParaReferencia, plano2D, peso, referenciasDiastolicas, limiteAeAoCanino, medidasSeguras.AE_Ao]);
+  }, [referenciaAtual, compararMedidas, medidasParaReferencia, plano2D, peso, referenciasDiastolicas, limiteAeAoCanino, medidasSeguras.AE_Ao]);
   const origemAeAoAmbigua = ["AE_Ao", "Aorta", "Atrio_esquerdo"].some((key) => unidadesAmbiguas.has(key));
   const metodoAeAoCanino = normalizeEchoSpecies(especie) === "Canina" && !origemAeAoAmbigua && Number.isFinite(aeAoCanino) && aeAoCanino > 0 ? (
     <div className="p-3 bg-blue-50 rounded-lg space-y-2 text-left">
@@ -146,6 +151,7 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
             : `Não há referência cadastrada para ${especie} com ${peso}kg.`}
         </p>
         {metodoAeAoCanino}
+        <FelinePediatricProtocol especie={especie} peso={peso} idade={idade} medidas={medidas} onMedidaChange={onMedidaChange} />
         <EchoDiastolicProtocol especie={especie} medidas={medidas} onMedidaChange={onMedidaChange} />
       </div>
     );
@@ -210,11 +216,12 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
         <span className="text-lg">📊</span>
         <div>
           <p className="font-medium text-teal-900">
-            {referencia.reference_origin === "computed"
+            {pediatrico ? "Referência pediátrica: consulta da coorte publicada"
+              : referencia.reference_origin === "computed"
               ? `Referência calculada: ${referencia.especie || especie}, peso de ${formatarPeso(referencia.patient_weight_kg ?? referencia.peso_kg)} kg`
               : `Referência selecionada: ${referencia.especie || especie}, cadastro de ${formatarPeso(referencia.peso_kg)} kg`}
           </p>
-          {calculatedMetadata && <p className="mt-1 text-xs text-teal-800">{calculatedMetadata.reason}</p>}
+          {!pediatrico && calculatedMetadata && <p className="mt-1 text-xs text-teal-800">{calculatedMetadata.reason}</p>}
           <p className="text-sm text-teal-700">
             Peso do paciente: {typeof peso === "number" ? formatarPeso(peso) : "—"} kg. Faixas aplicáveis dependem do método, peso e fonte identificada.
           </p>
@@ -227,6 +234,7 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
       </div> : <p className="rounded-lg bg-teal-50 p-3 text-sm text-teal-900">Referências: estudos publicados independentes do cadastro por peso.</p>}
 
       <EchoDiastolicProtocol especie={especie} medidas={medidas} onMedidaChange={onMedidaChange} />
+      <FelinePediatricProtocol especie={especie} peso={peso} idade={idade} medidas={medidas} onMedidaChange={onMedidaChange} />
 
       {temMedidas2D && /^canin/i.test(referencia?.especie ?? "") && (
         <div className="p-3 bg-blue-50 rounded-lg space-y-2">
@@ -268,17 +276,19 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
 
       {metodoAeAoCanino}
 
-      {positive(medidas.AE_Ao ?? medidas.LA_Ao) && isFelineEchoSpecies(referencia?.especie) && (
+      {(positive(medidas.AE_Ao ?? medidas.LA_Ao) || (pediatrico && (positive(medidas.Aorta) || positive(medidas.Atrio_esquerdo)))) && isFelineEchoSpecies(referencia?.especie) && (
         <div className="p-3 bg-blue-50 rounded-lg space-y-2">
           <label htmlFor="metodo-ae-ao" className="block text-sm font-medium text-blue-900">Método de obtenção de AE/Ao</label>
           <select id="metodo-ae-ao" value={medidas.AE_Ao_metodo || ""}
             onChange={(event) => onMedidaChange("AE_Ao_metodo", event.target.value)}
             className="w-full sm:w-auto rounded border border-blue-200 bg-white p-2 text-sm text-gray-900">
             <option value="">Método não confirmado</option>
-            <option value="2d_eixo_curto_diastole_inicial">Gato adulto; 2D, eixo curto paraesternal direito, início da diástole</option>
+            <option value="2d_eixo_curto_diastole_inicial">{pediatrico ? "Gato filhote" : "Gato adulto"}; 2D, eixo curto paraesternal direito, início da diástole</option>
             <option value="outro">Outra vista ou fase</option>
           </select>
-          <p className="text-xs text-blue-800">Confirme a primeira imagem após o fechamento da valva aórtica. Häggström et al. (2016) estudaram gatos adultos de raça pura; o intervalo de predição por peso exige a vista e a fase confirmadas.</p>
+          <p className="text-xs text-blue-800">Confirme a primeira imagem após o fechamento da valva aórtica. {pediatrico
+            ? "Gunther-Harrington et al. (2021): dimensões AE e Ao e razão AE/Ao em eixo curto; intervalo agrupado da coorte, não ajustado ao peso."
+            : "Häggström et al. (2016) estudaram gatos adultos de raça pura; o intervalo de predição por peso exige a vista e a fase confirmadas."}</p>
         </div>
       )}
 
@@ -322,18 +332,19 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
                         {item.referencia_tipo === "clinical_limit" ? "Limite clínico orientativo"
                           : item.metadados?.status === "estimated" ? "Estimativa calculada"
                           : item.metadados?.status === "published" && ["allometric", "interpolated"].includes(item.metadados.calculation || "") ? "Limites calculados"
-                          : item.referencia_texto ? (item.referencia_tipo === "reference_interval" ? "Intervalo de referência publicado" : item.estatistica === "mean_sd" ? "Média ± DP publicada" : "Comparação diastólica") : item.key.endsWith("_2D")
+                          : item.referencia_texto ? (item.estatistica === "published_cohort_reference_interval" ? "Intervalo da coorte pediátrica"
+                            : item.referencia_tipo === "reference_interval" ? "Intervalo de referência publicado" : item.estatistica === "mean_sd" ? "Média ± DP publicada" : "Comparação diastólica") : item.key.endsWith("_2D")
                           ? (semReferenciaDefinida ? "Faixa 2D" : "Faixa 2D publicada")
                           : item.metadados?.status === "published" ? "Faixa publicada" : "Faixa cadastrada"}: {faixaRef}
                       </p>
                       {item.fonte && <p className="text-xs text-gray-500">{item.doi ? <a href={`https://doi.org/${item.doi}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{item.fonte}</a> : item.fonte}</p>}
                       {item.metadados?.model_weight_kg != null && <details className="mt-1 text-xs text-gray-600">
-                        <summary className="cursor-pointer">População adulta e cálculo</summary>
+                        <summary className="cursor-pointer">População e cálculo</summary>
                         <p>{item.metadados.population}</p>
                         <p>{item.metadados.formula}</p>
                         <p>{item.metadados.reason}</p>
                       </details>}
-                      {item.nota_referencia && ["descriptive", "reference_interval"].includes(item.referencia_tipo ?? "") && (
+                      {item.nota_referencia && ["descriptive", "reference_interval", "unconfirmed"].includes(item.referencia_tipo ?? "") && (
                         <details className="mt-1 text-xs text-gray-600">
                           <summary className="cursor-pointer">Técnica e população do estudo</summary>
                           <p className="mt-1 max-w-xl leading-relaxed">{item.nota_referencia}</p>

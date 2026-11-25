@@ -10,6 +10,7 @@ import { isFelineEchoSpecies, normalizeEchoSpecies } from "@/lib/echo-species";
 import { canonicalEchoDiastolicKey, echoDiastolicReferences } from "@/lib/echo-diastolic-reference";
 import { FELINE_DIASTOLIC_KEYS } from "@/lib/echo-feline-diastolic-reference";
 import { lowWeightAgeContext, lowWeightEstimateText, makeLowWeightReference } from "@/lib/echo-low-weight-reference";
+import { canonicalPediatricMeasurement } from "@/lib/echo-feline-pediatric-reference";
 
 // Mapeamento de parâmetros das medidas para os campos da referência
 // As chaves devem corresponder aos 'key' definidos na nova aba Medidas
@@ -187,6 +188,18 @@ export function compararMedidasComReferencia(
 
     const valorNumerico = parseFloat(valor.replace(",", "."));
     if (isNaN(valorNumerico)) return;
+
+    const pediatric = referenciaSegura.pediatric_reference;
+    const cohort = pediatric?.ranges[canonicalPediatricMeasurement(key)];
+    if (cohort) {
+      comparacoes[key] = { nome: mapeamento.nome, valor_medido: valor,
+        referencia_min: null, referencia_max: null, referencia_texto: cohort.text,
+        referencia_tipo: cohort.status === "descriptive" ? "descriptive" : "unconfirmed",
+        estatistica: cohort.statistic, fonte: cohort.source, doi: cohort.doi,
+        nota_referencia: `${pediatric!.population} ${cohort.reason}`,
+        status: "nao_avaliado", interpretacao: cohort.reason, categoria: mapeamento.categoria };
+      return;
+    }
 
     const minKey = `${mapeamento.campo}_min` as keyof ReferenciaEco;
     const maxKey = `${mapeamento.campo}_max` as keyof ReferenciaEco;
