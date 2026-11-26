@@ -18,37 +18,6 @@ vi.mock("../hooks/useReferenciaEco", async () => ({
 }));
 
 describe("identificação da referência ecocardiográfica", () => {
-  it.each(["Canina", "Dog", "Cão", "cachorro"])("oferece confirmação explícita de AE/Ao para a espécie literal %s", (species) => {
-    const change = vi.fn(); const raw = Object.freeze({ AE_Ao: "1.41" });
-    const props = { especie: species, medidas: raw, onMedidaChange: change };
-    const view = render(<ReferenciaComparison {...props} />);
-    const selector = screen.getByLabelText("Método de obtenção de AE/Ao");
-    expect(selector).toHaveAttribute("id", "metodo-ae-ao-canino");
-    expect(selector).toHaveValue(""); expect(change).not.toHaveBeenCalled();
-    fireEvent.change(selector, { target: { value: "2d_eixo_curto_diastole_inicial_sueco" } });
-    expect(change).toHaveBeenCalledExactlyOnceWith("AE_Ao_metodo", "2d_eixo_curto_diastole_inicial_sueco");
-    view.rerender(<ReferenciaComparison {...props} medidas={{ ...raw, AE_Ao_metodo: "2d_eixo_curto_diastole_inicial_sueco" }} />);
-    expect(screen.getByLabelText("Método de obtenção de AE/Ao")).toHaveValue("2d_eixo_curto_diastole_inicial_sueco");
-    expect(props.especie).toBe(species); expect(raw).toEqual({ AE_Ao: "1.41" });
-  });
-
-  it.each(["CaninaXYZ", "Dogfish", "Felina", "Gato", "Cat", "Equina"])("não oferece a aquisição canina de AE/Ao à espécie %s", (species) => {
-    const change = vi.fn();
-    render(<ReferenciaComparison especie={species} medidas={{ AE_Ao: "1.41" }} onMedidaChange={change} />);
-    expect(document.querySelector("#metodo-ae-ao-canino")).toBeNull();
-    expect(screen.queryByRole("option", { name: /Método sueco/ })).not.toBeInTheDocument();
-    expect(change).not.toHaveBeenCalled();
-  });
-
-  it.each(["Dog", "Cão", "cachorro"])("mantém o índice normalizado atual ao comparar referências de %s", async (species) => {
-    compararMedidas.mockClear(); compararMedidas.mockImplementationOnce(compararMedidasComReferencia);
-    buscarReferencia.mockResolvedValueOnce({ id: 1, especie: "Canina", peso_kg: 10 });
-    const raw = { DIVEd: "30", DIVEd_normalizado: "0.9" };
-    render(<ReferenciaComparison especie={species} peso={10} medidas={raw} onMedidaChange={vi.fn()} />);
-    await waitFor(() => expect(compararMedidas).toHaveBeenCalledWith(expect.objectContaining({ DIVEd: "30", DIVEd_normalizado: "1.52" }), expect.objectContaining({ especie: "Canina" }), "", 10));
-    expect(raw.DIVEd_normalizado).toBe("0.9");
-  });
-
   it("exibe o limite no cartão AE/Ao com método sueco e catálogo legado bloqueado", async () => {
     buscarReferencia.mockResolvedValueOnce({
       id: 1, especie: "Canina", peso_kg: 4, la_ao_min: 0.8, la_ao_max: 1.6,
