@@ -310,9 +310,13 @@ export function deriveAutomaticEchoMeasurements(
  * sempre tem precedencia sobre o valor calculado aqui.
  */
 export function deriveLeftVentricularFunctionForReference(
-  measurements: Record<string, string>
+  measurements: Record<string, string>,
+  options: { preservePrecision?: boolean } = {},
 ): Record<string, string> {
   const derived: Record<string, string> = {};
+  // Cohort-position displays compare the calculated value before formatting.
+  // Existing callers retain their integer percentage display by default.
+  const formatPercentage = options.preservePrecision ? String : formatDerivedPercentage;
 
   for (const fields of Object.values({
     modo_m: {
@@ -335,7 +339,7 @@ export function deriveLeftVentricularFunctionForReference(
     const edv = parsePositiveNumber(measurements[fields.edv]);
     const esv = parsePositiveNumber(measurements[fields.esv]);
     if (!String(measurements[fields.ef] ?? "").trim() && edv !== null && esv !== null && esv <= edv) {
-      derived[fields.ef] = formatDerivedPercentage(((edv - esv) / edv) * 100);
+      derived[fields.ef] = formatPercentage(((edv - esv) / edv) * 100);
     }
 
     const lvidD = echoLengthInMm(measurements, fields.lvidD);
@@ -346,7 +350,7 @@ export function deriveLeftVentricularFunctionForReference(
       lvidS !== null &&
       lvidS <= lvidD
     ) {
-      derived[fields.fs] = formatDerivedPercentage(((lvidD - lvidS) / lvidD) * 100);
+      derived[fields.fs] = formatPercentage(((lvidD - lvidS) / lvidD) * 100);
     }
   }
 

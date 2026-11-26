@@ -41,3 +41,19 @@ Publicação autorizada pelo usuário em 25/11/2026 ("pode publicar"). Segue o f
 - PR #72, primeira tentativa: falha isolada no teste fiscal preexistente (estado de botão). Os 12 arquivos relacionados são idênticos a `main`; 12 repetições do caso e três execuções do arquivo fiscal completo passaram localmente. Causa exata não reproduzida; nenhuma fonte fiscal alterada.
 - Segunda tentativa: todos os 2.938 testes Vitest aprovados, mas erro assíncrono em temporizador de novo laudo após desmontagem (`window is not defined`). Duas regressões locais reproduziram temporizador pendente e agendamento por resposta tardia. A correção cancela os quatro temporizadores temporários na saída e impede novo agendamento após desmontagem, preservando as durações e os critérios de teste.
 - Correção de temporizadores: 120 testes das cinco páginas afetadas aprovados, incluindo as duas regressões; lint dos arquivos aprovado e revisão independente sem bloqueador. Regressões usam os handles reais dos avisos, evitando interferência do relógio global nos testes existentes.
+
+## Continuação: comparação mais visível e colorida
+
+Solicitação explícita de 25/11/2026: faixas ao lado dos valores e cores para dentro/acima/abaixo. A indicação cromática é apenas posição na faixa; a versão original neutra permanece no contrato clínico/PDF/IA.
+
+| Critério | Estado | Evidência |
+| --- | --- | --- |
+| CA-006 | aprovado local | Componentes reais em Chrome: 1440, 390 e 320 px; campos de 18 px lado a lado, sem overflow; PNGs inspecionados |
+| CA-007 | aprovado local | 180 testes focados; três posições, extremos inclusivos, unidade mista, número malformado, método/idade inválidos e precisão de FS |
+| CA-008 | aprovado local | Nota única e rótulos dentro/acima/abaixo da faixa; fonte e método preservados; revisão independente sem bloqueadores |
+
+Validação da continuação em `echo-feline-release` sobre Stage `015bb8d`: suíte completa com **171 arquivos / 3.089 testes Vitest e 23 Node aprovados**, guardrail SDD e diff aprovados. Revisão independente reexecutou 90 testes clínicos de apresentação. Os casos fictícios de FS 68,5% (dentro), 36,5% (abaixo) e 50% com unidades mistas foram conferidos em Chrome nos três tamanhos. Origem malformada e contexto insuficiente não recebem cores.
+
+A inspeção visual usou um harness local com os componentes/CSS reais e catálogo fictício, rede externa bloqueada, sem escrita clínica. Não representa fluxo completo autenticado de produção. Evidências ignoradas pelo Git em `output/echo-reference-clarity-20261125/`, incluindo `visual-results.json`, `visual-review.md` e PNGs. Nenhuma medida de paciente real foi alterada. Publicação da continuação seguirá o fluxo já autorizado, com evidência remota separada da validação local.
+
+Lint, TypeScript e build final aprovados. O typecheck detectou apenas inferência indevida de propriedade opcional em uma fixture de teste; a anotação explícita de tipo corrigiu esse problema sem alterar o comportamento testado.

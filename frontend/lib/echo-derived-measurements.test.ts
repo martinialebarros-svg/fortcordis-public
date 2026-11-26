@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { deriveAutomaticEchoMeasurements, parseStoredEchoMeasurements } from "./echo-derived-measurements";
+import { deriveAutomaticEchoMeasurements, deriveLeftVentricularFunctionForReference, parseStoredEchoMeasurements } from "./echo-derived-measurements";
 import { mergeImportedEchoMeasurements, updateEchoMeasurement } from "./echo-unit-provenance";
+
+describe("precisão opcional na comparação de função ventricular", () => {
+  it.each([
+    { DIVEd: "12", DIVES: "3.78", precise: 68.5, legacy: "69" },
+    { DIVEd: "12", DIVES: "7.62", precise: 36.5, legacy: "37" },
+  ])("preserva precisão quando solicitada e mantém o padrão legado: %j", ({ DIVEd, DIVES, precise, legacy }) => {
+    const measurements = Object.freeze({ DIVEd, DIVES });
+    expect(deriveLeftVentricularFunctionForReference(measurements).DeltaD_FS).toBe(legacy);
+    const result = deriveLeftVentricularFunctionForReference(measurements, { preservePrecision: true });
+    expect(Number(result.DeltaD_FS)).toBeCloseTo(precise, 12);
+    expect(measurements).toEqual({ DIVEd, DIVES });
+  });
+
+  it("mantém o FS informado como autoridade mesmo com precisão solicitada", () => {
+    expect(deriveLeftVentricularFunctionForReference({ DIVEd: "12", DIVES: "3.78", DeltaD_FS: "55.2" },
+      { preservePrecision: true })).not.toHaveProperty("DeltaD_FS");
+  });
+});
 
 describe("deriveAutomaticEchoMeasurements", () => {
   it("preserva a presença canônica diastólica vazia ou inválida sem recuperar a descrição histórica", () => {

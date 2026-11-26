@@ -1,6 +1,7 @@
 "use client";
 
-import { felinePediatricReference, FELINE_PEDIATRIC_PROTOCOL } from "@/lib/echo-feline-pediatric-reference";
+import { felinePediatricReference, FELINE_PEDIATRIC_NOTE, FELINE_PEDIATRIC_PROTOCOL } from "@/lib/echo-feline-pediatric-reference";
+import { PEDIATRIC_COMPARISON_COLOR_NOTE } from "./pediatric-comparison-position";
 
 interface Props {
   especie?: string;
@@ -17,7 +18,8 @@ export function FelinePediatricProtocol({ especie, peso, idade, medidas, onMedid
     <section className="space-y-3 rounded-lg border border-teal-200 bg-teal-50 p-3 text-left text-teal-950" aria-label="Referências pediátricas felinas">
       <p className="font-semibold">Referências para filhotes felinos · 6–16 semanas</p>
       <p className="text-sm">{reference.population}</p>
-      <p className="text-sm">{reference.reason}</p>
+      <p className="text-sm">{PEDIATRIC_COMPARISON_COLOR_NOTE}</p>
+      {reference.reason !== FELINE_PEDIATRIC_NOTE && <p className="text-sm">{reference.reason}</p>}
       <p className="text-xs"><a href={`https://doi.org/${reference.doi}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{reference.source}</a></p>
       <label htmlFor="protocolo-pediatrico-felino" className="block text-sm font-medium">Protocolo de aquisição pediátrico</label>
       <select id="protocolo-pediatrico-felino" value={medidas.Pediatria_protocolo || ""}

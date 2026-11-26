@@ -4,7 +4,7 @@
 
 - RF-001: selecionar a referência de Gunther-Harrington et al. (2021; publicação online 2020), DOI 10.1177/1098612X20946461, somente para felinos com idade reconhecida dentro de 6–16 semanas e peso positivo informado. Não inventar mínimo/máximo de peso: a fonte informa mediana e IQR, sem amplitude observada.
 - RF-002: disponibilizar dimensões do VE separadamente por modo M/eixo curto e 2D/eixo longo, preservando unidade mm do sistema e fonte em cm. Exigir confirmação do protocolo compatível; não presumir confirmação a partir da medida.
-- RF-003: usar exclusivamente os intervalos agrupados do Suplemento 1 como consulta neutra, sem ajuste por peso e sem classificação automática. Não implementar a Tabela 2 nem reconstruir seus limites a partir do Suplemento 3, devido às inconsistências documentadas. Não confundir os IC90 dos limites com os intervalos de referência; não atribuir nível95% não explícito aos intervalos do suplemento.
+- RF-003: usar exclusivamente os intervalos agrupados do Suplemento 1 como consulta descritiva, sem ajuste por peso e sem classificação diagnóstica automática. A comparação visual solicitada em 25/11/2026 indica somente a posição numérica na faixa da coorte. Não implementar a Tabela 2 nem reconstruir seus limites a partir do Suplemento 3, devido às inconsistências documentadas. Não confundir os IC90 dos limites com os intervalos de referência; não atribuir nível95% não explícito aos intervalos do suplemento.
 - RF-004: bloquear intervalos adultos/legados sem validação pediátrica para felinos em crescimento ou com faixa etária simples que possa incluir menos de 12 meses, mesmo com catálogo completo, preservando seus valores em catalog_ranges.
 - RF-005: recalcular ao mudar idade, peso, técnica ou protocolo. API, fallback frontend, prévia e PDF devem concordar. Não aplicar dados M em campos 2D nem recuperar limites pediátricos antigos em outro contexto.
 - RF-006: apresentar população, método, estatística e DOI e incluir bibliografia pertinente no PDF. Ausência de faixa não significa anormalidade. Nenhum diagnóstico, assinatura, salvamento ou emissão automática.
@@ -12,7 +12,7 @@
 ## Critérios de aceitação
 
 - CA-001: caso sintético de três meses encontra intervalos pediátricos de consulta com catálogo vazio e completo após protocolo confirmado.
-- CA-002: limites de idade, peso ausente/inválido e técnica/protocolo incompatível não expõem números pediátricos. Nenhum intervalo pediátrico produz classificação automática, mesmo quando disponível.
+- CA-002: limites de idade, peso ausente/inválido e técnica/protocolo incompatível não expõem números pediátricos. Nenhum intervalo pediátrico produz classificação diagnóstica automática; cores na comparação indicam apenas posição numérica quando os dados e o método são elegíveis.
 - CA-003: tabela, unidade, fonte e estatística correspondem à publicação verificada.
 - CA-004: troca de contexto invalida limites anteriores; adultos/cães mantêm comportamento existente.
 - CA-005: comparação, projeção e PDF concordam, com bibliografia correta e campos preservados.
@@ -38,3 +38,16 @@ O parser legado pode identificar modo M/2D ao reabrir um registro contendo apena
 ## Estabilidade do editor durante a publicação
 
 A suíte remota revelou um temporizador de mensagem de sucesso da tela de novo laudo que continuava após desmontar o editor. Os quatro avisos temporários mantêm as durações existentes de 4/5 segundos, mas seus temporizadores são cancelados ao sair da tela; respostas tardias não agendam novos avisos após desmontagem. Não altera carregamento de pacientes, edição clínica, emissão ou os dados das referências.
+
+## Legibilidade e posição na faixa (25/11/2026)
+
+Após a publicação inicial, o usuário solicitou faixas mais visíveis ao lado do valor medido e sinalização com cores. Essa decisão substitui a apresentação pediátrica exclusivamente neutra da versão inicial, sem mudar o contrato clínico dos consumidores.
+
+- RF-007: cada cartão da comparação apresenta campos adjacentes e explicitamente identificados como **Valor medido** e **Referência**, com números de destaque equivalente. Tipo estatístico, fonte e detalhes continuam acessíveis. Unidades pediátricas correspondem às medidas já normalizadas (mm, %, m/s ou razão adimensional).
+- RF-008: para uma faixa pediátrica elegível, verde significa **Dentro da faixa da coorte**, vermelho **Acima da faixa da coorte** e azul **Abaixo da faixa da coorte**, sempre com texto/ícone. A cor não significa diagnóstico de normalidade/doença.
+- RF-009: comparação visual exige número estritamente válido, finito e positivo, faixa disponível com limites finitos e ordenados e as mesmas condições de idade, peso, protocolo, técnica, vista e unidade já existentes. Limites inclusivos; tolerância apenas de representação binária para conversões de unidade. Campos vazios, malformados, zero e infinito, unidade ambígua e contexto inelegível permanecem neutros, com motivo pertinente.
+- RF-010: a derivação cromática é exclusiva da interface. `pediatric_reference` mantém seus valores/publicação e status `descriptive`; `*_min/max`, comparador genérico, PDF e IA continuam sem classificação pediátrica. Não alterar catálogo, medidas, protocolos nem registros clínicos.
+- RF-011: valores derivados exibidos na comparação usam as unidades originais uma única vez. Misturar DIVEd em cm e DIVES em mm (ou vice-versa) não pode duplicar a conversão; a medida original e o payload persistido permanecem intactos. Para encurtamento pediátrico derivado, usar a precisão do cálculo para decidir a posição, sem arredondar previamente a inteiro. Medida explicitamente informada mantém precedência.
+- CA-006: os campos medido/referência são legíveis em desktop e celular, sem sobreposição nem rolagem horizontal; fonte e tipo da faixa continuam disponíveis.
+- CA-007: testes demonstram as três posições, limites inclusivos, conversão cm→mm e neutralidade dos dados/métodos insuficientes; adultos mantêm as comparações existentes.
+- CA-008: o aviso explica uma única vez que a faixa de 6–16 semanas não é ajustada ao peso e que as cores indicam posição numérica, sem estabelecer diagnóstico isoladamente.

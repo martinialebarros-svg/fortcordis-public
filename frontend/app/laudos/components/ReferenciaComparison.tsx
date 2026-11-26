@@ -12,7 +12,9 @@ import { EchoDiastolicProtocol } from "./EchoDiastolicProtocol";
 import { resolveEchoReferenceForMeasurements } from "@/lib/echo-reference-policy";
 import { makeLowWeightReference } from "@/lib/echo-low-weight-reference";
 import { FelinePediatricProtocol } from "./FelinePediatricProtocol";
-import { isFelinePediatricContext } from "@/lib/echo-feline-pediatric-reference";
+import { canonicalPediatricMeasurement, isFelinePediatricContext } from "@/lib/echo-feline-pediatric-reference";
+import { pediatricCohortIntervalText, pediatricComparisonPosition, pediatricDisplayNumber } from "./pediatric-comparison-position";
+import { confirmedUnitKey, ECHO_LENGTH_KEYS } from "@/lib/echo-unit-provenance";
 
 interface ReferenciaComparisonProps {
   especie?: "Canina" | "Felina" | string;
@@ -47,8 +49,18 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
     [medidas, peso, especie, idade]
   );
   const medidasDerivadasParaReferencia = useMemo(
-    () => deriveLeftVentricularFunctionForReference(medidasSeguras),
-    [medidasSeguras]
+    () => {
+      // prepareEchoReportMeasurements already converts lengths to mm. Mark
+      // that unit only in this display copy, preventing a second conversion.
+      const normalized = { ...medidasSeguras };
+      for (const key of ECHO_LENGTH_KEYS) {
+        if (normalized[key] !== undefined) normalized[confirmedUnitKey(key)] = "mm";
+      }
+      return deriveLeftVentricularFunctionForReference(normalized, {
+        preservePrecision: isFelinePediatricContext(especie, idade),
+      });
+    },
+    [medidasSeguras, especie, idade]
   );
   const medidasParaReferencia = useMemo(
     () => ({ ...medidasSeguras, ...medidasDerivadasParaReferencia }),
@@ -314,29 +326,67 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
                     item.referencia_max === null ||
                     (item.referencia_min === 0 && item.referencia_max === 0);
                   const faixaRef = item.referencia_texto ?? (semReferenciaDefinida
-                    ? "-"
+                    ? "Não disponível"
                     : `${item.referencia_min} - ${item.referencia_max}`);
+                  const cohort = pediatrico
+                    ? referenciaAtual?.pediatric_reference?.ranges[canonicalPediatricMeasurement(item.key)]
+                    : undefined;
+                  const original = medidas[item.key];
+                  const derivedFs = item.key === "DeltaD_FS" && item.key in medidasDerivadasParaReferencia;
+                  const validOrigin = (original === undefined || pediatricDisplayNumber(original) !== null
+                    || (original.trim() === "" && item.key in medidasDerivadasParaReferencia))
+                    && (!derivedFs || [medidas.DIVEd, medidas.DIVES].every((value) => pediatricDisplayNumber(value ?? "") !== null));
+                  const position = validOrigin ? pediatricComparisonPosition(item.valor_medido, cohort) : null;
+                  const displayStatus = cohort ? position?.status ?? "nao_avaliado" : item.status;
+                  const measuredUnit = cohort && pediatricDisplayNumber(item.valor_medido) !== null ? cohort.unit : "";
+                  const measuredDisplay = pediatrico && item.key in medidasDerivadasParaReferencia
+                    ? new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 }).format(Number(item.valor_medido))
+                    : item.valor_medido;
+                  const cohortInterval = pediatricCohortIntervalText(cohort);
+                  const referenceText = cohort ? cohortInterval ?? "Não disponível" : faixaRef;
+                  const referenceLabel = item.referencia_tipo === "clinical_limit" ? "Limite clínico orientativo"
+                    : item.metadados?.status === "estimated" ? "Estimativa calculada"
+                    : item.metadados?.status === "published" && ["allometric", "interpolated"].includes(item.metadados.calculation || "") ? "Limites calculados"
+                    : item.referencia_texto ? (item.estatistica === "published_cohort_reference_interval" ? "Intervalo da coorte pediátrica"
+                      : item.referencia_tipo === "reference_interval" ? "Intervalo de referência publicado" : item.estatistica === "mean_sd" ? "Média ± DP publicada" : "Comparação diastólica") : item.key.endsWith("_2D")
+                    ? (semReferenciaDefinida ? "Faixa 2D" : "Faixa 2D publicada")
+                    : item.metadados?.status === "published" ? "Faixa publicada" : "Faixa cadastrada";
+                  const interpretation = position?.text ?? (cohort?.status === "descriptive"
+                    ? cohortInterval ? "Informe um valor medido positivo e finito para visualizar a posição na coorte."
+                    : "Intervalo da coorte indisponível para comparação."
+                    : item.interpretacao);
+                  const referenceNote = cohort?.status === "descriptive"
+                    ? referenciaAtual?.pediatric_reference?.population
+                    : item.nota_referencia;
 
                   return (
                 <div
                   key={item.key}
-                  className={`flex flex-col gap-3 p-3 rounded-lg border sm:flex-row sm:items-start sm:justify-between ${getStatusClass(
-                    item.status
+                  className={`space-y-3 p-4 rounded-lg border ${getStatusClass(
+                    displayStatus
                   )}`}
                 >
-                  <div className="flex min-w-0 items-start gap-3">
-                    {getStatusIcon(item.status)}
-                    <div>
-                      <p className="font-medium text-sm">{item.nome}</p>
-                      <p className="text-xs text-gray-500">
-                        {item.referencia_tipo === "clinical_limit" ? "Limite clínico orientativo"
-                          : item.metadados?.status === "estimated" ? "Estimativa calculada"
-                          : item.metadados?.status === "published" && ["allometric", "interpolated"].includes(item.metadados.calculation || "") ? "Limites calculados"
-                          : item.referencia_texto ? (item.estatistica === "published_cohort_reference_interval" ? "Intervalo da coorte pediátrica"
-                            : item.referencia_tipo === "reference_interval" ? "Intervalo de referência publicado" : item.estatistica === "mean_sd" ? "Média ± DP publicada" : "Comparação diastólica") : item.key.endsWith("_2D")
-                          ? (semReferenciaDefinida ? "Faixa 2D" : "Faixa 2D publicada")
-                          : item.metadados?.status === "published" ? "Faixa publicada" : "Faixa cadastrada"}: {faixaRef}
-                      </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    {getStatusIcon(displayStatus)}
+                    <p className="font-semibold text-sm text-gray-900">{item.nome}</p>
+                  </div>
+                  <dl className="grid grid-cols-2 gap-4">
+                    <div className="min-w-0">
+                      <dt className="text-sm font-medium text-gray-600">Valor medido</dt>
+                      <dd className="mt-1 break-words text-lg font-semibold text-gray-900">
+                        {measuredDisplay || "—"}{measuredUnit ? ` ${measuredUnit}` : ""}
+                      </dd>
+                    </div>
+                    <div className="min-w-0">
+                      <dt className="text-sm font-medium text-gray-600">Referência</dt>
+                      <dd className="mt-1 break-words text-lg font-semibold text-gray-900">{referenceText}</dd>
+                      <p className="mt-1 text-xs text-gray-600">{referenceLabel}</p>
+                    </div>
+                  </dl>
+                  <p className={`text-sm font-medium ${getStatusTextClass(displayStatus)}`}>
+                    {interpretation}
+                  </p>
+                  <div className="space-y-1">
                       {item.fonte && <p className="text-xs text-gray-500">{item.doi ? <a href={`https://doi.org/${item.doi}`} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{item.fonte}</a> : item.fonte}</p>}
                       {item.metadados?.model_weight_kg != null && <details className="mt-1 text-xs text-gray-600">
                         <summary className="cursor-pointer">População e cálculo</summary>
@@ -344,22 +394,15 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
                         <p>{item.metadados.formula}</p>
                         <p>{item.metadados.reason}</p>
                       </details>}
-                      {item.nota_referencia && ["descriptive", "reference_interval", "unconfirmed"].includes(item.referencia_tipo ?? "") && (
+                      {referenceNote && ["descriptive", "reference_interval", "unconfirmed"].includes(item.referencia_tipo ?? "") && (
                         <details className="mt-1 text-xs text-gray-600">
                           <summary className="cursor-pointer">Técnica e população do estudo</summary>
-                          <p className="mt-1 max-w-xl leading-relaxed">{item.nota_referencia}</p>
+                          <p className="mt-1 max-w-xl leading-relaxed">{referenceNote}</p>
                         </details>
                       )}
                       {item.metadados?.clinical_threshold && ["AE_Ao", "LA_Ao"].includes(item.key) && (
                         <p className="text-xs text-gray-500">Limiar clínico geral: AE/Ao &lt; 1,5, independente do intervalo estatístico por peso. Interpretar com os demais achados.</p>
                       )}
-                    </div>
-                  </div>
-                  <div className="min-w-0 sm:max-w-sm sm:shrink-0 sm:text-right">
-                    <p className="font-bold text-lg">{item.valor_medido || "-"}</p>
-                    <p className={`text-xs ${getStatusTextClass(item.status)}`}>
-                      {item.interpretacao}
-                    </p>
                   </div>
                 </div>
                   );
@@ -370,18 +413,18 @@ export function ReferenciaComparison({ especie, peso, idade, medidas, onMedidaCh
         ))
       )}
 
-      <div className="flex gap-4 text-sm mt-4 p-3 bg-gray-50 rounded-lg">
+      <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm mt-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex items-center gap-1">
-          <CheckCircle className="w-4 h-4 text-green-500" />
-          <span>Dentro da faixa</span>
+          <CheckCircle className="w-4 h-4 shrink-0 text-green-500" />
+          <span>{pediatrico ? "Dentro da faixa da coorte" : "Dentro da faixa"}</span>
         </div>
         <div className="flex items-center gap-1">
-          <ArrowUp className="w-4 h-4 text-red-500" />
-          <span>Acima da faixa</span>
+          <ArrowUp className="w-4 h-4 shrink-0 text-red-500" />
+          <span>{pediatrico ? "Acima da faixa da coorte" : "Acima da faixa"}</span>
         </div>
         <div className="flex items-center gap-1">
-          <ArrowDown className="w-4 h-4 text-blue-500" />
-          <span>Abaixo da faixa</span>
+          <ArrowDown className="w-4 h-4 shrink-0 text-blue-500" />
+          <span>{pediatrico ? "Abaixo da faixa da coorte" : "Abaixo da faixa"}</span>
         </div>
       </div>
     </div>
