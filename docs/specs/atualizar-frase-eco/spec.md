@@ -13,3 +13,7 @@ CA-01: atualização explícita envia um único PUT com ID/texto/metadados corre
 CA-02: seleção e texto permanecem íntegros após sucesso e falha; repetir o salvamento sem nova edição fica indisponível.
 CA-03: entradas inválidas e requisições concorrentes não oferecem atualização; nova edição durante o envio não é descartada.
 CA-04: ação disponível nos modos preset/compositor e compatível com a criação de nova frase; sem atualização de conclusão composta.
+
+## Limite da homologação de 26/11/2026
+
+A homologação instalada verifica identidade, bundles, saúde e contrato da API usando catálogo temporário. A revisão visual usa o componente real com API e dados fictícios; não se apresenta como teste integral autenticado da página Next. A ação de catálogo não regrava nem emite laudos salvos.
