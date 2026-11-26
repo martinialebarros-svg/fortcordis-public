@@ -208,6 +208,9 @@ export default function EcocardiogramaEstruturadoEditor({
   const [atualizandoPresetSelecionado, setAtualizandoPresetSelecionado] = useState(false);
   const [propagandoFrasesSelecionadas, setPropagandoFrasesSelecionadas] = useState(false);
   const [salvandoNovaFraseAspecto, setSalvandoNovaFraseAspecto] = useState<string | null>(null);
+  const [atualizandoFraseAspecto, setAtualizandoFraseAspecto] = useState<string | null>(null);
+  const salvandoFrase =
+    propagandoFrasesSelecionadas || !!salvandoNovaFraseAspecto || !!atualizandoFraseAspecto;
   const [presetFormAberto, setPresetFormAberto] = useState(false);
   const [filtroAspectosPreset, setFiltroAspectosPreset] = useState<"all" | "pending">("all");
   const [presetDeteccao, setPresetDeteccao] = useState<Record<string, PresetDeteccaoInfo>>({});
@@ -1094,8 +1097,26 @@ export default function EcocardiogramaEstruturadoEditor({
     }
   };
 
+  const atualizarFraseDoAspecto = async (aspecto: AspectoEcoEstruturadoTeste) => {
+    if (salvandoFrase) {
+      return;
+    }
+
+    try {
+      setAtualizandoFraseAspecto(aspecto.key);
+      const atualizado = await sincronizarFraseSelecionadaDoAspecto(aspecto);
+      if (atualizado) {
+        setHint(
+          `Frase de ${aspecto.label} atualizada no banco. Os presets que usam essa frase passam a usar o novo texto.`
+        );
+      }
+    } finally {
+      setAtualizandoFraseAspecto(null);
+    }
+  };
+
   const propagarTextosSelecionadosParaBanco = async () => {
-    if (!presetAtual) {
+    if (!presetAtual || salvandoFrase) {
       return;
     }
 
@@ -1137,6 +1158,9 @@ export default function EcocardiogramaEstruturadoEditor({
   };
 
   const salvarNovaFraseDoAspecto = async (aspecto: AspectoEcoEstruturadoTeste) => {
+    if (salvandoFrase) {
+      return;
+    }
     const textoAtual = String(estado.textos[aspecto.key] || "").trim();
     if (!textoAtual) {
       setError(`O texto de ${aspecto.label} esta vazio.`);
@@ -1457,7 +1481,7 @@ export default function EcocardiogramaEstruturadoEditor({
         <button
           type="button"
           onClick={propagarTextosSelecionadosParaBanco}
-          disabled={!presetAtual || propagandoFrasesSelecionadas}
+          disabled={!presetAtual || salvandoFrase}
           className="rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
         >
           {propagandoFrasesSelecionadas ? "Propagando frases..." : "Propagar frases para banco"}
@@ -1691,6 +1715,10 @@ export default function EcocardiogramaEstruturadoEditor({
             (frase) => Number(frase.ativo ?? 1) === 1
           );
           const fraseSelecionadaId = fraseSelecionadaEfetivaPorAspecto[aspecto.key] || "";
+          const fraseSelecionada = frasesAtivas.find(
+            (frase) => String(frase.id) === fraseSelecionadaId
+          );
+          const textoAtual = String(estado.textos[aspecto.key] || "").trim();
           const opcoesDeGrau =
             aspecto.key === "conclusao"
               ? []
@@ -1813,7 +1841,7 @@ export default function EcocardiogramaEstruturadoEditor({
                   </button>
                 </div>
               ) : (
-                <div className="mb-3 flex flex-col items-start gap-2 lg:flex-row">
+                <div className="mb-3 flex flex-col items-start gap-2 xl:flex-row">
                   {aspecto.key === "conclusao" ? (
                     <SeletorFraseConclusao
                       frases={frasesAtivas}
@@ -1900,7 +1928,7 @@ export default function EcocardiogramaEstruturadoEditor({
                       ))}
                     </select>
                   )}
-                  <div className="flex shrink-0 flex-wrap gap-2">
+                  <div className="flex max-w-full shrink-0 flex-wrap gap-2">
                     {modoPreenchimento === "preset" ? (
                       <button
                         type="button"
@@ -1913,10 +1941,26 @@ export default function EcocardiogramaEstruturadoEditor({
                     ) : null}
                     <button
                       type="button"
+                      onClick={() => atualizarFraseDoAspecto(aspecto)}
+                      disabled={
+                        !fraseSelecionada ||
+                        !textoAtual ||
+                        textoAtual === String(fraseSelecionada.texto || "").trim() ||
+                        salvandoFrase
+                      }
+                      title="Salva o texto na frase selecionada e nos presets que a utilizam."
+                      className="rounded-lg border border-teal-300 px-3 py-2 text-sm text-teal-700 hover:bg-teal-50 disabled:opacity-50"
+                    >
+                      {atualizandoFraseAspecto === aspecto.key
+                        ? "Atualizando..."
+                        : "Atualizar frase"}
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => salvarNovaFraseDoAspecto(aspecto)}
                       disabled={
                         !String(estado.textos[aspecto.key] || "").trim() ||
-                        salvandoNovaFraseAspecto === aspecto.key
+                        salvandoFrase
                       }
                       className="rounded-lg border border-teal-300 px-3 py-2 text-sm text-teal-700 hover:bg-teal-50 disabled:opacity-50"
                     >
@@ -1927,10 +1971,22 @@ export default function EcocardiogramaEstruturadoEditor({
                   </div>
                 </div>
               )}
+              {fraseSelecionada && textoAtual !== String(fraseSelecionada.texto || "").trim() &&
+              !(aspecto.key === "conclusao" && modoPreenchimento === "compositor") ? (
+                <p className="mb-2 text-xs text-gray-500">
+                  Atualizar frase também altera o texto nos presets que a utilizam.
+                </p>
+              ) : null}
               <textarea
                 value={estado.textos[aspecto.key] || ""}
                 onChange={(e) =>
                   {
+                    if (fraseSelecionadaId) {
+                      setFraseSelecionadaPorAspecto((prev) => ({
+                        ...prev,
+                        [aspecto.key]: fraseSelecionadaId,
+                      }));
+                    }
                     onChange(
                       atualizarEstrutura(estado, {
                         textos: {

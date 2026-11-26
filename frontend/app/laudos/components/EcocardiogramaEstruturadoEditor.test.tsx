@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -379,5 +379,176 @@ describe("EcocardiogramaEstruturadoEditor - composicao de achados", () => {
     expect(
       screen.getByRole("button", { name: /Aplicar rascunho revisado na conclusão/i }),
     ).toBeEnabled();
+  });
+});
+
+describe("EcocardiogramaEstruturadoEditor - atualizar frase", () => {
+  beforeEach(() => {
+    Object.values(apiMocks).forEach((mock) => mock.mockReset());
+    apiMocks.carregarBanco.mockResolvedValue(payload);
+    window.localStorage.clear();
+  });
+
+  async function abrirEditor() {
+    const onChange = vi.fn();
+    render(<EditorControlado onChange={onChange} />);
+    const campo = await screen.findByPlaceholderText("Descreva o ventriculo esquerdo");
+    const bloco = within(campo.parentElement!);
+    return { campo, bloco, onChange };
+  }
+
+  it.each(["preset", "compositor"])(
+    "atualiza somente a frase selecionada no modo %s, sem criar duplicata ou mudar o laudo",
+    async (modo) => {
+      apiMocks.carregarBanco.mockResolvedValue({
+        ...payload,
+        aspectos: payload.aspectos.map((aspecto) => ({
+          ...aspecto,
+          frases: aspecto.frases.map((frase) => frase.id === 66
+            ? { ...frase, patologias: ["Categoria de teste"], ordem: 4 }
+            : frase),
+        })),
+      });
+      apiMocks.atualizarFrase.mockResolvedValue({ id: 66 });
+      const { campo, bloco, onChange } = await abrirEditor();
+      if (modo === "compositor") {
+        fireEvent.click(screen.getByRole("button", { name: /Combinar achados/i }));
+      }
+      const botao = bloco.getByRole("button", { name: "Atualizar frase" });
+      expect(botao).toBeDisabled();
+      const texto = "Texto revisado pelo veterinário.";
+      fireEvent.change(campo, { target: { value: texto } });
+      expect(apiMocks.atualizarFrase).not.toHaveBeenCalled();
+      expect(botao).toBeEnabled();
+      expect(bloco.getByText(/Atualizar frase também altera/)).toBeInTheDocument();
+      onChange.mockClear();
+
+      fireEvent.click(botao);
+
+      await screen.findByText(/Frase de Ventriculo esquerdo atualizada no banco/);
+      expect(apiMocks.atualizarFrase).toHaveBeenCalledExactlyOnceWith(66, {
+        aspecto: "ventriculo_esquerdo",
+        titulo: "VE com sobrecarga volumétrica moderada",
+        texto,
+        tags: ["moderado", "endocardiose", "cao", "B2"],
+        patologias: ["Categoria de teste"],
+        ordem: 4,
+      });
+      expect(apiMocks.criarFrase).not.toHaveBeenCalled();
+      expect(apiMocks.salvarPreset).not.toHaveBeenCalled();
+      expect(onChange).not.toHaveBeenCalled();
+      expect(campo).toHaveValue(texto);
+      expect(screen.getByPlaceholderText("Descreva a valva mitral")).toHaveValue(textoMitralNormal);
+      expect(screen.getByPlaceholderText("Escreva a conclusao")).toHaveValue(conclusaoDmvm);
+      expect(botao).toBeDisabled();
+      expect(bloco.getByRole("button", { name: "Salvar como nova frase" })).toBeEnabled();
+      if (modo === "preset") {
+        fireEvent.change(campo, { target: { value: "Outra edição local." } });
+        fireEvent.click(bloco.getByRole("button", { name: "Usar frase" }));
+        expect(campo).toHaveValue(texto);
+      } else {
+        expect(within(screen.getByPlaceholderText("Escreva a conclusao").parentElement!)
+          .queryByRole("button", { name: "Atualizar frase" })).not.toBeInTheDocument();
+      }
+    }
+  );
+
+  it("mantém a frase original selecionada quando a edição coincide com outra frase", async () => {
+    apiMocks.atualizarFrase.mockResolvedValue({ id: 66 });
+    const { campo, bloco } = await abrirEditor();
+    fireEvent.change(campo, { target: { value: textoImportante } });
+    expect(bloco.getByRole("combobox")).toHaveValue("66");
+    fireEvent.click(bloco.getByRole("button", { name: "Atualizar frase" }));
+    await waitFor(() => expect(apiMocks.atualizarFrase).toHaveBeenCalledWith(
+      66, expect.objectContaining({ texto: textoImportante })
+    ));
+    await screen.findByText(/Frase de Ventriculo esquerdo atualizada no banco/);
+  });
+
+  it("mantém a opção de criar uma frase nova com o texto editado", async () => {
+    const novaFrase = { id: 900, titulo: "Frase de teste", texto: "Texto revisado", tags: [], ativo: 1 };
+    apiMocks.criarFrase.mockResolvedValue(novaFrase);
+    apiMocks.carregarBanco.mockResolvedValueOnce(payload).mockResolvedValue({
+      ...payload,
+      aspectos: payload.aspectos.map((aspecto) => aspecto.key === "ventriculo_esquerdo"
+        ? { ...aspecto, frases: [...aspecto.frases, novaFrase] }
+        : aspecto),
+    });
+    const prompt = vi.spyOn(window, "prompt").mockReturnValueOnce("Frase de teste").mockReturnValueOnce("");
+    try {
+      const { campo, bloco } = await abrirEditor();
+      fireEvent.change(campo, { target: { value: "Texto revisado" } });
+      fireEvent.click(bloco.getByRole("button", { name: "Salvar como nova frase" }));
+      await screen.findByText('Frase "Frase de teste" salva no banco em Ventriculo esquerdo.');
+      expect(apiMocks.criarFrase).toHaveBeenCalledExactlyOnceWith({
+        aspecto: "ventriculo_esquerdo", titulo: "Frase de teste", texto: "Texto revisado", tags: [],
+      });
+      expect(apiMocks.atualizarFrase).not.toHaveBeenCalled();
+      expect(campo).toHaveValue("Texto revisado");
+      expect(bloco.getByRole("combobox")).toHaveValue("900");
+    } finally {
+      prompt.mockRestore();
+    }
+  });
+
+  it("bloqueia atualização com texto vazio ou sem alterações", async () => {
+    const { campo, bloco } = await abrirEditor();
+    const botao = bloco.getByRole("button", { name: "Atualizar frase" });
+    expect(botao).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "   " } });
+    expect(botao).toBeDisabled();
+    expect(apiMocks.atualizarFrase).not.toHaveBeenCalled();
+  });
+
+  it("não oferece atualização quando o aspecto não tem frase ativa selecionada", async () => {
+    apiMocks.carregarBanco.mockResolvedValue({
+      ...payload,
+      aspectos: payload.aspectos.map((aspecto) => ({
+        ...aspecto,
+        frases: aspecto.frases.map((frase) => ({ ...frase, ativo: 0 })),
+      })),
+    });
+    const { campo, bloco } = await abrirEditor();
+    fireEvent.change(campo, { target: { value: "Texto manual" } });
+    expect(bloco.getByRole("button", { name: "Atualizar frase" })).toBeDisabled();
+    expect(apiMocks.atualizarFrase).not.toHaveBeenCalled();
+  });
+
+  it("preserva texto e seleção após falha e permite tentar novamente", async () => {
+    apiMocks.atualizarFrase.mockRejectedValueOnce({ response: { data: { detail: "Falha simulada" } } })
+      .mockResolvedValueOnce({ id: 66 });
+    const { campo, bloco } = await abrirEditor();
+    fireEvent.change(campo, { target: { value: "Texto revisado" } });
+    const botao = bloco.getByRole("button", { name: "Atualizar frase" });
+    fireEvent.click(botao);
+    await screen.findByText("Falha simulada");
+    expect(screen.queryByText(/Frase de Ventriculo esquerdo atualizada no banco/)).not.toBeInTheDocument();
+    expect(campo).toHaveValue("Texto revisado");
+    expect(bloco.getByRole("combobox")).toHaveValue("66");
+    expect(botao).toBeEnabled();
+    fireEvent.click(botao);
+    await screen.findByText(/Frase de Ventriculo esquerdo atualizada no banco/);
+    expect(apiMocks.atualizarFrase).toHaveBeenCalledTimes(2);
+    expect(botao).toBeDisabled();
+  });
+
+  it("bloqueia salvamentos concorrentes e preserva a edição feita durante a requisição", async () => {
+    let resolver!: () => void;
+    apiMocks.atualizarFrase.mockImplementation(() => new Promise<void>((resolve) => { resolver = resolve; }));
+    const { campo, bloco } = await abrirEditor();
+    fireEvent.change(campo, { target: { value: "Texto enviado" } });
+    fireEvent.click(bloco.getByRole("button", { name: "Atualizar frase" }));
+    expect(bloco.getByRole("button", { name: "Atualizando..." })).toBeDisabled();
+    expect(bloco.getByRole("button", { name: "Salvar como nova frase" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Propagar frases para banco" })).toBeDisabled();
+    fireEvent.change(campo, { target: { value: "Edição posterior" } });
+    await act(async () => resolver());
+    expect(campo).toHaveValue("Edição posterior");
+    expect(bloco.getByRole("button", { name: "Atualizar frase" })).toBeEnabled();
+    expect(apiMocks.atualizarFrase).toHaveBeenCalledExactlyOnceWith(
+      66, expect.objectContaining({ texto: "Texto enviado" })
+    );
+    fireEvent.click(bloco.getByRole("button", { name: "Usar frase" }));
+    expect(campo).toHaveValue("Texto enviado");
   });
 });
