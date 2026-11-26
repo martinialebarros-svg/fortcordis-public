@@ -1,6 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { deriveAutomaticEchoMeasurements, parseStoredEchoMeasurements } from "./echo-derived-measurements";
+import { deriveAutomaticEchoMeasurements, deriveLeftVentricularFunctionForReference, parseStoredEchoMeasurements } from "./echo-derived-measurements";
 import { mergeImportedEchoMeasurements, updateEchoMeasurement } from "./echo-unit-provenance";
+
+describe("precisão opcional na comparação de função ventricular", () => {
+  it.each([
+    { DIVEd: "12", DIVES: "3.78", precise: 68.5, legacy: "69" },
+    { DIVEd: "12", DIVES: "7.62", precise: 36.5, legacy: "37" },
+  ])("preserva precisão quando solicitada e mantém o padrão legado: %j", ({ DIVEd, DIVES, precise, legacy }) => {
+    const measurements = Object.freeze({ DIVEd, DIVES });
+    expect(deriveLeftVentricularFunctionForReference(measurements).DeltaD_FS).toBe(legacy);
+    const result = deriveLeftVentricularFunctionForReference(measurements, { preservePrecision: true });
+    expect(Number(result.DeltaD_FS)).toBeCloseTo(precise, 12);
+    expect(measurements).toEqual({ DIVEd, DIVES });
+  });
+
+  it("mantém o FS informado como autoridade mesmo com precisão solicitada", () => {
+    expect(deriveLeftVentricularFunctionForReference({ DIVEd: "12", DIVES: "3.78", DeltaD_FS: "55.2" },
+      { preservePrecision: true })).not.toHaveProperty("DeltaD_FS");
+  });
+});
 
 describe("deriveAutomaticEchoMeasurements", () => {
   it("preserva a presença canônica diastólica vazia ou inválida sem recuperar a descrição histórica", () => {
@@ -86,7 +104,16 @@ describe("deriveAutomaticEchoMeasurements", () => {
       expect(historical).toEqual(before);
     });
 
-  it("aplica os mesmos cálculos aos aliases caninos exatos sem aceitar prefixos", () => {
+  it.each(["Dog", "Cão", "cachorro"])("recalcula índices caninos após editar DIVEd sem manter o histórico em %s", (species) => {
+    const stored = { DIVEd: "25", DIVEd_normalizado: "0.9", DIVEd_2D: "32", DIVEd_normalizado_2D: "0.8", VE_vista_2D: "eixo_curto" };
+    const changed = { ...stored, DIVEd: "30" };
+    const derived = deriveAutomaticEchoMeasurements(changed, 10, species, "5 anos");
+    expect(derived).toMatchObject({ DIVEd_normalizado: "1.52", DIVEd_normalizado_2D: "1.55" });
+    expect({ ...changed, ...derived }.DIVEd_normalizado).toBe("1.52");
+    expect(stored.DIVEd_normalizado).toBe("0.9");
+  });
+
+  it("mantém fórmulas caninas e usa os aliases exatos do classificador compartilhado", () => {
     const measurements = {
       Onda_E: "1.08", Onda_A: "0.95", TRIV: "40", e_doppler: "0.16", a_doppler: "0.08",
       DIVEd: "30", DIVEd_2D: "32", VE_vista_2D: "eixo_curto",
@@ -95,16 +122,15 @@ describe("deriveAutomaticEchoMeasurements", () => {
       E_A: "1.14", E_TRIV: "2.7", E_E_linha: "6.75", doppler_tecidual_relacao: "2",
       DIVEd_normalizado: "1.52", DIVEd_normalizado_2D: "1.55",
     });
-    for (const species of ["Dog", " Cão ", "cães", "Cachorro", "canino", "Canine"]) {
-      expect(deriveAutomaticEchoMeasurements(measurements, 10, species)).toMatchObject({
-        DIVEd_normalizado: "1.52", DIVEd_normalizado_2D: "1.55", E_A: "1.14",
-      });
-    }
-    for (const species of ["CaninaXYZ", "Caninoide", "Dogfish", "Felina"]) {
-      const derived = deriveAutomaticEchoMeasurements(measurements, 10, species);
-      expect(derived).not.toHaveProperty("DIVEd_normalizado");
-      expect(derived).not.toHaveProperty("DIVEd_normalizado_2D");
-    }
+    const dog = deriveAutomaticEchoMeasurements(measurements, 10, "Dog");
+    expect(dog).toMatchObject({ DIVEd_normalizado: "1.52", DIVEd_normalizado_2D: "1.55" });
+    expect(dog.E_A).toBe("1.14");
+  });
+
+  it.each(["CaninaXYZ", "Dogfish", "Felina", "Cat"])("não deriva índices caninos para espécie não canina %s", (species) => {
+    const derived = deriveAutomaticEchoMeasurements({ DIVEd: "30", DIVEd_2D: "32", VE_vista_2D: "eixo_curto" }, 10, species, "5 anos");
+    expect(derived).not.toHaveProperty("DIVEd_normalizado");
+    expect(derived).not.toHaveProperty("DIVEd_normalizado_2D");
   });
 
   it("exige separação felina confirmada após editar ou reimportar origens de um contexto fundido", () => {
